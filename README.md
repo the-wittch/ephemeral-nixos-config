@@ -129,7 +129,7 @@ direnv allow
 flatpak-apps
 ```
 
-User Flatpaks. The list is in `scripts/flatpak-tui.sh`. Steam is `programs.steam`, not that list.
+User Flatpaks. The list is in `scripts/flatpak-tui.sh`.
 
 ## SMB
 
