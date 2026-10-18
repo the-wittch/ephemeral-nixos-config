@@ -1,0 +1,36 @@
+{
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "editor.tabSize": 2,
+  "editor.formatOnSave": true,
+  "nix.enableLanguageServer": true,
+  "nix.serverPath": "nil",
+  "nix.formatterPath": "nixfmt",
+  "nix.serverSettings": {
+    "nil": {
+      "formatting": {
+        "command": [
+          "nixfmt"
+        ]
+      }
+    }
+  },
+  "[nix]": {
+    "editor.defaultFormatter": "jnoortheen.nix-ide",
+    "editor.tabSize": 2
+  },
+  "files.exclude": {
+    "**/.direnv": true,
+    "**/result": true
+  },
+  "search.exclude": {
+    "**/.direnv": true,
+    "**/result": true,
+    "**/result-*": true
+  },
+  "files.watcherExclude": {
+    "**/.direnv/**": true,
+    "**/result/**": true
+  }
+}

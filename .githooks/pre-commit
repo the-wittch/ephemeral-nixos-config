@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+[[ ${SKIP_SECRET_CHECK:-0} == 1 ]] && exit 0
+ROOT=$(git rev-parse --show-toplevel)
+exec "$ROOT/scripts/check-no-secrets.sh" --staged

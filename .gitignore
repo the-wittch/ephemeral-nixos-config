@@ -1,0 +1,36 @@
+# machine files (next to the flake; copy from *.example.nix)
+settings.nix
+settings.from-pass.nix
+hardware-configuration.nix
+smb-shares.nix
+
+# machine-only edits under customize/ (loader default.nix stays tracked)
+customize/*
+!customize/default.nix
+!customize/*.example.nix
+
+# secrets / local material
+passwords/
+*.key
+*.pem
+*.age
+*.creds
+id_rsa
+id_ed25519
+secrets.nix
+.env
+.env.*
+
+# nix
+result
+result-*
+
+# editors / tools
+.direnv/
+*.swp
+*~
+.DS_Store
+
+# syncthing, if this tree is a synced folder
+.stfolder/
+.stignore

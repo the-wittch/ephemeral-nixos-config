@@ -1,0 +1,62 @@
+{
+  ...
+}:
+
+{
+  fileSystems."/persist".neededForBoot = true;
+  fileSystems."/var/log".neededForBoot = true;
+
+  environment.persistence."/persist" = {
+    hideMounts = true;
+    directories = [
+      "/home"
+      "/var/lib/nixos"
+      "/var/lib/systemd"
+      "/var/lib/bluetooth"
+      "/var/lib/NetworkManager"
+      "/var/lib/cups"
+      "/var/lib/flatpak"
+      "/var/lib/fwupd"
+      "/var/lib/containers"
+      "/var/lib/opensnitch"
+      "/etc/NetworkManager/system-connections"
+    ];
+    files = [
+      "/etc/machine-id"
+    ];
+  };
+
+  system.activationScripts.persistSecrets = {
+    deps = [ "users" ];
+    text = ''
+      mkdir -p /persist/passwords
+      chmod 700 /persist/passwords
+      for f in /persist/passwords/*; do
+        if [ -e "$f" ]; then
+          chmod 600 "$f"
+        fi
+      done
+
+      mkdir -p /persist/etc/ssh
+      chmod 755 /persist/etc/ssh
+      for f in /persist/etc/ssh/ssh_host_*_key; do
+        if [ -f "$f" ]; then
+          chmod 600 "$f"
+        fi
+      done
+      for f in /persist/etc/ssh/ssh_host_*_key.pub; do
+        if [ -f "$f" ]; then
+          chmod 644 "$f"
+        fi
+      done
+
+      mkdir -p /persist/etc/smb
+      chmod 700 /persist/etc/smb
+      for f in /persist/etc/smb/*; do
+        if [ -e "$f" ]; then
+          chmod 600 "$f"
+        fi
+      done
+    '';
+  };
+}
