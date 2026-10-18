@@ -2,6 +2,8 @@
 
 Post-install flake for [ephemeral-nixos](https://github.com/the-wittch/ephemeral-nixos). Root rolls back every boot. `/home` and a few paths stay on `/persist`.
 
+Opinionated: desktop apps and services are included that you may want to trim in a private `host.nix` or fork.
+
 Personal machines: private flake that takes this repo as an input (`examples/private-flake/`). Packages in private git. Hostname, disk, and resolver id in gitignored `settings.nix` or Pass.
 
 Or clone this tree and use `customize/` for extras.
