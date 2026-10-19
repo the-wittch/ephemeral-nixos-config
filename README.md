@@ -13,16 +13,24 @@ Or clone this tree and use `customize/` for extras.
 
 1. Install from [ephemeral-nixos](https://github.com/the-wittch/ephemeral-nixos).
 2. Boot, unlock LUKS, log in. The password hash is already in `/persist/passwords/`.
-3. Put a private flake on the installed system (copy from `examples/private-flake/`):
+3. Put a private flake on the installed system:
 
    ```bash
    cd /persist/etc/nixos
-   cp /path/to/ephemeral-nixos-config/settings.example.nix settings.nix
-   # plus hardware-configuration.nix from the install
+
+   BASE=https://raw.githubusercontent.com/the-wittch/ephemeral-nixos-config/main
+   curl -fsSL -o flake.nix "$BASE/examples/private-flake/flake.nix"
+   curl -fsSL -o host.nix "$BASE/examples/private-flake/host.nix"
+   curl -fsSL -o .gitignore "$BASE/examples/private-flake/.gitignore"
+   curl -fsSL -o settings.nix "$BASE/settings.example.nix"
+
+   # hardware-configuration.nix from the install (keep or copy into this directory)
+
+   nix flake update
    sudo nixos-rebuild switch --flake path:.#nixos
    ```
 
-4. Edit `host.nix`. Set `inputs.ephemeral.url` if it is not already correct.
+4. Edit `settings.nix` and `host.nix`. `flake.nix` already points at this template.
 
 `path:.` is required so Nix sees gitignored `settings.nix` and `hardware-configuration.nix`.
 
