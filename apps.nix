@@ -183,34 +183,10 @@ in
     btop
     fastfetch
     unrar
-
-    # --- optional (uncomment to enable) ---
-    # remmina          # was rpm; also Flathub org.remmina.Remmina
-    # thunderbird      # flathub org.mozilla.thunderbird
-    # inkscape         # flathub org.inkscape.Inkscape
-    # krita            # flathub org.kde.krita
-    # libreoffice
-    # heroic           # flathub com.heroicgameslauncher.hgl
-    # lutris           # flathub net.lutris.Lutris
-    # prismlauncher    # flathub org.prismlauncher.PrismLauncher
-    # gamescope
-    # vorta            # flathub com.borgbase.Vorta
-    # pika-backup      # flathub org.gnome.World.PikaBackup
-    # newsflash        # flathub io.gitlab.news_flash.NewsFlash
-    # meld
-    # gnome-boxes
-    # gh
-    # hugo
-    # go
-    # uv
-    # rustup
-    # eza
   ];
 
   environment.sessionVariables = {
     TERMINAL = "ghostty";
-    # secret service. kwallet on plasma, gnome-keyring otherwise.
-    # pass-cli login once on a fresh install.
     PROTON_PASS_LINUX_KEYRING = "dbus";
   };
 }
