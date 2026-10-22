@@ -21,7 +21,17 @@ let
   settingsPath = flakeRoot + "/settings.nix";
   passPath = flakeRoot + "/settings.from-pass.nix";
 
-  fromSettings = if builtins.pathExists settingsPath then import settingsPath else { };
+  # a missing file must not become username nixuser
+  fromSettings =
+    if builtins.pathExists settingsPath then
+      import settingsPath
+    else
+      throw ''
+        settings.nix is not in this flake.
+        Installed machine:
+          sudo nixos-rebuild switch --flake path:/persist/etc/nixos#nixos
+        Or copy /persist/etc/nixos/settings.nix next to flake.nix.
+      '';
 
   # pass file can't flip this on by itself
   usePass =
@@ -30,7 +40,11 @@ let
   fromPass =
     if usePass && builtins.pathExists passPath then import passPath else { };
 
-  merged = defaults // fromSettings // fromPass;
+  merged =
+    if !(fromSettings ? username) || fromSettings.username == "" then
+      throw "settings.nix must set username"
+    else
+      defaults // fromSettings // fromPass;
   merged' =
     if (merged.controldResolver or "") != "" || (merged.chezmoiRepo or "") != "" then
       throw ''

@@ -6,19 +6,23 @@ Private repo. Template is an input. Packages and overrides go in `host.nix`. Mac
 
 1. Copy this directory into a private git repo (or use it as `/persist/etc/nixos`).
 2. Set `inputs.ephemeral.url` if needed.
-3. Add machine files next to this flake:
+3. On an installed machine, copy the files the installer already wrote:
 
    ```bash
-   cp /path/to/ephemeral-nixos-config/settings.example.nix settings.nix
-   # hardware-configuration.nix from the install
+   cp /persist/etc/nixos/settings.nix settings.nix
+   cp /persist/etc/nixos/hardware-configuration.nix hardware-configuration.nix
    ```
+
+   `settings.example.nix` is only for a machine that has no `/persist/etc/nixos` yet.
 
 4. Edit `host.nix`.
-5. Rebuild:
+5. Rebuild the installed tree, which is the one that contains `settings.nix`:
 
    ```bash
-   sudo nixos-rebuild switch --flake path:.#nixos
+   sudo nixos-rebuild switch --flake path:/persist/etc/nixos#nixos
    ```
+
+   `path:.#nixos` from another checkout is a different flake. If `settings.nix` is missing there, the build stops.
 
 ## Updates
 
