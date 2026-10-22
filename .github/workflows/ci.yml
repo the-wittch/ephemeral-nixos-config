@@ -1,4 +1,4 @@
-name: ci
+name: CI
 
 on:
   push:
@@ -17,5 +17,8 @@ jobs:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
       - name: secret scan
         run: ./scripts/check-no-secrets.sh
+      - name: example settings
+        run: cp settings.example.nix settings.nix
       - name: flake check
-        run: nix flake check
+        # path:. so the gitignored settings.nix is visible
+        run: nix flake check path:.
