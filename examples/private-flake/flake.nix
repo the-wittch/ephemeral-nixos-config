@@ -2,7 +2,7 @@
   description = "Private host flake on top of ephemeral-nixos-config";
 
   inputs = {
-    ephemeral.url = "github:the-wittch/ephemeral-nixos-config";
+    ephemeral.url = "github:the-wittch/ephemeral-nixos-config/v1.0.0";
     nixpkgs.follows = "ephemeral/nixpkgs";
   };
 
