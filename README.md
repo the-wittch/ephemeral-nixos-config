@@ -1,5 +1,5 @@
 # Ephemeral NixOS Config
-[![ci](https://github.com/the-wittch/ephemeral-nixos-config/actions/workflows/ci.yml/badge.svg)](https://github.com/the-wittch/ephemeral-nixos-config/actions/workflows/ci.yml)
+[![CI](https://github.com/the-wittch/ephemeral-nixos-config/actions/workflows/ci.yml/badge.svg)](https://github.com/the-wittch/ephemeral-nixos-config/actions/workflows/ci.yml)
 
 Post-install flake for [ephemeral-nixos](https://github.com/the-wittch/ephemeral-nixos). Root rolls back every boot. `/home` and a few paths stay on `/persist`.
 
