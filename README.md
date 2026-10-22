@@ -103,7 +103,7 @@ Hooks refuse `settings.nix`, `settings.from-pass.nix`, user files under `customi
 
 Scripts default to vault `Personal` and item `nixos-settings`. Override with `PASS_SETTINGS_VAULT`, `PASS_SETTINGS_ITEM`, and `PASS_SSH_VAULT`.
 
-1. Make a Pass item `nixos-settings` with custom fields for whatever you want pulled: `hostname`, `username`, `diskDevice`, `swapSize`, `timeZone`, `desktop`, `chezmoiRepo`, `controldResolver`. Bools `allowUnfree` and `useFlakePassCli` are the strings `true` or `false`.
+1. Make a Pass item `nixos-settings` with custom fields for whatever you want pulled: `hostname`, `username`, `diskDevice`, `swapSize`, `timeZone`, `desktop`. Bools `allowUnfree` and `useFlakePassCli` are the strings `true` or `false`. `chezmoiRepo` plus `chezmoiRev` (the git commit) are written to `/persist/etc/chezmoi-repo`. `controldResolver` is written to `/persist/etc/controld-resolver` and sets `useControlD = true`.
 2. `pass-cli login`
 3. `usePassSettings = true;` in `settings.nix`
 4. Pull and rebuild:

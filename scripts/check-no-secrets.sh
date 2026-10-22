@@ -99,9 +99,12 @@ for p in "${files[@]}"; do
     continue
   fi
   for pat in "${CONTENT_PATTERNS[@]}"; do
-    if grep -nIE "$pat" -- "$p" >/dev/null 2>&1; then
+    hits=$(grep -nIE "$pat" -- "$p" || true)
+    if [[ -n $hits ]]; then
       echo "blocked content in $p matching /$pat/:" >&2
-      grep -nIE "$pat" -- "$p" >&2 || true
+      printf '%s\n' "$hits" | cut -d: -f1 | while read -r lineno; do
+        echo "  line $lineno" >&2
+      done
       fail=1
     fi
   done

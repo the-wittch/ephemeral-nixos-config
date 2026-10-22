@@ -1,4 +1,5 @@
 {
+  settings,
   ...
 }:
 
@@ -58,6 +59,15 @@
           chmod 600 "$f"
         fi
       done
+
+      if [ -f /persist/etc/controld-resolver ]; then
+        chown root:root /persist/etc/controld-resolver
+        chmod 600 /persist/etc/controld-resolver
+      fi
+      if [ -f /persist/etc/chezmoi-repo ]; then
+        chown ${settings.username}:users /persist/etc/chezmoi-repo
+        chmod 600 /persist/etc/chezmoi-repo
+      fi
     '';
   };
 }

@@ -120,6 +120,12 @@ else
   echo "Target version: $target_ver (pinned was $pinned_ver)"
 fi
 
+# sed writes this straight into the nix string
+if [[ ! $target_ver =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "refusing version that is not x.y.z" >&2
+  exit 1
+fi
+
 hex=$(fetch_hex "$target_ver")
 [[ $hex =~ ^[0-9a-f]{64}$ ]] || {
   echo "bad upstream sha256 for $target_ver: $hex" >&2

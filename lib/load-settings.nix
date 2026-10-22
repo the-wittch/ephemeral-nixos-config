@@ -10,9 +10,8 @@ let
     swapSize = "16G";
     timeZone = "UTC";
     desktop = "gnome"; # plasma | gnome | niri
-    chezmoiRepo = "";
     allowUnfree = true;
-    controldResolver = ""; # "" = off
+    useControlD = false; # id is /persist/etc/controld-resolver
     useFlakePassCli = true; # false once nixpkgs has pass-cli
     usePassSettings = false; # true merges settings.from-pass.nix
     passSettingsVault = "Personal";
@@ -32,15 +31,27 @@ let
     if usePass && builtins.pathExists passPath then import passPath else { };
 
   merged = defaults // fromSettings // fromPass;
+  merged' =
+    if (merged.controldResolver or "") != "" || (merged.chezmoiRepo or "") != "" then
+      throw ''
+        Don't put controldResolver or chezmoiRepo in settings.
+        Control D id: /persist/etc/controld-resolver and useControlD = true.
+        chezmoi: /persist/etc/chezmoi-repo as "<git-url> <commit>".
+      ''
+    else
+      merged;
 in
-assert merged.hostname != "";
-assert merged.username != "";
-assert merged.diskDevice != "";
-assert merged.swapSize != "";
-assert merged.timeZone != "";
-assert builtins.elem merged.desktop [
+assert merged'.hostname != "";
+assert merged'.username != "";
+assert merged'.diskDevice != "";
+assert merged'.swapSize != "";
+assert merged'.timeZone != "";
+assert builtins.elem merged'.desktop [
   "plasma"
   "gnome"
   "niri"
 ];
-merged
+removeAttrs merged' [
+  "controldResolver"
+  "chezmoiRepo"
+]

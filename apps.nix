@@ -84,7 +84,13 @@ in
   # programs.gamemode.enable = true;
 
   # rules persist under /var/lib/opensnitch
-  services.opensnitch.enable = true;
+  services.opensnitch = {
+    enable = true;
+    settings = {
+      DefaultAction = "deny";
+      InterceptUnknown = true;
+    };
+  };
 
   environment.etc."xdg/autostart/opensnitch-ui.desktop".text = ''
     [Desktop Entry]

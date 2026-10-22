@@ -10,6 +10,7 @@ let
   isPlasma = desktop == "plasma";
   isGnome = desktop == "gnome";
   isNiri = desktop == "niri";
+  kdeDark = import ./lib/kde-dark.nix { inherit lib; };
 in
 {
   assertions = [
@@ -42,6 +43,24 @@ in
   # gnome. gdm is wayland-only on gnome 50, don't set gdm.wayland
   services.displayManager.gdm.enable = lib.mkIf isGnome true;
   services.desktopManager.gnome.enable = lib.mkIf isGnome true;
+  programs.dconf.profiles = lib.mkIf isGnome {
+    gdm.databases = [
+      {
+        settings."org/gnome/desktop/interface".color-scheme = "prefer-dark";
+      }
+    ];
+  };
+
+  # greeter home is /var/lib/plasmalogin, not ~/.config
+  systemd.tmpfiles.rules = lib.mkIf isPlasma [
+    "d /var/lib/plasmalogin/.config 0755 plasmalogin plasmalogin -"
+    "L+ /var/lib/plasmalogin/.config/kdeglobals - - - - ${pkgs.writeText "plasmalogin-kdeglobals" kdeDark.ini}"
+  ];
+
+  # plasma sets this itself
+  environment.sessionVariables = lib.mkIf (!isPlasma) {
+    QT_QPA_PLATFORMTHEME = "gtk3";
+  };
   # secret service for pass-cli (PROTON_PASS_LINUX_KEYRING=dbus).
   # plasma6 already unlocks kwallet, which provides the same bus name.
   # gnome-keyring on plasma would fight it.
@@ -55,6 +74,9 @@ in
   };
   # greetd. niri shows up once programs.niri.enable is on
   services.displayManager.noctalia-greeter.enable = lib.mkIf isNiri true;
+  services.displayManager.noctalia-greeter.settings = lib.mkIf isNiri {
+    appearance.theme_mode = "dark";
+  };
 
   environment.systemPackages =
     with pkgs;

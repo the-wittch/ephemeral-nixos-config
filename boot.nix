@@ -35,8 +35,10 @@
       unitConfig.DefaultDependencies = "no";
       serviceConfig.Type = "oneshot";
       script = ''
+        set -euo pipefail
         mkdir -p /btrfs_tmp
         mount -o subvolid=5 /dev/mapper/cryptroot /btrfs_tmp
+        trap 'umount /btrfs_tmp' EXIT
 
         if [[ ! -e /btrfs_tmp/root-blank ]]; then
           echo "ERROR: root-blank subvolume missing" >&2
@@ -44,16 +46,20 @@
         fi
 
         if [[ -e /btrfs_tmp/root ]]; then
-          btrfs subvolume list -o /btrfs_tmp/root |
-            cut -f9 -d' ' |
-            while read -r subvolume; do
+          # higher id is a newer child, so delete from the bottom
+          list=$(btrfs subvolume list -o /btrfs_tmp/root)
+          if [[ -n $list ]]; then
+            mapfile -t subvols < <(printf '%s\n' "$list" | cut -d' ' -f9-)
+            for ((i = ''${#subvols[@]} - 1; i >= 0; i--)); do
+              subvolume=''${subvols[i]}
+              [[ -n $subvolume ]] || continue
               btrfs subvolume delete "/btrfs_tmp/$subvolume"
             done
+          fi
           btrfs subvolume delete /btrfs_tmp/root
         fi
 
         btrfs subvolume snapshot /btrfs_tmp/root-blank /btrfs_tmp/root
-        umount /btrfs_tmp
       '';
     };
 

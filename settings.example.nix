@@ -14,12 +14,12 @@
   # plasma | gnome | niri
   desktop = "plasma";
 
-  # https://github.com/you/dotfiles.git
-  chezmoiRepo = "";
-
   allowUnfree = true;
 
-  controldResolver = ""; # "" = off. id from the Control D panel
+  # id file: /persist/etc/controld-resolver
+  # chezmoi file: /persist/etc/chezmoi-repo
+  #   <git-url> <commit>
+  useControlD = false;
 
   useFlakePassCli = true; # false once nixpkgs has pass-cli
 
