@@ -11,8 +11,8 @@
     ./users.nix
     ./desktop.nix
     ./dns.nix # Control D
-    ./apps.nix # Steam, Brave Origin, …
-    ./smb.nix # CIFS mounts from smb-setup
+    ./apps.nix
+    ./smb.nix # mounts from smb-setup
   ];
 
   networking.hostName = settings.hostname;

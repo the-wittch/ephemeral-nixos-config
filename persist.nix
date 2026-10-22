@@ -1,4 +1,6 @@
 {
+  config,
+  lib,
   settings,
   ...
 }:
@@ -26,6 +28,21 @@
     files = [
       "/etc/machine-id"
     ];
+  };
+
+  # blank root drops /home/$USER. create it here.
+  system.activationScripts.ensureUserHome = {
+    deps = [ "users" "groups" ];
+    text = ''
+      home=${lib.escapeShellArg "/persist/home/${settings.username}"}
+      if [ ! -d "$home" ]; then
+        mkdir -p "$home"
+        chmod 0700 "$home"
+      fi
+      chown ${
+        lib.escapeShellArg "${settings.username}:${config.users.users.${settings.username}.group}"
+      } "$home"
+    '';
   };
 
   system.activationScripts.persistSecrets = {

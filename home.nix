@@ -39,7 +39,7 @@ in
     plasmaColorScheme = lib.hm.dag.entryAfter [ "writeBoundary" ] (kdeDark.kwriteScript kwriteconfig);
   };
 
-  # user service is the nixos module
+  # nixos already starts the user service
   programs.noctalia = lib.mkIf isNiri {
     enable = true;
     settings.theme = {
