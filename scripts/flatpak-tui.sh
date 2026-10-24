@@ -32,17 +32,9 @@ is_installed() {
 }
 
 ensure_user_dirs() {
-  # flatpak errors if index.theme isn't there
-  local hicolor="$HOME/.local/share/icons/hicolor"
-  mkdir -p "$hicolor" "$HOME/.local/share/flatpak"
-  if [[ ! -f $hicolor/index.theme ]]; then
-    cat >"$hicolor/index.theme" <<'EOF'
-[Icon Theme]
-Name=Hicolor
-Comment=Fallback icon theme
-Directories=
-EOF
-  fi
+  # flatpak bind-mounts this directory. an index.theme here replaces the
+  # system hicolor theme, and an empty one hides every icon.
+  mkdir -p "$HOME/.local/share/icons/hicolor" "$HOME/.local/share/flatpak"
 }
 
 ensure_flathub() {
