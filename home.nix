@@ -42,9 +42,12 @@ in
   # nixos already starts the user service
   programs.noctalia = lib.mkIf isNiri {
     enable = true;
-    settings.theme = {
-      mode = "dark";
-      shell_mode = "dark";
+    settings = {
+      theme = {
+        mode = "dark";
+        shell_mode = "dark";
+      };
+      shell.greeter_sync.auto_sync = true;
     };
   };
 
