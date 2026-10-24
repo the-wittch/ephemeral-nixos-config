@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   pkgs,
   settings,
@@ -16,15 +17,43 @@ let
     color-scheme='prefer-dark'
   '';
   greeterDefaults = pkgs.runCommand "gdm-greeter-defaults" { } ''
-    mkdir -p keys "$out"
+    mkdir -p keys
     cp ${greeterInterface} keys/interface
-    ${lib.getExe' pkgs.dconf "dconf"} compile "$out/db" keys
+    ${lib.getExe' pkgs.dconf "dconf"} compile "$out" keys
   '';
-  gdmProfile = pkgs.writeText "gdm-dconf-profile" ''
-    user-db:user
-    file-db:/var/lib/gdm/greeter-db
-    file-db:${greeterDefaults}/db
-  '';
+  dconfDb =
+    name: values:
+    pkgs.runCommand name { } ''
+      mkdir keys
+      printf '%s\n' ${lib.escapeShellArg (lib.generators.toDconfINI values)} > keys/settings
+      ${lib.getExe' pkgs.dconf "dconf"} compile "$out" keys
+    '';
+  gdmCfg = config.services.displayManager.gdm;
+  gdmProfile = pkgs.writeTextDir "etc/dconf/profile/gdm" (
+    lib.concatStringsSep "\n" (
+      [
+        "user-db:user"
+        "file-db:/var/lib/gdm/greeter-db"
+        "file-db:${greeterDefaults}"
+      ]
+      ++ lib.optional (!gdmCfg.autoSuspend) "file-db:${dconfDb "gdm-power" {
+        "org/gnome/settings-daemon/plugins/power" = {
+          sleep-inactive-ac-type = "nothing";
+          sleep-inactive-battery-type = "nothing";
+          sleep-inactive-ac-timeout = lib.gvariant.mkInt32 0;
+          sleep-inactive-battery-timeout = lib.gvariant.mkInt32 0;
+        };
+      }}"
+      ++ lib.optional (gdmCfg.banner != null) "file-db:${dconfDb "gdm-banner" {
+        "org/gnome/login-screen" = {
+          banner-message-enable = true;
+          banner-message-text = gdmCfg.banner;
+        };
+      }}"
+      ++ [ "file-db:${pkgs.gdm}/share/gdm/greeter-dconf-defaults" ]
+    )
+    + "\n"
+  );
   greeter-sync = pkgs.writeShellApplication {
     name = "greeter-sync";
     runtimeInputs = with pkgs; [
@@ -72,10 +101,7 @@ in
   # gnome. gdm is wayland-only on gnome 50, don't set gdm.wayland
   services.displayManager.gdm.enable = lib.mkIf isGnome true;
   services.desktopManager.gnome.enable = lib.mkIf isGnome true;
-  # user-db is tmpfs. greeter-db is the persisted override.
-  programs.dconf.profiles = lib.mkIf isGnome {
-    gdm = gdmProfile;
-  };
+  programs.dconf.packages = lib.mkBefore (lib.optionals isGnome [ gdmProfile ]);
 
   systemd.services.greeter-sync = {
     description = "Publish avatar and wallpaper for the greeter";

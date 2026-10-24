@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# publish avatar and wallpaper for the login greeter.
 
 set -euo pipefail
 
