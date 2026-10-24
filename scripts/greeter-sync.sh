@@ -300,14 +300,13 @@ sync_plasma_wallpaper() {
   fi
 
   tmp=$(mktemp /etc/plasmalogin.conf.XXXXXX)
-  cat >"$tmp" <<EOF
-# published by greeter-sync
-[Greeter]
-WallpaperPluginId=org.kde.image
-
-[Greeter][Wallpaper][org.kde.image][General]
-Image=file://${light}
-EOF
+  {
+    printf '%s\n' "# published by greeter-sync"
+    printf '%s\n' "[Greeter]"
+    printf '%s\n' "WallpaperPluginId=org.kde.image"
+    printf '\n%s\n' "[Greeter][Wallpaper][org.kde.image][General]"
+    printf 'Image=file://%s\n' "$light"
+  } >"$tmp"
   chmod 644 "$tmp"
   chown root:root "$tmp"
   mv -f "$tmp" "$conf"
