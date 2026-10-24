@@ -12,7 +12,7 @@ let
     desktop = "gnome"; # plasma | gnome | niri
     allowUnfree = true;
     useControlD = false; # id is /persist/etc/controld-resolver
-    useFlakePassCli = true; # false once nixpkgs has pass-cli
+    useFlakePassCli = false; # true keeps packages/pass-cli.nix
     usePassSettings = false; # true merges settings.from-pass.nix
     passSettingsVault = "Personal";
     passSettingsItem = "nixos-settings";

@@ -72,7 +72,7 @@ If you clone this repo directly, put extras in `customize/` (see `customize/apps
 | `apps.nix` | packages |
 | `smb.nix` | CIFS mounts from `smb-setup` |
 | `home.nix` | home-manager |
-| `packages/pass-cli.nix` | Proton Pass CLI binary |
+| `packages/pass-cli.nix` | local pass-cli fallback (`useFlakePassCli = true`) |
 | `settings.example.nix` | copy to `settings.nix` next to the *host* flake |
 | `customize/` | optional extras when using this tree directly |
 | `examples/private-flake/` | tiny private host flake on top of this template |
@@ -98,7 +98,7 @@ Hooks refuse `settings.nix`, `settings.from-pass.nix`, user files under `customi
 
 ### Proton Pass
 
-`useFlakePassCli` picks `packages/pass-cli.nix`. Set it false when nixpkgs has `pkgs.pass-cli`.
+`pass-cli` comes from nixpkgs `proton-pass-cli`. `useFlakePassCli = true` keeps the local package in `packages/pass-cli.nix`. `update-pass-cli` only updates that local package.
 
 `settings-from-pass` writes `settings.from-pass.nix`. Merge order is defaults, then `settings.nix`, then that file. Missing Pass fields are left out, so the file or the defaults stay. `usePassSettings = false` ignores the overlay.
 

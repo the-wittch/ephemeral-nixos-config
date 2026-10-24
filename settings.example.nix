@@ -21,7 +21,7 @@
   #   <git-url> <commit>
   useControlD = false;
 
-  useFlakePassCli = true; # false once nixpkgs has pass-cli
+  useFlakePassCli = false; # true keeps packages/pass-cli.nix
 
   # true: settings-from-pass writes settings.from-pass.nix and it gets merged
   usePassSettings = false;

@@ -47,15 +47,12 @@ let
     text = builtins.readFile ./scripts/update-pass-cli.sh;
   };
 
-  # Flip settings.useFlakePassCli = false when nixpkgs ships pkgs.pass-cli.
+  # true: packages/pass-cli.nix. false: pkgs.proton-pass-cli
   pass-cli =
-    if settings.useFlakePassCli or true then
+    if settings.useFlakePassCli or false then
       pkgs.callPackage ./packages/pass-cli.nix { }
     else
-      pkgs.pass-cli or (throw ''
-        settings.useFlakePassCli = false but pkgs.pass-cli is missing.
-        Keep useFlakePassCli = true, or wait for nixpkgs.
-      '');
+      pkgs.proton-pass-cli;
 
   settings-from-pass = pkgs.writeShellApplication {
     name = "settings-from-pass";
