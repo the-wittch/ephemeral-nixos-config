@@ -59,6 +59,7 @@ let
     runtimeInputs = with pkgs; [
       coreutils
       dconf
+      diffutils
       systemd
       util-linux
     ];
