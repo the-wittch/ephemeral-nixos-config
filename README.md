@@ -39,15 +39,16 @@ Leave password hashes and SSH host keys on `/persist`.
 ## Rebuild
 
 ```bash
-cd /persist/etc/nixos
-sudo nixos-rebuild switch --flake path:.#nixos
+ephemeral-update
 ```
+
+That runs `sudo nixos-rebuild switch --flake path:/persist/etc/nixos#nixos`.
 
 ## Updates (private flake)
 
 ```bash
-nix flake update ephemeral
-sudo nixos-rebuild switch --flake path:.#nixos
+nix flake update ephemeral --flake /persist/etc/nixos
+ephemeral-update
 ```
 
 ## Fork with customize/ (optional)

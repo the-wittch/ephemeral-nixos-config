@@ -6,6 +6,11 @@
 }:
 
 let
+  ephemeral-update = pkgs.writeShellApplication {
+    name = "ephemeral-update";
+    text = builtins.readFile ./scripts/ephemeral-update.sh;
+  };
+
   flatpak-apps = pkgs.writeShellApplication {
     name = "flatpak-apps";
     runtimeInputs = with pkgs; [
@@ -173,6 +178,7 @@ in
     syncthingtray-minimal
     opensnitch-ui
     gum
+    ephemeral-update
     flatpak-apps
     smb-setup
     pass-cli

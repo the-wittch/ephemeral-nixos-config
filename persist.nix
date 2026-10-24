@@ -15,18 +15,31 @@
       "/home"
       "/var/lib/nixos"
       "/var/lib/AccountsService"
-      "/var/lib/systemd"
-      "/var/lib/bluetooth"
+      { directory = "/var/lib/bluetooth"; mode = "0700"; }
       "/var/lib/NetworkManager"
+      { directory = "/etc/NetworkManager/system-connections"; mode = "0700"; }
       "/var/lib/cups"
       "/var/lib/flatpak"
-      "/var/lib/fwupd"
+      {
+        directory = "/var/lib/fwupd";
+        user = "fwupd-refresh";
+        group = "fwupd-refresh";
+      }
       "/var/lib/containers"
       "/var/lib/opensnitch"
-      "/etc/NetworkManager/system-connections"
+      "/var/lib/systemd/backlight"
+      "/var/lib/systemd/rfkill"
+      "/var/lib/systemd/timers"
+      "/var/lib/systemd/linger"
+      {
+        directory = "/var/lib/systemd/timesync";
+        user = "systemd-timesync";
+        group = "systemd-timesync";
+      }
     ];
     files = [
       "/etc/machine-id"
+      "/var/lib/systemd/random-seed"
     ];
   };
 
