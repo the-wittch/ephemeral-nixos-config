@@ -1,4 +1,4 @@
-# Every command this repo builds. apps.nix and greeter.nix install them from
+# Every command this repo builds. apps.nix installs them from
 # here, and the flake exports them so CI builds each one, which also runs
 # shellcheck on the exact text that gets installed.
 {
@@ -63,15 +63,13 @@ with pkgs;
     gnused
   ];
 
-  greeter-sync = writeShellApplication {
-    name = "greeter-sync";
-    runtimeInputs = [
-      coreutils
-      dconf
-      util-linux
-    ];
-    text = builtins.readFile ../scripts/greeter-sync.sh;
-  };
+  luks-header-backup = mkScript "luks-header-backup" ../scripts/luks-header-backup.sh [
+    coreutils
+    cryptsetup
+    gawk
+    gnugrep
+    util-linux
+  ];
 
   check-no-secrets = writeShellApplication {
     name = "check-no-secrets";

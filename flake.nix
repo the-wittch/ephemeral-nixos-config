@@ -54,7 +54,10 @@
         config-eval = pkgs.runCommand "config-eval" { } ''
           echo ${lib.escapeShellArg mkSystem.config.networking.hostName} > "$out"
         '';
-        greeter-sync = import ./tests/greeter-sync.nix { inherit pkgs; };
+        boot = import ./tests/boot.nix {
+          inherit pkgs;
+          baseModules = import ./lib/base-modules.nix { inherit impermanence disko home-manager; };
+        };
         # builds (and so shellchecks) every packaged command
         scripts = pkgs.linkFarmFromDrvs "scripts" (lib.attrValues scripts);
       };

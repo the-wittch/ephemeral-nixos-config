@@ -12,6 +12,7 @@
 let
   inherit (nixpkgs) lib;
   settings = import ./load-settings.nix { inherit lib flakeRoot; };
+  baseModules = import ./base-modules.nix { inherit impermanence disko home-manager; };
 
   hardware = flakeRoot + "/hardware-configuration.nix";
   customize = flakeRoot + "/customize/default.nix";
@@ -21,36 +22,20 @@ nixpkgs.lib.nixosSystem {
   specialArgs = {
     inherit settings flakeRoot;
   };
-  modules = [
-    disko.nixosModules.disko
-    ../disko.nix
-    ../configuration.nix
-  ]
-  ++ (
-    if builtins.pathExists hardware then
-      [ hardware ]
-    else
-      [
-        {
-          warnings = [
-            "no hardware-configuration.nix next to the flake; building without initrd modules or microcode"
-          ];
-        }
-      ]
-  )
-  ++ [
-    impermanence.nixosModules.impermanence
-    home-manager.nixosModules.home-manager
-    {
-      home-manager.useGlobalPkgs = true;
-      home-manager.useUserPackages = true;
-      home-manager.backupFileExtension = "hm-backup";
-      home-manager.extraSpecialArgs = {
-        inherit settings flakeRoot;
-      };
-      home-manager.users.${settings.username} = import ../home.nix;
-    }
-  ]
-  ++ lib.optional (builtins.pathExists customize) (flakeRoot + "/customize")
-  ++ modules;
+  modules =
+    baseModules { inherit settings flakeRoot; }
+    ++ (
+      if builtins.pathExists hardware then
+        [ hardware ]
+      else
+        [
+          {
+            warnings = [
+              "no hardware-configuration.nix next to the flake; building without initrd modules or microcode"
+            ];
+          }
+        ]
+    )
+    ++ lib.optional (builtins.pathExists customize) (flakeRoot + "/customize")
+    ++ modules;
 }

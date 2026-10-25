@@ -24,7 +24,6 @@ in
   ];
 
   environment.persistence."/persist".directories = [
-    "/var/lib/flatpak"
     "/var/lib/containers"
     "/var/lib/opensnitch"
   ];
@@ -60,24 +59,6 @@ in
     X-GNOME-Autostart-enabled=true
   '';
 
-  services.flatpak.enable = true;
-
-  systemd.services.flatpak-flathub = {
-    description = "Add Flathub Flatpak remote";
-    wantedBy = [ "multi-user.target" ];
-    wants = [ "network-online.target" ];
-    after = [ "network-online.target" ];
-    path = [ pkgs.flatpak ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-    };
-    script = ''
-      flatpak remote-add --system --if-not-exists flathub \
-        https://dl.flathub.org/repo/flathub.flatpakrepo
-    '';
-  };
-
   services.syncthing = {
     enable = true;
     user = settings.username;
@@ -101,18 +82,10 @@ in
       flags = [ "--all" ];
     };
   };
-  
-    # prebuilt binaries that expect /lib64/ld-linux, e.g. the claude code
-  # binary the vscode extension downloads
-  programs.nix-ld = {
-    enable = true;
-    libraries = with pkgs; [
-      stdenv.cc.cc.lib
-      zlib
-      openssl
-      curl
-    ];
-  };
+
+  # a dynamic loader at /lib64 for prebuilt binaries, like the ones VS Code
+  # extensions download. nixpkgs ships curl, openssl, zlib and libstdc++ for it.
+  programs.nix-ld.enable = true;
 
   environment.systemPackages =
     (with scripts; [
@@ -123,6 +96,7 @@ in
       update-pass-cli
       settings-from-pass
       ssh-pubs-from-pass
+      luks-header-backup
     ])
     ++ (with pkgs; [
       vscode

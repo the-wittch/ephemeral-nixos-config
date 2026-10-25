@@ -11,10 +11,13 @@
     ./persist.nix
     ./users.nix
     ./unfree.nix
+    ./hardening.nix
+    ./flathub.nix
     ./desktop.nix
     ./dns.nix # Control D
     ./apps.nix
     ./smb.nix # mounts from smb-setup
+    ./snapshots.nix # snapper on /persist
   ];
 
   networking.hostName = settings.hostname;

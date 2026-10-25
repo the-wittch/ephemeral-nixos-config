@@ -10,9 +10,9 @@ let
   isPlasma = desktop == "plasma";
   isGnome = desktop == "gnome";
   isNiri = desktop == "niri";
+  kdeDark = import ./lib/kde-dark.nix { inherit lib; };
 in
 {
-  imports = [ ./greeter.nix ];
 
   assertions = [
     {
@@ -37,6 +37,13 @@ in
   services.desktopManager.plasma6.enable = lib.mkIf isPlasma true;
   services.displayManager.plasma-login-manager.enable = lib.mkIf isPlasma true;
 
+  # dark login screen. its wallpaper is set in System Settings > Login Screen.
+  # the greeter's home is /var/lib/plasmalogin, not ~/.config
+  systemd.tmpfiles.rules = lib.mkIf isPlasma [
+    "d /var/lib/plasmalogin/.config 0755 plasmalogin plasmalogin -"
+    "L+ /var/lib/plasmalogin/.config/kdeglobals - - - - ${pkgs.writeText "plasmalogin-kdeglobals" kdeDark.ini}"
+  ];
+
   boot.plymouth = lib.mkIf isPlasma {
     theme = "breeze";
     themePackages = [ pkgs.kdePackages.breeze-plymouth ];
@@ -45,6 +52,10 @@ in
   # gnome. gdm is wayland-only on gnome 50, don't set gdm.wayland
   services.displayManager.gdm.enable = lib.mkIf isGnome true;
   services.desktopManager.gnome.enable = lib.mkIf isGnome true;
+  # dark login screen. first database wins, so it goes before gdm's defaults.
+  programs.dconf.profiles.gdm.databases = lib.mkIf isGnome (
+    lib.mkBefore [ { settings."org/gnome/desktop/interface".color-scheme = "prefer-dark"; } ]
+  );
 
   # plasma sets this itself
   environment.sessionVariables = lib.mkIf (!isPlasma) {
