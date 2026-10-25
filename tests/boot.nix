@@ -90,7 +90,7 @@ pkgs.testers.runNixOSTest {
 
         for unit in ["nix-daemon.socket", "systemd-resolved.service", "controld-resolver.service",
                      "flatpak-flathub.service", "home-manager-alice.service",
-                     "greeter-sync.path", "display-manager.service",
+                     "display-manager.service",
                      "snapper-persist-setup.service", "snapper-timeline.timer"]:
             machine.succeed(f"systemctl is-active --quiet {unit}")
         print(f"ok: boot {boot} is clean")
@@ -138,6 +138,12 @@ pkgs.testers.runNixOSTest {
 
     with subtest("Flathub was added offline"):
         machine.succeed("flatpak remotes --system --columns=name | grep -qx flathub")
+
+    with subtest("the GDM login screen is dark"):
+        scheme = machine.succeed(
+            "HOME=/var/empty DCONF_PROFILE=gdm dconf read /org/gnome/desktop/interface/color-scheme"
+        ).strip()
+        assert scheme == "'prefer-dark'", f"gdm color-scheme is {scheme!r}"
 
     with subtest("snapshots of /persist undo a delete, and stay root-only"):
         machine.succeed("echo precious > /persist/home/alice/notes.txt && chown alice /persist/home/alice/notes.txt")

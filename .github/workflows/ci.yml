@@ -43,28 +43,6 @@ jobs:
           nix flake check path:. --no-build
           nix build path:.#checks.x86_64-linux.config-eval path:.#checks.x86_64-linux.scripts --no-link
 
-  vm-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - name: enable kvm
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
-        with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
-          extra_nix_config: system-features = nixos-test benchmark big-parallel kvm
-      - name: example settings
-        run: |
-          cp settings.example.json settings.json
-          cp hardware-configuration.example.nix hardware-configuration.nix
-      - name: greeter-sync
-        run: nix build path:.#checks.x86_64-linux.greeter-sync -L --no-link
-
   boot-test:
     runs-on: ubuntu-latest
     steps:
