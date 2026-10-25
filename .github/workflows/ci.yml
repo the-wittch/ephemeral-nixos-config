@@ -23,6 +23,8 @@ jobs:
         run: |
           ./scripts/check-no-secrets.sh
           ./scripts/check-no-secrets.sh --range HEAD
+      - name: shared modules match the installer
+        run: ./scripts/check-shared.sh
       - name: shellcheck
         run: nix run --inputs-from path:. nixpkgs#shellcheck -- -x -P SCRIPTDIR scripts/*.sh .githooks/*
       - name: nixfmt

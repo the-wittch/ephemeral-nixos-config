@@ -79,6 +79,7 @@ If you clone this repo directly, put extras in `customize/` (see `customize/apps
 | `examples/private-flake/` | tiny private host flake on top of this template |
 | `scripts/lib.sh` | helpers built into the packaged commands |
 | `scripts/check-no-secrets.sh` | hook and CI secret scan |
+| `scripts/check-shared.sh` | CI check that the shared modules match the installer |
 | `.githooks/` | `git config core.hooksPath .githooks` |
 | `.github/workflows/ci.yml` | secret scan over full history, shellcheck, nixfmt, `nix flake check` |
 
