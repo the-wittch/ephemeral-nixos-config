@@ -10,6 +10,7 @@
     ./boot.nix
     ./persist.nix
     ./users.nix
+    ./unfree.nix
     ./desktop.nix
     ./dns.nix # Control D
     ./apps.nix
@@ -115,6 +116,8 @@
         "flakes"
       ];
       trusted-users = [ "root" ];
+      # only admins talk to the nix daemon
+      allowed-users = [ "@wheel" ];
       auto-optimise-store = true;
     };
     gc = {
@@ -123,8 +126,6 @@
       options = "--delete-older-than 30d";
     };
   };
-
-  nixpkgs.config.allowUnfree = settings.allowUnfree;
 
   system.stateVersion = "25.05";
 }

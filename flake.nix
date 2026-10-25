@@ -34,21 +34,29 @@
           ;
       };
 
-      settings = import ./lib/load-settings.nix { flakeRoot = ./.; };
+      settings = import ./lib/load-settings.nix {
+        inherit lib;
+        flakeRoot = ./.;
+      };
       mkSystem = mkNixos { flakeRoot = ./.; };
+      scripts = import ./packages/scripts.nix { inherit pkgs; };
     in
     {
       lib.mkNixos = mkNixos;
 
       formatter.${system} = pkgs.nixfmt-tree;
 
-      packages.${system}.pass-cli = pkgs.callPackage ./packages/pass-cli.nix { };
+      packages.${system} = scripts // {
+        pass-cli = pkgs.callPackage ./packages/pass-cli.nix { };
+      };
 
       checks.${system} = {
         config-eval = pkgs.runCommand "config-eval" { } ''
           echo ${lib.escapeShellArg mkSystem.config.networking.hostName} > "$out"
         '';
         greeter-sync = import ./tests/greeter-sync.nix { inherit pkgs; };
+        # builds (and so shellchecks) every packaged command
+        scripts = pkgs.linkFarmFromDrvs "scripts" (lib.attrValues scripts);
       };
 
       nixosConfigurations = {

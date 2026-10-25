@@ -6,14 +6,6 @@
 }:
 
 let
-  # scripts/lib.sh goes first so every command gets die and nix_escape
-  mkScript =
-    name: file: runtimeInputs:
-    pkgs.writeShellApplication {
-      inherit name runtimeInputs;
-      text = builtins.readFile ./scripts/lib.sh + builtins.readFile file;
-    };
-
   # true: packages/pass-cli.nix. false: pkgs.proton-pass-cli
   pass-cli =
     if settings.useFlakePassCli or false then
@@ -21,50 +13,16 @@ let
     else
       pkgs.proton-pass-cli;
 
-  scripts = with pkgs; [
-    (mkScript "ephemeral-update" ./scripts/ephemeral-update.sh [ ])
-    (mkScript "flatpak-apps" ./scripts/flatpak-tui.sh [
-      gum
-      flatpak
-      gnugrep
-      coreutils
-    ])
-    (mkScript "smb-setup" ./scripts/smb-setup.sh [
-      gum
-      coreutils
-      gnugrep
-      gnused
-    ])
-    (mkScript "controld-setup" ./scripts/controld-setup.sh [
-      gum
-      coreutils
-      gnugrep
-      gnused
-      gawk
-    ])
-    (mkScript "update-pass-cli" ./scripts/update-pass-cli.sh [
-      curl
-      python3
-      gnused
-      gnugrep
-      gawk
-      coreutils
-      nix
-    ])
-    (mkScript "settings-from-pass" ./scripts/settings-from-pass.sh [
-      pass-cli
-      coreutils
-      gnused
-    ])
-    (mkScript "ssh-pubs-from-pass" ./scripts/ssh-pubs-from-pass.sh [
-      pass-cli
-      coreutils
-      python3
-      gnused
-    ])
-  ];
+  scripts = import ./packages/scripts.nix { inherit pkgs pass-cli; };
 in
 {
+  ephemeral.unfreePackages = [
+    "steam"
+    "steam-unwrapped"
+    "vscode"
+    "unrar"
+  ];
+
   environment.persistence."/persist".directories = [
     "/var/lib/flatpak"
     "/var/lib/containers"
@@ -145,7 +103,15 @@ in
   };
 
   environment.systemPackages =
-    scripts
+    (with scripts; [
+      ephemeral-update
+      flatpak-apps
+      smb-setup
+      controld-setup
+      update-pass-cli
+      settings-from-pass
+      ssh-pubs-from-pass
+    ])
     ++ (with pkgs; [
       vscode
       firefox

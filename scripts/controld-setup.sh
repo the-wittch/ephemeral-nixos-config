@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# controld-setup. id in /persist/etc/controld-resolver, flag in settings.nix.
+# controld-setup. id in /persist/etc/controld-resolver, flag in settings.json.
 
 set -euo pipefail
 
@@ -9,43 +9,23 @@ if ! command -v gum >/dev/null; then
 fi
 
 FLAKE_DIR=${FLAKE_DIR:-/persist/etc/nixos}
-SETTINGS="$FLAKE_DIR/settings.nix"
-PASS_SETTINGS="$FLAKE_DIR/settings.from-pass.nix"
+SETTINGS=$(settings_json "$FLAKE_DIR")
+PASS_SETTINGS="$FLAKE_DIR/settings.from-pass.json"
 ID_FILE=/persist/etc/controld-resolver
 
+# prints true/false, or nothing when the file or key is missing
 flag_in() {
-  local file=$1 line
+  local file=$1
   [[ -f $file ]] || return 0
-  line=$(grep -E '^[[:space:]]*useControlD[[:space:]]*=[[:space:]]*(true|false)' "$file" | head -1 || true)
-  [[ -n $line ]] || return 0
-  printf '%s' "$line" | sed -E 's/.*=[[:space:]]*(true|false).*/\1/'
+  jq -r 'if has("useControlD") then .useControlD | tostring else empty end' "$file"
 }
 
 set_flag() {
-  local file=$1 value=$2 tmp mode
-  [[ -f $file ]] || return 0
-  [[ -w $file ]] || die "$file is not writable"
+  local file=$1 value=$2
   [[ $value == true || $value == false ]] || die "bad flag value"
-  tmp=$(mktemp)
-  if grep -q -E '^[[:space:]]*useControlD[[:space:]]*=' "$file"; then
-    sed -E "s/^([[:space:]]*useControlD[[:space:]]*=[[:space:]]*)(true|false)/\1${value}/" "$file" >"$tmp"
-  else
-    awk -v value="$value" '
-      /^}[[:space:]]*$/ && !done {
-        print "  useControlD = " value ";"
-        done = 1
-      }
-      { print }
-      END { if (!done) exit 1 }
-    ' "$file" >"$tmp"
-  fi
-  grep -q -E "^[[:space:]]*useControlD[[:space:]]*=[[:space:]]*${value};" "$tmp" \
-    || die "failed to set useControlD in $file"
-  mode=$(stat -c %a "$file")
-  install -m "$mode" "$tmp" "$file"
-  rm -f "$tmp"
+  # shellcheck disable=SC2016 # $v is jq's
+  jq_edit "$file" --argjson v "$value" '.useControlD = $v'
 }
-
 current_id() {
   local id
   if ! sudo test -f "$ID_FILE"; then
@@ -71,22 +51,21 @@ show_status() {
   id=$(current_id || true)
   pass_flag=$(flag_in "$PASS_SETTINGS")
   {
-    printf 'settings.nix: useControlD = %s\n' "${flag:-missing}"
+    printf 'settings.json: useControlD = %s\n' "${flag:-missing}"
     if [[ -n $id ]]; then
       printf 'resolver id: %s\n' "$id"
     else
       printf '%s\n' "resolver id: not set"
     fi
     if [[ -n $pass_flag ]]; then
-      printf 'settings.from-pass.nix: useControlD = %s\n' "$pass_flag"
+      printf 'settings.from-pass.json: useControlD = %s\n' "$pass_flag"
     fi
   } | gum style --border rounded --padding "0 1" --border-foreground 240
 }
 
 set_existing_flag() {
   local file=$1 value=$2
-  [[ -f $file ]] || return 0
-  grep -q -E '^[[:space:]]*useControlD[[:space:]]*=' "$file" || return 0
+  [[ -n $(flag_in "$file") ]] || return 0
   set_flag "$file" "$value"
 }
 
@@ -114,7 +93,6 @@ disable_controld() {
   gum style --foreground 2 "useControlD = false"
 }
 
-[[ -f $SETTINGS ]] || die "missing $SETTINGS"
 show_status
 echo
 

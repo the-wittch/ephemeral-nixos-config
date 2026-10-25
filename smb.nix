@@ -8,8 +8,8 @@
 }:
 
 let
-  sharesFile = flakeRoot + "/smb-shares.nix";
-  shares = if builtins.pathExists sharesFile then import sharesFile else [ ];
+  readData = import ./lib/read-data.nix { inherit lib; };
+  shares = readData (flakeRoot + "/smb-shares") [ ];
   # names, not numbers. users.users.<name>.uid is null unless set.
   user = config.users.users.${settings.username};
 in
@@ -26,8 +26,8 @@ in
     done
   '';
 
-  # smb-setup writes smb-shares.nix. example:
-  # { server = "nas.local"; share = "files"; mountPoint = "/mnt/files"; credentials = "/persist/etc/smb/files.creds"; }
+  # smb-setup writes smb-shares.json, a list of:
+  # { "server": "nas.local", "share": "files", "mountPoint": "/mnt/files", "credentials": "/persist/etc/smb/files.creds" }
   fileSystems = lib.mkMerge (
     map (s: {
       ${s.mountPoint} = {

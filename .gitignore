@@ -1,7 +1,10 @@
-# machine files (next to the flake; copy from *.example.nix)
+# machine files (next to the flake; copy from *.example.json). .nix are the old names.
+settings.json
 settings.nix
+settings.from-pass.json
 settings.from-pass.nix
 hardware-configuration.nix
+smb-shares.json
 smb-shares.nix
 
 # machine-only edits under customize/ (loader default.nix stays tracked)

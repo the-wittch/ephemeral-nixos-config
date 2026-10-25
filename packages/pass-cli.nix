@@ -5,13 +5,17 @@
   autoPatchelfHook,
 }:
 
+let
+  # version and hash; update-pass-cli writes this file
+  pin = lib.importJSON ./pass-cli.json;
+in
 stdenv.mkDerivation rec {
   pname = "pass-cli";
-  version = "2.4.2";
+  inherit (pin) version;
 
   src = fetchurl {
     url = "https://github.com/protonpass/pass-cli/releases/download/${version}/pass-cli-linux-x86_64";
-    hash = "sha256-QIm99ZgRQKxb7mXS15v5h2dTf1TTMZe3nl+GxjBxSEI=";
+    inherit (pin) hash;
   };
 
   dontUnpack = true;

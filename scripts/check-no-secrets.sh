@@ -8,6 +8,14 @@
 
 set -euo pipefail
 
+usage() {
+  cat <<'USAGE'
+check-no-secrets                    tracked files in the working tree
+check-no-secrets --staged           the index, as it will be committed
+check-no-secrets --range <revs...>  every commit in a range, e.g. HEAD or a..b
+USAGE
+}
+
 mode=tree
 revs=()
 
@@ -25,7 +33,7 @@ while [[ $# -gt 0 ]]; do
       break
       ;;
     -h | --help)
-      sed -n '2,7p' "$0" | sed 's/^# \?//'
+      usage
       exit 0
       ;;
     *)
@@ -37,10 +45,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 FORBIDDEN_PATHS=(
-  '^settings\.nix$'
-  '^settings\.from-pass\.nix$'
+  '^settings\.(nix|json)$'
+  '^settings\.from-pass\.(nix|json)$'
   '^hardware-configuration\.nix$'
-  '^smb-shares\.nix$'
+  '^smb-shares\.(nix|json)$'
   '^secrets\.nix$'
   '(^|/)\.env$'
   '(^|/)\.env\.'

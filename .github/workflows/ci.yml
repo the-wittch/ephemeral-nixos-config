@@ -3,6 +3,7 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -31,13 +32,13 @@ jobs:
         run: git ls-files -z '*.nix' | xargs -0 nix run --inputs-from path:. nixpkgs#nixfmt -- --check
       - name: example settings
         run: |
-          cp settings.example.nix settings.nix
+          cp settings.example.json settings.json
           cp hardware-configuration.example.nix hardware-configuration.nix
       - name: flake check
-        # path:. so the gitignored settings.nix is visible. the vm test runs in its own job.
+        # path:. so the gitignored settings.json is visible. the vm test runs in its own job.
         run: |
           nix flake check path:. --no-build
-          nix build path:.#checks.x86_64-linux.config-eval --no-link
+          nix build path:.#checks.x86_64-linux.config-eval path:.#checks.x86_64-linux.scripts --no-link
 
   vm-test:
     runs-on: ubuntu-latest
@@ -56,7 +57,7 @@ jobs:
           extra_nix_config: system-features = nixos-test benchmark big-parallel kvm
       - name: example settings
         run: |
-          cp settings.example.nix settings.nix
+          cp settings.example.json settings.json
           cp hardware-configuration.example.nix hardware-configuration.nix
       - name: greeter-sync
         run: nix build path:.#checks.x86_64-linux.greeter-sync -L --no-link

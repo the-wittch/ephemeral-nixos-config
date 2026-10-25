@@ -11,7 +11,7 @@
 }:
 let
   inherit (nixpkgs) lib;
-  settings = import ./load-settings.nix { inherit flakeRoot; };
+  settings = import ./load-settings.nix { inherit lib flakeRoot; };
 
   hardware = flakeRoot + "/hardware-configuration.nix";
   customize = flakeRoot + "/customize/default.nix";

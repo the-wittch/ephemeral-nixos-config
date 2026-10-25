@@ -1,5 +1,5 @@
 # shellcheck shell=bash
-# prepended to the packaged scripts in apps.nix
+# prepended to the packaged scripts in packages/scripts.nix
 
 # not every command uses every helper
 # shellcheck disable=SC2329
@@ -8,15 +8,33 @@ die() {
   exit 1
 }
 
-# body of a nix double-quoted string
+# jq_edit <file> <jq args...>: rewrite a JSON file in place, keeping its mode
 # shellcheck disable=SC2329
-nix_escape() {
-  local s=$1
-  s=${s//\\/\\\\}
-  s=${s//\"/\\\"}
-  s=${s//\$/\\$}
-  s=${s//$'\n'/\\n}
-  s=${s//$'\r'/\\r}
-  s=${s//$'\t'/\\t}
-  printf '%s' "$s"
+jq_edit() {
+  local file=$1 tmp mode
+  shift
+  [[ -w $file ]] || die "$file is not writable"
+  tmp=$(mktemp "$file.XXXXXX")
+  if ! jq "$@" "$file" >"$tmp"; then
+    rm -f "$tmp"
+    die "could not update $file"
+  fi
+  mode=$(stat -c %a "$file")
+  chmod "$mode" "$tmp"
+  mv -f "$tmp" "$file"
+}
+
+# settings_json <flake dir>: path of settings.json, or how to get one
+# shellcheck disable=SC2329
+settings_json() {
+  local dir=$1
+  if [[ -f $dir/settings.json ]]; then
+    printf '%s\n' "$dir/settings.json"
+    return 0
+  fi
+  if [[ -f $dir/settings.nix ]]; then
+    die "$dir/settings.nix has to be converted to settings.json first:
+  cd $dir && nix eval --json --file settings.nix | jq . > settings.json && rm settings.nix"
+  fi
+  die "missing $dir/settings.json"
 }

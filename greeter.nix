@@ -47,15 +47,7 @@ let
     )
   );
 
-  greeter-sync = pkgs.writeShellApplication {
-    name = "greeter-sync";
-    runtimeInputs = with pkgs; [
-      coreutils
-      dconf
-      util-linux
-    ];
-    text = builtins.readFile ./scripts/greeter-sync.sh;
-  };
+  inherit (import ./packages/scripts.nix { inherit pkgs; }) greeter-sync;
 in
 {
   # avatars need nothing here: gnome and plasma settings set them through

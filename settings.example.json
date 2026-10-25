@@ -1,0 +1,13 @@
+{
+  "hostname": "nixos",
+  "username": "nixuser",
+  "diskDevice": "/dev/nvme0n1",
+  "swapSize": "16G",
+  "timeZone": "UTC",
+  "desktop": "plasma",
+  "useControlD": false,
+  "useFlakePassCli": false,
+  "usePassSettings": false,
+  "passSettingsVault": "Personal",
+  "passSettingsItem": "nixos-settings"
+}

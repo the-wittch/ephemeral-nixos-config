@@ -1,8 +1,10 @@
-# settings.nix and settings.from-pass.nix are gitignored.
+# settings.json and settings.from-pass.json are gitignored.
 
-{ flakeRoot }:
+{ lib, flakeRoot }:
 
 let
+  readData = import ./read-data.nix { inherit lib; };
+
   defaults = {
     hostname = "nixos";
     username = "nixuser";
@@ -10,37 +12,29 @@ let
     swapSize = "16G";
     timeZone = "UTC";
     desktop = "plasma"; # plasma | gnome | niri
-    allowUnfree = true;
     useControlD = false; # id is /persist/etc/controld-resolver
     useFlakePassCli = false; # true keeps packages/pass-cli.nix
-    usePassSettings = false; # true merges settings.from-pass.nix
+    usePassSettings = false; # true merges settings.from-pass.json
     passSettingsVault = "Personal";
     passSettingsItem = "nixos-settings";
   };
 
-  settingsPath = flakeRoot + "/settings.nix";
-  passPath = flakeRoot + "/settings.from-pass.nix";
-
   # a missing file must not become username nixuser
-  fromSettings =
-    if builtins.pathExists settingsPath then
-      import settingsPath
-    else
-      throw ''
-        settings.nix is not in this flake.
-        Installed machine:
-          sudo nixos-rebuild switch --flake path:/persist/etc/nixos#nixos
-        Or copy /persist/etc/nixos/settings.nix next to flake.nix.
-      '';
+  fromSettings = readData (flakeRoot + "/settings") (throw ''
+    settings.json is not in this flake.
+    Installed machine:
+      sudo nixos-rebuild switch --flake path:/persist/etc/nixos#nixos
+    Or copy /persist/etc/nixos/settings.json next to flake.nix.
+  '');
 
   # pass file can't flip this on by itself
   usePass = (defaults // fromSettings).usePassSettings or false;
 
-  fromPass = if usePass && builtins.pathExists passPath then import passPath else { };
+  fromPass = if usePass then readData (flakeRoot + "/settings.from-pass") { } else { };
 
   merged =
     if !(fromSettings ? username) || fromSettings.username == "" then
-      throw "settings.nix must set username"
+      throw "settings must set username"
     else
       defaults // fromSettings // fromPass;
   merged' =
@@ -51,7 +45,9 @@ let
         chezmoi: /persist/etc/chezmoi-repo as "<git-url> <commit>".
       ''
     else
-      merged;
+      lib.warnIf (merged ? allowUnfree)
+        "settings.allowUnfree is no longer used. Unfree packages are listed in ephemeral.unfreePackages."
+        merged;
 in
 assert merged'.hostname != "";
 assert merged'.username != "";
@@ -66,4 +62,5 @@ assert builtins.elem merged'.desktop [
 removeAttrs merged' [
   "controldResolver"
   "chezmoiRepo"
+  "allowUnfree"
 ]

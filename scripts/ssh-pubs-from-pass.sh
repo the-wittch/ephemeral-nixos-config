@@ -24,7 +24,14 @@ FOUND_TITLES=()
 FOUND_PUBS=()
 
 usage() {
-  sed -n '2,12p' "$0" | sed 's/^# \?//'
+  cat <<'USAGE'
+~/.ssh/<title>.pub from Proton Pass SSH items.
+
+  ssh-pubs-from-pass [--list | --debug | --dry-run] [--vault NAME] [--outdir DIR] [title...]
+
+PASS_SSH_VAULT   default Personal
+PASS_SSH_DIR     default ~/.ssh
+USAGE
   exit "${1:-0}"
 }
 
