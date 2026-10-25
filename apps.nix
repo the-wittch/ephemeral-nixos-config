@@ -83,8 +83,7 @@ in
     };
   };
 
-  # a dynamic loader at /lib64 for prebuilt binaries, like the ones VS Code
-  # extensions download. nixpkgs ships curl, openssl, zlib and libstdc++ for it.
+  # /lib64 loader for prebuilt binaries, e.g. vscode extensions
   programs.nix-ld.enable = true;
 
   environment.systemPackages =

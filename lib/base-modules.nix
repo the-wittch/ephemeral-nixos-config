@@ -1,5 +1,4 @@
-# The modules every system built from this template gets. mk-nixos.nix adds
-# the machine's own files on top; tests/boot.nix boots exactly this list.
+# modules every system gets. mk-nixos adds the machine's files.
 {
   impermanence,
   disko,

@@ -13,6 +13,7 @@
     ./unfree.nix
     ./hardening.nix
     ./flathub.nix
+    ./wallpaper.nix
     ./desktop.nix
     ./dns.nix # Control D
     ./apps.nix
@@ -90,7 +91,7 @@
   };
   networking.firewall.enable = true;
 
-  # off unless a host turns it on. keys stay on /persist either way.
+  # off unless a host enables it
   services.openssh = {
     enable = lib.mkDefault false;
     openFirewall = false;
@@ -119,7 +120,7 @@
         "flakes"
       ];
       trusted-users = [ "root" ];
-      # only admins talk to the nix daemon
+      # nix daemon for wheel only
       allowed-users = [ "@wheel" ];
       auto-optimise-store = true;
     };

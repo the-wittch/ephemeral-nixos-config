@@ -1,13 +1,11 @@
-# Every command this repo builds. apps.nix installs them from
-# here, and the flake exports them so CI builds each one, which also runs
-# shellcheck on the exact text that gets installed.
+# every packaged command. exported so ci builds (and shellchecks) each one
 {
   pkgs,
   pass-cli ? pkgs.proton-pass-cli,
 }:
 
 let
-  # scripts/lib.sh goes first so every command gets the shared helpers
+  # lib.sh first, for the shared helpers
   mkScript =
     name: file: runtimeInputs:
     pkgs.writeShellApplication {

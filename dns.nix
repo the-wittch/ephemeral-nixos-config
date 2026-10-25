@@ -18,8 +18,7 @@
   systemd.services.controld-resolver = lib.mkIf settings.useControlD {
     description = "Write Control D config for systemd-resolved";
     requiredBy = [ "systemd-resolved.service" ];
-    # resolved starts before sysinit.target, so this can't have the default
-    # After=basic.target or boot gets an ordering cycle
+    # resolved starts before sysinit.target. default deps would cycle
     unitConfig.DefaultDependencies = false;
     after = [ "local-fs.target" ];
     before = [
@@ -30,8 +29,7 @@
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
-      # reads the id file, writes one drop-in. nothing here may add mount
-      # dependencies, since this runs before sysinit.target.
+      # runs before sysinit.target: nothing that adds mount deps
       RuntimeDirectory = "systemd/resolved.conf.d";
       RuntimeDirectoryPreserve = "yes";
       ProtectSystem = "strict";
@@ -63,7 +61,7 @@
         echo "bad id in /persist/etc/controld-resolver" >&2
         exit 1
       fi
-      # resolved reads this as systemd-resolve; nobody else needs the id
+      # readable by resolved only
       install -d -m 755 /run/systemd/resolved.conf.d
       conf=/run/systemd/resolved.conf.d/controld.conf
       (

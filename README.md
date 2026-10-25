@@ -77,6 +77,7 @@ If you clone this repo directly, put extras in `customize/` (see `customize/apps
 | `snapshots.nix` | hourly/daily/weekly snapper snapshots of `/persist` |
 | `hardening.nix` | kernel sysctls and module blacklist (shared with the installer) |
 | `flathub.nix` | Flathub remote from a pinned repo file (shared with the installer) |
+| `wallpaper.nix`, `assets/wallpaper.svg` | default wallpaper and login background (shared with the installer) |
 | `tests/boot.nix` | VM test: three boots with a wiped root, checks units, persistence, snapshots |
 | `home.nix` | home-manager |
 | `packages/pass-cli.nix` | local pass-cli fallback (`useFlakePassCli = true`); pin in `pass-cli.json` |
@@ -226,3 +227,9 @@ luks-header-backup /run/media/$USER/<stick>/luks-header.img
 ```
 
 It refuses a destination on the encrypted disk itself or in memory. The copy unlocks with every passphrase that existed when it was made, so after changing or removing a passphrase, make a new copy and destroy the old ones.
+
+## Wallpaper
+
+`assets/wallpaper.svg` is rendered to a 4K PNG at build time and installed at `/run/current-system/sw/share/backgrounds/ephemeral/wallpaper.png`. It's the default on GNOME (desktop, lock screen, and the GDM login screen) and on the Plasma login screen; on Plasma's desktop or niri, pick that file in the wallpaper settings. A wallpaper you choose yourself always wins.
+
+The snowflake is the [NixOS logo](https://github.com/NixOS/nixos-artwork) by Tim Cuthbertson, used under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) and recoloured.
