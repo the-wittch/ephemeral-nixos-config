@@ -55,6 +55,11 @@ in
   programs.dconf.profiles.gdm.databases = lib.mkIf isGnome (
     lib.mkBefore [ { settings."org/gnome/desktop/interface".color-scheme = "prefer-dark"; } ]
   );
+  # tray icons (opensnitch, syncthing). default only; your own extension list wins
+  services.desktopManager.gnome.extraGSettingsOverrides = lib.mkIf isGnome ''
+    [org.gnome.shell]
+    enabled-extensions=['appindicatorsupport@rgcjonas.gmail.com']
+  '';
 
   # plasma sets this itself
   environment.sessionVariables = lib.mkIf (!isPlasma) {
@@ -97,6 +102,7 @@ in
       gnome-text-editor
       loupe
       file-roller
+      gnomeExtensions.appindicator
     ]
     ++ lib.optionals isNiri [
       xwayland-satellite

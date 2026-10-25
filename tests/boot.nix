@@ -39,7 +39,13 @@ pkgs.testers.runNixOSTest {
       environment.systemPackages = [
         pkgs.cryptsetup
         pkgs.e2fsprogs
+        pkgs.file
       ];
+
+      # not part of booting, and most of the download
+      ephemeral.desktopApps = false;
+      hardware.enableRedistributableFirmware = lib.mkForce false;
+      services.speechd.enable = lib.mkForce false;
 
       virtualisation = {
         diskImage = null;
@@ -160,6 +166,13 @@ pkgs.testers.runNixOSTest {
             "HOME=/var/empty DCONF_PROFILE=gdm dconf read /org/gnome/desktop/background/picture-uri"
         ).strip()
         assert gdm == uri, f"GDM wallpaper is {gdm!r}"
+
+    with subtest("GNOME has a tray for opensnitch and syncthing"):
+        ext = machine.succeed(
+            "runuser -l alice -c 'GSETTINGS_BACKEND=memory gsettings get org.gnome.shell enabled-extensions'"
+        ).strip()
+        assert "appindicatorsupport@rgcjonas.gmail.com" in ext, f"enabled-extensions is {ext!r}"
+        machine.succeed("test -d /run/current-system/sw/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com")
 
     with subtest("snapshots of /persist undo a delete, and stay root-only"):
         machine.succeed("echo precious > /persist/home/alice/notes.txt && chown alice /persist/home/alice/notes.txt")
