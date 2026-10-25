@@ -41,7 +41,7 @@ fstype=$(findmnt -no FSTYPE -T "$dir")
 case $fstype in
   tmpfs | ramfs) die "$dir is in memory and won't survive a reboot; use a USB stick or another disk" ;;
 esac
-if [[ -b $src ]] && lsblk -nspo NAME "$src" | grep -qxF "$luks"; then
+if [[ -b $src ]] && lsblk -nslpo NAME "$src" | grep -qxF "$luks"; then
   die "$dir is on the encrypted disk itself; use a USB stick or another disk"
 fi
 if [[ ! -b $src ]]; then

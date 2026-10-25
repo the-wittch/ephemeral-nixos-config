@@ -37,7 +37,12 @@ pkgs.testers.runNixOSTest {
       disko.enableConfig = false;
       boot.initrd.systemd.services.rollback.enable = false;
       boot.loader.systemd-boot.enable = lib.mkForce false;
-      environment.systemPackages = [ pkgs.cryptsetup ];
+      # the test driver reads the console; keep its log level
+      boot.consoleLogLevel = lib.mkForce 7;
+      environment.systemPackages = [
+        pkgs.cryptsetup
+        pkgs.e2fsprogs
+      ];
 
       virtualisation = {
         diskImage = null;
@@ -78,11 +83,13 @@ pkgs.testers.runNixOSTest {
         cycles = machine.succeed("journalctl -b --no-pager -o cat | grep -i 'ordering cycle' || true").strip()
         assert cycles == "", f"boot {boot}: ordering cycle\n{cycles}"
 
+        assert machine.succeed("stat -c %a /etc").strip() == "755", f"boot {boot}: /etc is not 755"
+
         failed = machine.succeed("systemctl --failed --no-legend --plain").strip()
         assert failed == "", f"boot {boot}: failed units\n{failed}"
 
         for unit in ["nix-daemon.socket", "systemd-resolved.service", "controld-resolver.service",
-                     "libvirtd.service", "flatpak-flathub.service", "home-manager-alice.service",
+                     "flatpak-flathub.service", "home-manager-alice.service",
                      "greeter-sync.path", "display-manager.service",
                      "snapper-persist-setup.service", "snapper-timeline.timer"]:
             machine.succeed(f"systemctl is-active --quiet {unit}")
@@ -94,8 +101,14 @@ pkgs.testers.runNixOSTest {
 
     with subtest("first boot, nothing on /persist yet"):
         machine.wait_for_unit("multi-user.target")
-        # the installer leaves these on /persist; the resolver id comes from controld-setup
-        machine.succeed("install -d -m 700 /persist/etc && printf 'testid\\n' > /persist/etc/controld-resolver")
+        # the key is made on the very first boot
+        machine.succeed("test -s /persist/var/lib/systemd/credential.secret")
+        machine.succeed("test ! -L /var/lib/systemd/credential.secret && findmnt -n /var/lib/systemd/credential.secret")
+        # what libvirt does: encrypt with the host key, expect it to decrypt after reboots
+        machine.succeed("echo boot-one-secret | systemd-creds encrypt --with-key=host --name=t - /persist/t.cred")
+        # 0700 on purpose: a too-strict /persist/etc must not lock everyone out of /etc
+        # the resolver id comes from controld-setup
+        machine.succeed("install -d /persist/etc && chmod 700 /persist/etc && printf 'testid\\n' > /persist/etc/controld-resolver")
         reboot()
 
     with subtest("second boot"):
@@ -110,6 +123,7 @@ pkgs.testers.runNixOSTest {
     with subtest("credential key is bind-mounted from /persist"):
         machine.succeed("findmnt -n /var/lib/systemd/credential.secret")
         machine.succeed("test -s /persist/var/lib/systemd/credential.secret")
+        machine.succeed("test ! -L /var/lib/systemd/credential.secret && findmnt -n /var/lib/systemd/credential.secret")
 
     with subtest("hardening is on"):
         assert machine.succeed("sysctl -n kernel.kptr_restrict").strip() == "2"
@@ -128,6 +142,8 @@ pkgs.testers.runNixOSTest {
     with subtest("snapshots of /persist undo a delete, and stay root-only"):
         machine.succeed("echo precious > /persist/home/alice/notes.txt && chown alice /persist/home/alice/notes.txt")
         machine.succeed("systemctl start snapper-timeline.service")
+        # the timeline service returns before the snapshot exists
+        machine.wait_until_succeeds("snapper -c persist --csvout list --columns number | tail -n 1 | grep -qvx 0", timeout=30)
         n = machine.succeed("snapper -c persist --csvout list --columns number | tail -n 1").strip()
         assert n.isdigit() and n != "0", f"no snapshot taken: {n!r}"
         machine.succeed("rm /home/alice/notes.txt")
@@ -163,7 +179,8 @@ pkgs.testers.runNixOSTest {
         boot_is_clean(3)
         machine.fail("test -e /root-was-here")
         machine.succeed("test -e /persist/persist-was-here")
-        # libvirt's key was made on boot 1; it must still decrypt on boot 3
-        machine.succeed("systemctl is-active --quiet libvirtd.service")
+        # encrypted on boot 1, when the key was still reached through a symlink
+        got = machine.succeed("systemd-creds decrypt --name=t /persist/t.cred -").strip()
+        assert got == "boot-one-secret", f"credential from boot 1 no longer decrypts: {got!r}"
   '';
 }
