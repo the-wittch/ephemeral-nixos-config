@@ -68,7 +68,7 @@ If you clone this repo directly, put extras in `customize/` (see `customize/apps
 | `persist.nix` | impermanence |
 | `users.nix` | user, sudo, chezmoi |
 | `desktop.nix` | plasma, gnome, or niri |
-| `dns.nix` | Control D |
+| `dns.nix` | Control D (`controld-setup`) |
 | `apps.nix` | packages |
 | `smb.nix` | CIFS mounts from `smb-setup` |
 | `home.nix` | home-manager |

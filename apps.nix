@@ -33,6 +33,18 @@ let
     text = builtins.readFile ./scripts/smb-setup.sh;
   };
 
+  controld-setup = pkgs.writeShellApplication {
+    name = "controld-setup";
+    runtimeInputs = with pkgs; [
+      gum
+      coreutils
+      gnugrep
+      gnused
+      gawk
+    ];
+    text = builtins.readFile ./scripts/controld-setup.sh;
+  };
+
   update-pass-cli = pkgs.writeShellApplication {
     name = "update-pass-cli";
     runtimeInputs = with pkgs; [
@@ -178,6 +190,7 @@ in
     ephemeral-update
     flatpak-apps
     smb-setup
+    controld-setup
     pass-cli
     update-pass-cli
     settings-from-pass

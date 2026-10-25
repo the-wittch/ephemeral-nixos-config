@@ -16,7 +16,7 @@
 
   allowUnfree = true;
 
-  # id file: /persist/etc/controld-resolver
+  # id file: /persist/etc/controld-resolver (controld-setup)
   # chezmoi file: /persist/etc/chezmoi-repo
   #   <git-url> <commit>
   useControlD = false;
