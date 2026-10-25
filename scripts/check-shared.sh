@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The installer repo has the same copy of these modules. Fail if they differ.
+# shared modules must match the installer's copy
 #
 #   check-shared                                     # compare with installer main
 #   INSTALLER_DIR=~/Projects/ephemeral-nixos check-shared
@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-SHARED=(boot.nix persist.nix users.nix disko.nix unfree.nix hardening.nix flathub.nix lib/read-data.nix)
+SHARED=(boot.nix persist.nix users.nix disko.nix unfree.nix hardening.nix flathub.nix wallpaper.nix assets/wallpaper.svg lib/read-data.nix)
 INSTALLER_URL=${INSTALLER_URL:-https://github.com/the-wittch/ephemeral-nixos.git}
 INSTALLER_REF=${INSTALLER_REF:-main}
 

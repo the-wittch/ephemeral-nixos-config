@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
-# Copy the LUKS header of the root disk to a file on another disk.
-# Without the header the disk can't be unlocked, even with the passphrase.
+# copy the root disk's luks header to another disk.
 #
 #   luks-header-backup /run/media/$USER/usb/luks-header.img
 #
-# The copy unlocks with every passphrase that was set when it was made, so
-# after changing or removing a passphrase, make a new one and destroy the old.
+# the copy opens with every passphrase it had. after changing one, make a new copy.
 
 set -euo pipefail
 

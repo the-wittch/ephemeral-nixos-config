@@ -1,8 +1,7 @@
 { pkgs, ... }:
 
-# Read-only btrfs snapshots of /persist, which holds everything that survives
-# a reboot (home included). They undo deletes and bad edits; they are on the
-# same disk, so they are not a backup. Exclude /persist/.snapshots from borg.
+# snapper on /persist, home included. same disk, so not a backup.
+# exclude /persist/.snapshots from borg.
 #
 #   sudo snapper -c persist list
 #   sudo cp -a /persist/.snapshots/<n>/snapshot/home/<user>/<file> ~/
@@ -23,9 +22,8 @@
     };
   };
 
-  # snapper needs .snapshots to be a subvolume before its first run. nested
-  # subvolumes are left out of snapshots, so it never snapshots itself.
-  # root only: old snapshots still hold old password hashes and keys.
+  # .snapshots has to be a subvolume. nested ones aren't snapshotted.
+  # root only: old snapshots keep old hashes and keys.
   systemd.services.snapper-persist-setup = {
     description = "Create the snapper subvolume on /persist";
     wantedBy = [ "multi-user.target" ];

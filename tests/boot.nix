@@ -1,7 +1,4 @@
-# Boots the template the way an installed machine runs: root is a tmpfs, so
-# it is wiped on every boot like after the btrfs rollback, and /persist is its
-# own disk. Three boots, so anything that only breaks once state comes back
-# from /persist shows up.
+# tmpfs root wiped every boot, /persist on its own disk, three boots.
 #   nix build path:.#checks.x86_64-linux.boot -L
 { pkgs, baseModules }:
 
@@ -24,7 +21,7 @@ in
 pkgs.testers.runNixOSTest {
   name = "boot";
 
-  # the template sets nixpkgs.config (the unfree allowlist)
+  # the unfree allowlist sets nixpkgs.config
   node.pkgsReadOnly = false;
   node.specialArgs = { inherit settings flakeRoot; };
 
@@ -33,11 +30,11 @@ pkgs.testers.runNixOSTest {
     {
       imports = baseModules { inherit settings flakeRoot; };
 
-      # no LUKS disk in the VM; a tmpfs root is what the rollback gives anyway
+      # no luks disk. a tmpfs root is what the rollback gives
       disko.enableConfig = false;
       boot.initrd.systemd.services.rollback.enable = false;
       boot.loader.systemd-boot.enable = lib.mkForce false;
-      # the test driver reads the console; keep its log level
+      # the test driver needs console output
       boot.consoleLogLevel = lib.mkForce 7;
       environment.systemPackages = [
         pkgs.cryptsetup
@@ -51,7 +48,7 @@ pkgs.testers.runNixOSTest {
             size = 4096;
             driveConfig.deviceExtraOpts.serial = "persist";
           }
-          # stands in for a USB stick in the header backup test
+          # usb stick for the header backup test
           {
             size = 64;
             driveConfig.deviceExtraOpts.serial = "usb";
@@ -101,13 +98,12 @@ pkgs.testers.runNixOSTest {
 
     with subtest("first boot, nothing on /persist yet"):
         machine.wait_for_unit("multi-user.target")
-        # the key is made on the very first boot
+        # key exists on first boot
         machine.succeed("test -s /persist/var/lib/systemd/credential.secret")
         machine.succeed("test ! -L /var/lib/systemd/credential.secret && findmnt -n /var/lib/systemd/credential.secret")
-        # what libvirt does: encrypt with the host key, expect it to decrypt after reboots
+        # like libvirt: encrypt now, decrypt after reboots
         machine.succeed("echo boot-one-secret | systemd-creds encrypt --with-key=host --name=t - /persist/t.cred")
-        # 0700 on purpose: a too-strict /persist/etc must not lock everyone out of /etc
-        # the resolver id comes from controld-setup
+        # 0700 on purpose. /etc has to stay readable
         machine.succeed("install -d /persist/etc && chmod 700 /persist/etc && printf 'testid\\n' > /persist/etc/controld-resolver")
         reboot()
 
@@ -124,6 +120,13 @@ pkgs.testers.runNixOSTest {
         machine.succeed("findmnt -n /var/lib/systemd/credential.secret")
         machine.succeed("test -s /persist/var/lib/systemd/credential.secret")
         machine.succeed("test ! -L /var/lib/systemd/credential.secret && findmnt -n /var/lib/systemd/credential.secret")
+
+    with subtest("a new user's first shell has no zsh wizard"):
+        machine.fail("test -e /home/alice/.zshrc")
+        out = machine.succeed(
+            "timeout 20 runuser -u alice -- script -qec 'zsh -i -c true' /dev/null </dev/null 2>&1 || true"
+        )
+        assert "zsh-newuser-install" not in out, f"zsh wizard ran:\n{out}"
 
     with subtest("hardening is on"):
         assert machine.succeed("sysctl -n kernel.kptr_restrict").strip() == "2"
@@ -145,6 +148,19 @@ pkgs.testers.runNixOSTest {
         ).strip()
         assert scheme == "'prefer-dark'", f"gdm color-scheme is {scheme!r}"
 
+    with subtest("the wallpaper is rendered and is the default for GNOME and GDM"):
+        png = "/run/current-system/sw/share/backgrounds/ephemeral/wallpaper.png"
+        uri = f"'file://{png}'"
+        machine.succeed(f"file -L {png} | grep -q 'PNG image data, 3840 x 2160'")
+        user = machine.succeed(
+            "runuser -l alice -c 'GSETTINGS_BACKEND=memory gsettings get org.gnome.desktop.background picture-uri'"
+        ).strip()
+        assert user == uri, f"GNOME default wallpaper is {user!r}"
+        gdm = machine.succeed(
+            "HOME=/var/empty DCONF_PROFILE=gdm dconf read /org/gnome/desktop/background/picture-uri"
+        ).strip()
+        assert gdm == uri, f"GDM wallpaper is {gdm!r}"
+
     with subtest("snapshots of /persist undo a delete, and stay root-only"):
         machine.succeed("echo precious > /persist/home/alice/notes.txt && chown alice /persist/home/alice/notes.txt")
         machine.succeed("systemctl start snapper-timeline.service")
@@ -160,7 +176,7 @@ pkgs.testers.runNixOSTest {
         machine.succeed(f"btrfs property get -ts /persist/.snapshots/{n}/snapshot ro | grep -qx 'ro=true'")
 
     with subtest("luks-header-backup refuses the same disk and memory, then writes a real header"):
-        # a throwaway LUKS image, opened under the name the real disk uses
+        # throwaway luks image named like the real one
         machine.succeed(
             "truncate -s 64M /persist/fake-disk.img"
             " && printf secret > /root/key"
@@ -185,7 +201,7 @@ pkgs.testers.runNixOSTest {
         boot_is_clean(3)
         machine.fail("test -e /root-was-here")
         machine.succeed("test -e /persist/persist-was-here")
-        # encrypted on boot 1, when the key was still reached through a symlink
+        # encrypted on boot 1, through the first-boot link
         got = machine.succeed("systemd-creds decrypt --name=t /persist/t.cred -").strip()
         assert got == "boot-one-secret", f"credential from boot 1 no longer decrypts: {got!r}"
   '';
