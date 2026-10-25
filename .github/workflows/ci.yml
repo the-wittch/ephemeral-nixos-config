@@ -12,13 +12,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # full history for the secret scan
+          fetch-depth: 0
+          persist-credentials: false
       - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
       - name: secret scan
-        run: ./scripts/check-no-secrets.sh
+        run: |
+          ./scripts/check-no-secrets.sh
+          ./scripts/check-no-secrets.sh --range HEAD
+      - name: shellcheck
+        run: nix run --inputs-from path:. nixpkgs#shellcheck -- -x -P SCRIPTDIR scripts/*.sh .githooks/*
+      - name: nixfmt
+        run: git ls-files -z '*.nix' | xargs -0 nix run --inputs-from path:. nixpkgs#nixfmt -- --check
       - name: example settings
-        run: cp settings.example.nix settings.nix
+        run: |
+          cp settings.example.nix settings.nix
+          cp hardware-configuration.example.nix hardware-configuration.nix
       - name: flake check
         # path:. so the gitignored settings.nix is visible
         run: nix flake check path:.

@@ -13,15 +13,6 @@ SHARES_NIX="$FLAKE_DIR/smb-shares.nix"
 CREDS_DIR=/persist/etc/smb
 LIST_FILE="$CREDS_DIR/shares.list"
 
-nix_escape() {
-  local s=$1
-  s=${s//\\/\\\\}
-  s=${s//\"/\\\"}
-  s=${s//\$/\\$}
-  s=${s//$'\n'/\\n}
-  printf '%s' "$s"
-}
-
 ensure_dirs() {
   sudo mkdir -p "$CREDS_DIR"
   sudo chmod 700 "$CREDS_DIR"
@@ -97,8 +88,21 @@ add_share() {
     gum style --foreground 1 "All fields are required."
     return 1
   fi
-  if [[ $mount != /* ]]; then
-    gum style --foreground 1 "Mount point must be absolute (e.g. /mnt/files)."
+  if [[ ! $server =~ ^[A-Za-z0-9._:-]+$ ]]; then
+    gum style --foreground 1 "Server must be a hostname or IP."
+    return 1
+  fi
+  if [[ ! $share =~ ^[A-Za-z0-9._\$\ -]+$ ]]; then
+    gum style --foreground 1 "Share name: letters, digits, space, . _ - \$ only."
+    return 1
+  fi
+  if [[ ! $mount =~ ^/[A-Za-z0-9._/-]+$ || $mount == *..* ]] ||
+    [[ $mount != /mnt/?* && $mount != /media/?* && $mount != "$HOME"/?* ]]; then
+    gum style --foreground 1 "Mount point must be under /mnt, /media, or $HOME."
+    return 1
+  fi
+  if [[ $user == *$'\n'* || $pass == *$'\n'* ]]; then
+    gum style --foreground 1 "Username and password must be one line."
     return 1
   fi
 
@@ -108,8 +112,8 @@ add_share() {
   fi
 
   creds="$CREDS_DIR/${name}.creds"
-  printf 'username=%s\npassword=%s\n' "$user" "$pass" | sudo tee "$creds" >/dev/null
-  sudo chmod 600 "$creds"
+  printf 'username=%s\npassword=%s\n' "$user" "$pass" |
+    sudo install -m 600 -o root -g root /dev/stdin "$creds"
 
   line="${name}|${server}|${share}|${mount}"
   printf '%s\n' "$line" | sudo tee -a "$LIST_FILE" >/dev/null

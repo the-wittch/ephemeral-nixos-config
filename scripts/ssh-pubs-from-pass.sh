@@ -34,13 +34,12 @@ while [[ $# -gt 0 ]]; do
     --dry-run) DRY_RUN=1; shift ;;
     --list) LIST_ONLY=1; shift ;;
     --debug) DEBUG=1; shift ;;
-    --all) shift ;;
     --vault)
-      VAULT=$2
+      VAULT=${2:?--vault needs a name}
       shift 2
       ;;
     --outdir)
-      OUTDIR=$2
+      OUTDIR=${2:?--outdir needs a path}
       shift 2
       ;;
     --)
@@ -268,14 +267,24 @@ discover_ssh_keys
 
 count=${#FOUND_TITLES[@]}
 
+# two titles must not write the same file
+declare -A seen=()
+for i in "${!FOUND_TITLES[@]}"; do
+  f=$(file_for_title "${FOUND_TITLES[$i]}")
+  if [[ -n ${seen[$f]:-} ]]; then
+    echo "'${seen[$f]}' and '${FOUND_TITLES[$i]}' both map to $f; rename one in Pass" >&2
+    exit 1
+  fi
+  seen[$f]=${FOUND_TITLES[$i]}
+done
+
 if [[ $LIST_ONLY -eq 1 || $DEBUG -eq 1 ]]; then
   echo "SSH keys in vault:"
   if [[ $count -eq 0 ]]; then
     echo "  (none)"
   else
-    local_i=0
-    for local_i in "${!FOUND_TITLES[@]}"; do
-      printf '  - %s  →  %s\n' "${FOUND_TITLES[$local_i]}" "$(file_for_title "${FOUND_TITLES[$local_i]}")"
+    for i in "${!FOUND_TITLES[@]}"; do
+      printf '  - %s  →  %s\n' "${FOUND_TITLES[$i]}" "$(file_for_title "${FOUND_TITLES[$i]}")"
     done
   fi
   echo

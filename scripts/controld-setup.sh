@@ -13,11 +13,6 @@ SETTINGS="$FLAKE_DIR/settings.nix"
 PASS_SETTINGS="$FLAKE_DIR/settings.from-pass.nix"
 ID_FILE=/persist/etc/controld-resolver
 
-die() {
-  echo "error: $*" >&2
-  exit 1
-}
-
 flag_in() {
   local file=$1 line
   [[ -f $file ]] || return 0

@@ -26,7 +26,12 @@
       pkgs = nixpkgs.legacyPackages.${system};
 
       mkNixos = import ./lib/mk-nixos.nix {
-        inherit nixpkgs impermanence disko home-manager;
+        inherit
+          nixpkgs
+          impermanence
+          disko
+          home-manager
+          ;
       };
 
       settings = import ./lib/load-settings.nix { flakeRoot = ./.; };
@@ -35,18 +40,19 @@
     {
       lib.mkNixos = mkNixos;
 
+      formatter.${system} = pkgs.nixfmt-tree;
+
       packages.${system}.pass-cli = pkgs.callPackage ./packages/pass-cli.nix { };
 
       checks.${system}.config-eval = pkgs.runCommand "config-eval" { } ''
         echo ${lib.escapeShellArg mkSystem.config.networking.hostName} > "$out"
       '';
 
-      nixosConfigurations =
-        {
-          nixos = mkSystem;
-        }
-        // lib.optionalAttrs (settings.hostname != "nixos") {
-          ${settings.hostname} = mkSystem;
-        };
+      nixosConfigurations = {
+        nixos = mkSystem;
+      }
+      // lib.optionalAttrs (settings.hostname != "nixos") {
+        ${settings.hostname} = mkSystem;
+      };
     };
 }

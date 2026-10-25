@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   pkgs,
   settings,
@@ -7,9 +8,17 @@
 
 let
   home = "/home/${settings.username}";
+  group = config.users.users.${settings.username}.group;
   chezmoiSource = "${home}/.local/share/chezmoi";
 in
 {
+  assertions = [
+    {
+      assertion = builtins.match "[a-z_][a-z0-9_-]{0,31}" settings.username != null;
+      message = "settings.username must be a plain account name ([a-z_][a-z0-9_-]*, max 32)";
+    }
+  ];
+
   programs.zsh = {
     enable = true;
     enableCompletion = true;
@@ -39,6 +48,16 @@ in
     '';
   };
 
+  system.activationScripts.chezmoiRepo = {
+    deps = [ "users" ];
+    text = ''
+      if [ -f /persist/etc/chezmoi-repo ]; then
+        chown ${lib.escapeShellArg "${settings.username}:${group}"} /persist/etc/chezmoi-repo
+        chmod 600 /persist/etc/chezmoi-repo
+      fi
+    '';
+  };
+
   # /persist/etc/chezmoi-repo is "<git-url> <commit>", mode 600, owned by the user.
   systemd.services.chezmoi-init = {
     description = "Initialize chezmoi from /persist/etc/chezmoi-repo";
@@ -57,7 +76,7 @@ in
     serviceConfig = {
       Type = "oneshot";
       User = settings.username;
-      Group = "users";
+      Group = group;
       WorkingDirectory = home;
       Environment = "HOME=${home}";
     };
@@ -69,8 +88,8 @@ in
         echo "/persist/etc/chezmoi-repo must be one line: <git-url> <commit>" >&2
         exit 1
       fi
-      if [[ ! $rev =~ ^[0-9a-fA-F]{7,64}$ ]]; then
-        echo "chezmoi commit must be 7-64 hex chars" >&2
+      if [[ ! $rev =~ ^[0-9a-fA-F]{40}$ ]]; then
+        echo "chezmoi commit must be the full 40-character hash" >&2
         exit 1
       fi
       case $url in

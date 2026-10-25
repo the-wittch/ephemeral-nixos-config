@@ -5,28 +5,35 @@
   ...
 }:
 
+let
+  owner = lib.escapeShellArg "${settings.username}:${config.users.users.${settings.username}.group}";
+in
 {
   fileSystems."/persist".neededForBoot = true;
   fileSystems."/var/log".neededForBoot = true;
 
+  # base system state. modules that add a service persist its state next to it.
   environment.persistence."/persist" = {
     hideMounts = true;
     directories = [
       "/home"
       "/var/lib/nixos"
       "/var/lib/AccountsService"
-      { directory = "/var/lib/bluetooth"; mode = "0700"; }
+      {
+        directory = "/var/lib/bluetooth";
+        mode = "0700";
+      }
       "/var/lib/NetworkManager"
-      { directory = "/etc/NetworkManager/system-connections"; mode = "0700"; }
+      {
+        directory = "/etc/NetworkManager/system-connections";
+        mode = "0700";
+      }
       "/var/lib/cups"
-      "/var/lib/flatpak"
       {
         directory = "/var/lib/fwupd";
         user = "fwupd-refresh";
         group = "fwupd-refresh";
       }
-      "/var/lib/containers"
-      "/var/lib/opensnitch"
       "/var/lib/systemd/backlight"
       "/var/lib/systemd/rfkill"
       "/var/lib/systemd/timers"
@@ -45,16 +52,17 @@
 
   # blank root drops /home/$USER. create it here.
   system.activationScripts.ensureUserHome = {
-    deps = [ "users" "groups" ];
+    deps = [
+      "users"
+      "groups"
+    ];
     text = ''
       home=${lib.escapeShellArg "/persist/home/${settings.username}"}
       if [ ! -d "$home" ]; then
         mkdir -p "$home"
         chmod 0700 "$home"
       fi
-      chown ${
-        lib.escapeShellArg "${settings.username}:${config.users.users.${settings.username}.group}"
-      } "$home"
+      chown ${owner} "$home"
     '';
   };
 
@@ -81,23 +89,6 @@
           chmod 644 "$f"
         fi
       done
-
-      mkdir -p /persist/etc/smb
-      chmod 700 /persist/etc/smb
-      for f in /persist/etc/smb/*; do
-        if [ -e "$f" ]; then
-          chmod 600 "$f"
-        fi
-      done
-
-      if [ -f /persist/etc/controld-resolver ]; then
-        chown root:root /persist/etc/controld-resolver
-        chmod 600 /persist/etc/controld-resolver
-      fi
-      if [ -f /persist/etc/chezmoi-repo ]; then
-        chown ${settings.username}:users /persist/etc/chezmoi-repo
-        chmod 600 /persist/etc/chezmoi-repo
-      fi
     '';
   };
 }

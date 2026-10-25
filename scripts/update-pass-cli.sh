@@ -106,7 +106,8 @@ write_pkg() {
     echo "failed to set hash" >&2
     exit 1
   }
-  mv "$tmp" "$PKG"
+  install -m 644 "$tmp" "$PKG"
+  rm -f "$tmp"
 }
 
 pinned_ver=$(read_pinned_version)

@@ -32,16 +32,18 @@ let
       section:
       lib.concatStrings (
         lib.mapAttrsToList (name: value: ''
-          run ${lib.escapeShellArgs [
-            kwriteconfig
-            "--file"
-            "kdeglobals"
-            "--group"
-            section.name
-            "--key"
-            name
-            value
-          ]}
+          run ${
+            lib.escapeShellArgs [
+              kwriteconfig
+              "--file"
+              "kdeglobals"
+              "--group"
+              section.name
+              "--key"
+              name
+              value
+            ]
+          }
         '') section.attrs
       )
     ) sections;

@@ -4,13 +4,13 @@
     {
       "label": "nix flake show",
       "type": "shell",
-      "command": "nix flake show",
+      "command": "nix flake show path:.",
       "problemMatcher": []
     },
     {
       "label": "nix flake check (no build)",
       "type": "shell",
-      "command": "nix flake check --no-build",
+      "command": "nix flake check path:. --no-build",
       "problemMatcher": [],
       "group": "test"
     }

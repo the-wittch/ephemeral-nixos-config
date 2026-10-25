@@ -6,58 +6,13 @@
 }:
 
 let
-  ephemeral-update = pkgs.writeShellApplication {
-    name = "ephemeral-update";
-    text = builtins.readFile ./scripts/ephemeral-update.sh;
-  };
-
-  flatpak-apps = pkgs.writeShellApplication {
-    name = "flatpak-apps";
-    runtimeInputs = with pkgs; [
-      gum
-      flatpak
-      gnugrep
-      coreutils
-    ];
-    text = builtins.readFile ./scripts/flatpak-tui.sh;
-  };
-
-  smb-setup = pkgs.writeShellApplication {
-    name = "smb-setup";
-    runtimeInputs = with pkgs; [
-      gum
-      coreutils
-      gnugrep
-      gnused
-    ];
-    text = builtins.readFile ./scripts/smb-setup.sh;
-  };
-
-  controld-setup = pkgs.writeShellApplication {
-    name = "controld-setup";
-    runtimeInputs = with pkgs; [
-      gum
-      coreutils
-      gnugrep
-      gnused
-      gawk
-    ];
-    text = builtins.readFile ./scripts/controld-setup.sh;
-  };
-
-  update-pass-cli = pkgs.writeShellApplication {
-    name = "update-pass-cli";
-    runtimeInputs = with pkgs; [
-      curl
-      python3
-      gnused
-      gnugrep
-      gawk
-      coreutils
-      nix
-    ];
-    text = builtins.readFile ./scripts/update-pass-cli.sh;
-  };
+  # scripts/lib.sh goes first so every command gets die and nix_escape
+  mkScript =
+    name: file: runtimeInputs:
+    pkgs.writeShellApplication {
+      inherit name runtimeInputs;
+      text = builtins.readFile ./scripts/lib.sh + builtins.readFile file;
+    };
 
   # true: packages/pass-cli.nix. false: pkgs.proton-pass-cli
   pass-cli =
@@ -66,28 +21,56 @@ let
     else
       pkgs.proton-pass-cli;
 
-  settings-from-pass = pkgs.writeShellApplication {
-    name = "settings-from-pass";
-    runtimeInputs = [
+  scripts = with pkgs; [
+    (mkScript "ephemeral-update" ./scripts/ephemeral-update.sh [ ])
+    (mkScript "flatpak-apps" ./scripts/flatpak-tui.sh [
+      gum
+      flatpak
+      gnugrep
+      coreutils
+    ])
+    (mkScript "smb-setup" ./scripts/smb-setup.sh [
+      gum
+      coreutils
+      gnugrep
+      gnused
+    ])
+    (mkScript "controld-setup" ./scripts/controld-setup.sh [
+      gum
+      coreutils
+      gnugrep
+      gnused
+      gawk
+    ])
+    (mkScript "update-pass-cli" ./scripts/update-pass-cli.sh [
+      curl
+      python3
+      gnused
+      gnugrep
+      gawk
+      coreutils
+      nix
+    ])
+    (mkScript "settings-from-pass" ./scripts/settings-from-pass.sh [
       pass-cli
-      pkgs.coreutils
-      pkgs.gnused
-    ];
-    text = builtins.readFile ./scripts/settings-from-pass.sh;
-  };
-
-  ssh-pubs-from-pass = pkgs.writeShellApplication {
-    name = "ssh-pubs-from-pass";
-    runtimeInputs = [
+      coreutils
+      gnused
+    ])
+    (mkScript "ssh-pubs-from-pass" ./scripts/ssh-pubs-from-pass.sh [
       pass-cli
-      pkgs.coreutils
-      pkgs.python3
-      pkgs.gnused
-    ];
-    text = builtins.readFile ./scripts/ssh-pubs-from-pass.sh;
-  };
+      coreutils
+      python3
+      gnused
+    ])
+  ];
 in
 {
+  environment.persistence."/persist".directories = [
+    "/var/lib/flatpak"
+    "/var/lib/containers"
+    "/var/lib/opensnitch"
+  ];
+
   programs.steam = {
     enable = true;
     # firewall holes; leave off unless you use them
@@ -161,55 +144,49 @@ in
     };
   };
 
-  environment.systemPackages = with pkgs; [
-    vscode
-    firefox
-    brave-origin
-    ghostty
-    vlc
-    git
-    chezmoi
-    curl
-    wget
-    ripgrep
-    wl-clipboard
-    htop
-    dig
-    mkpasswd
-    unzip
-    zip
-    p7zip
-    file
-    usbutils
-    pciutils
-    wireguard-tools
-    distrobox
-    syncthingtray-minimal
-    opensnitch-ui
-    gum
-    ephemeral-update
-    flatpak-apps
-    smb-setup
-    controld-setup
-    pass-cli
-    update-pass-cli
-    settings-from-pass
-    ssh-pubs-from-pass
+  environment.systemPackages =
+    scripts
+    ++ (with pkgs; [
+      vscode
+      firefox
+      brave-origin
+      ghostty
+      vlc
+      git
+      chezmoi
+      curl
+      wget
+      ripgrep
+      wl-clipboard
+      htop
+      dig
+      mkpasswd
+      unzip
+      zip
+      p7zip
+      file
+      usbutils
+      pciutils
+      wireguard-tools
+      distrobox
+      syncthingtray-minimal
+      opensnitch-ui
+      gum
+      pass-cli
 
-    neovim
-    git-crypt
-    age
-    starship
-    zoxide
-    yazi
-    btop
-    fastfetch
-    unrar
-  ];
+      neovim
+      git-crypt
+      age
+      starship
+      zoxide
+      yazi
+      btop
+      fastfetch
+      unrar
+    ]);
 
   environment.sessionVariables = {
     TERMINAL = "ghostty";
     PROTON_PASS_LINUX_KEYRING = "dbus";
   };
 }
-

@@ -68,6 +68,7 @@ If you clone this repo directly, put extras in `customize/` (see `customize/apps
 | `persist.nix` | impermanence |
 | `users.nix` | user, sudo, chezmoi |
 | `desktop.nix` | plasma, gnome, or niri |
+| `greeter.nix` | login screen theme, avatar and wallpaper sync |
 | `dns.nix` | Control D (`controld-setup`) |
 | `apps.nix` | packages |
 | `smb.nix` | CIFS mounts from `smb-setup` |
@@ -76,9 +77,10 @@ If you clone this repo directly, put extras in `customize/` (see `customize/apps
 | `settings.example.nix` | copy to `settings.nix` next to the *host* flake |
 | `customize/` | optional extras when using this tree directly |
 | `examples/private-flake/` | tiny private host flake on top of this template |
+| `scripts/lib.sh` | helpers built into the packaged commands |
 | `scripts/check-no-secrets.sh` | hook and CI secret scan |
 | `.githooks/` | `git config core.hooksPath .githooks` |
-| `.github/workflows/ci.yml` | same secret scan, plus `nix flake check` |
+| `.github/workflows/ci.yml` | secret scan over full history, shellcheck, nixfmt, `nix flake check` |
 
 ## settings.nix
 
@@ -94,7 +96,7 @@ See `settings.example.nix` for the fields. Rebuild with `path:.#nixos` after you
 git config core.hooksPath .githooks
 ```
 
-Hooks refuse `settings.nix`, `settings.from-pass.nix`, user files under `customize/`, `*.creds`, private keys, and Control D hostnames. CI runs the same scan, so skipping the hook locally still fails on GitHub. `SKIP_SECRET_CHECK=1` skips it on purpose.
+Hooks refuse `settings.nix`, `settings.from-pass.nix`, user files under `customize/`, `*.creds`, private keys, and Control D hostnames. pre-push checks every commit being pushed, so a secret added and then deleted is still caught. CI scans the whole history, so skipping the hook locally still fails on GitHub. `SKIP_SECRET_CHECK=1` skips it on purpose.
 
 ### Proton Pass
 
@@ -104,7 +106,7 @@ Hooks refuse `settings.nix`, `settings.from-pass.nix`, user files under `customi
 
 Scripts default to vault `Personal` and item `nixos-settings`. Override with `PASS_SETTINGS_VAULT`, `PASS_SETTINGS_ITEM`, and `PASS_SSH_VAULT`.
 
-1. Make a Pass item `nixos-settings` with custom fields for whatever you want pulled: `hostname`, `username`, `diskDevice`, `swapSize`, `timeZone`, `desktop`. Bools `allowUnfree` and `useFlakePassCli` are the strings `true` or `false`. `chezmoiRepo` plus `chezmoiRev` (the git commit) are written to `/persist/etc/chezmoi-repo`. `controldResolver` is written to `/persist/etc/controld-resolver` and sets `useControlD = true`.
+1. Make a Pass item `nixos-settings` with custom fields for whatever you want pulled: `hostname`, `username`, `diskDevice`, `swapSize`, `timeZone`, `desktop`. Bools `allowUnfree` and `useFlakePassCli` are the strings `true` or `false`. `chezmoiRepo` plus `chezmoiRev` (the full 40-character commit hash) are written to `/persist/etc/chezmoi-repo`. `controldResolver` is written to `/persist/etc/controld-resolver` and sets `useControlD = true`.
 2. `pass-cli login`
 3. `usePassSettings = true;` in `settings.nix`
 4. Pull and rebuild:
@@ -157,10 +159,10 @@ Asks for server, share, user, and password. Creds go to `/persist/etc/smb/<label
 `passwd` does not stick. The hash is a file:
 
 ```bash
-mkpasswd -m sha-512
+mkpasswd -m yescrypt
 sudo tee /persist/passwords/$USER
 sudo chmod 600 /persist/passwords/$USER
 ```
 
-Hibernation is off. Suspend is fine. SSH is installed and the firewall is closed. Host keys are under `/persist/etc/ssh`.
+Hibernation is off. Suspend is fine. SSH is off; `services.openssh.enable = true` in `host.nix` turns it on with the firewall still closed. The ed25519 host key is under `/persist/etc/ssh`.
 

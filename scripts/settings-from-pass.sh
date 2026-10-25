@@ -54,15 +54,6 @@ write_root_file() {
   rm -f "$tmp"
 }
 
-nix_escape() {
-  local s=$1
-  s=${s//\\/\\\\}
-  s=${s//\"/\\\"}
-  s=${s//\$/\\$}
-  s=${s//$'\n'/\\n}
-  printf '%s' "$s"
-}
-
 # empty if the field isn't there
 get_field() {
   local key=$1
@@ -118,8 +109,8 @@ if [[ -n ${repo:-} || -n ${rev:-} ]]; then
     echo "  ! chezmoi needs both chezmoiRepo and chezmoiRev" >&2
     exit 1
   fi
-  if [[ ! $rev =~ ^[0-9a-fA-F]{7,64}$ ]]; then
-    echo "  ! chezmoiRev must be 7-64 hex chars" >&2
+  if [[ ! $rev =~ ^[0-9a-fA-F]{40}$ ]]; then
+    echo "  ! chezmoiRev must be the full 40-character commit hash" >&2
     exit 1
   fi
   case $repo in

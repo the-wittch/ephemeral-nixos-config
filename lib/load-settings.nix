@@ -9,7 +9,7 @@ let
     diskDevice = "/dev/nvme0n1";
     swapSize = "16G";
     timeZone = "UTC";
-    desktop = "gnome"; # plasma | gnome | niri
+    desktop = "plasma"; # plasma | gnome | niri
     allowUnfree = true;
     useControlD = false; # id is /persist/etc/controld-resolver
     useFlakePassCli = false; # true keeps packages/pass-cli.nix
@@ -34,11 +34,9 @@ let
       '';
 
   # pass file can't flip this on by itself
-  usePass =
-    (defaults // fromSettings).usePassSettings or false;
+  usePass = (defaults // fromSettings).usePassSettings or false;
 
-  fromPass =
-    if usePass && builtins.pathExists passPath then import passPath else { };
+  fromPass = if usePass && builtins.pathExists passPath then import passPath else { };
 
   merged =
     if !(fromSettings ? username) || fromSettings.username == "" then

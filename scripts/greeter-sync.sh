@@ -4,7 +4,7 @@ set -euo pipefail
 
 user=${GREETER_SYNC_USER:-}
 desktop=${GREETER_SYNC_DESKTOP:-}
-if [[ ! $user =~ ^[A-Za-z_][A-Za-z0-9._-]{0,31}$ ]]; then
+if [[ ! $user =~ ^[a-z_][a-z0-9_-]{0,31}$ ]]; then
   echo "GREETER_SYNC_USER is missing or not a username" >&2
   exit 1
 fi
@@ -53,7 +53,7 @@ urldecode() {
 dconf_get() {
   local raw
   raw=$(
-    env -u DBUS_SESSION_BUS_ADDRESS \
+    runuser -u "$user" -- env -u DBUS_SESSION_BUS_ADDRESS \
       HOME="$home" \
       XDG_CONFIG_HOME="$home/.config" \
       dconf read "$1" 2>/dev/null || true
@@ -122,22 +122,25 @@ publishable() {
 
 copy_public() {
   local src=$1 dest=$2 size dir tmp
-  size=$(stat -c %s "$src")
+  dir=$(dirname "$dest")
+  install -d -m 0755 -o root -g root "$dir"
+  tmp=$(mktemp "$dir/.publish.XXXXXX")
+  # read as the user so a swapped symlink can't reach root-only files
+  if ! runuser -u "$user" -- head -c "$((max_bytes + 1))" -- "$src" >"$tmp"; then
+    rm -f "$tmp"
+    return 1
+  fi
+  size=$(stat -c %s "$tmp")
   if ((size == 0 || size > max_bytes)); then
+    rm -f "$tmp"
     echo "not publishing $src" >&2
     return 1
   fi
-  dir=$(dirname "$dest")
-  install -d -m 0755 -o root -g root "$dir"
-  if [[ -f $dest ]] && cmp -s "$src" "$dest" && is_image "$dest"; then
+  if [[ -f $dest ]] && cmp -s "$tmp" "$dest" && is_image "$dest"; then
+    rm -f "$tmp"
     chmod 644 "$dest"
     chown root:root "$dest"
     return 0
-  fi
-  tmp=$(mktemp "$dir/.publish.XXXXXX")
-  if ! cp -f -- "$src" "$tmp"; then
-    rm -f "$tmp"
-    return 1
   fi
   if ! is_image "$tmp"; then
     rm -f "$tmp"

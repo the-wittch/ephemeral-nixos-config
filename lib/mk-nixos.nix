@@ -26,7 +26,18 @@ nixpkgs.lib.nixosSystem {
     ../disko.nix
     ../configuration.nix
   ]
-  ++ lib.optional (builtins.pathExists hardware) hardware
+  ++ (
+    if builtins.pathExists hardware then
+      [ hardware ]
+    else
+      [
+        {
+          warnings = [
+            "no hardware-configuration.nix next to the flake; building without initrd modules or microcode"
+          ];
+        }
+      ]
+  )
   ++ [
     impermanence.nixosModules.impermanence
     home-manager.nixosModules.home-manager
