@@ -44,9 +44,12 @@
 
       packages.${system}.pass-cli = pkgs.callPackage ./packages/pass-cli.nix { };
 
-      checks.${system}.config-eval = pkgs.runCommand "config-eval" { } ''
-        echo ${lib.escapeShellArg mkSystem.config.networking.hostName} > "$out"
-      '';
+      checks.${system} = {
+        config-eval = pkgs.runCommand "config-eval" { } ''
+          echo ${lib.escapeShellArg mkSystem.config.networking.hostName} > "$out"
+        '';
+        greeter-sync = import ./tests/greeter-sync.nix { inherit pkgs; };
+      };
 
       nixosConfigurations = {
         nixos = mkSystem;

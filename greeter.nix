@@ -7,11 +7,8 @@
 }:
 
 let
-  desktop = settings.desktop;
-  isPlasma = desktop == "plasma";
-  isGnome = desktop == "gnome";
-  isNiri = desktop == "niri";
-  home = "/home/${settings.username}";
+  isPlasma = settings.desktop == "plasma";
+  useGdm = config.services.displayManager.gdm.enable;
   kdeDark = import ./lib/kde-dark.nix { inherit lib; };
 
   dconfDb =
@@ -22,14 +19,23 @@ let
       ${lib.getExe' pkgs.dconf "dconf"} compile "$out" keys
     '';
 
-  # hand-built because programs.dconf.profiles checks every file-db at build
-  # time, and greeter-db only exists at runtime. the tail mirrors the
-  # programs.dconf.profiles.gdm list in nixpkgs gdm.nix; recheck it on bumps.
-  gdmCfg = config.services.displayManager.gdm;
+  # programs.dconf.profiles checks every file-db at build time, and greeter-db
+  # only exists at runtime, so this profile is written by hand. the databases
+  # nixpkgs puts in the gdm profile are read from the option and appended.
+  gdmProfileCfg = config.programs.dconf.profiles.gdm;
+  toFileDb =
+    db:
+    if lib.isAttrs db && !lib.isDerivation db then
+      if db.keyfiles != [ ] || db.locks != [ ] || db.lockAll then
+        throw "greeter.nix: a gdm dconf database uses keyfiles or locks, which gdmProfile does not handle"
+      else
+        "file-db:${dconfDb "gdm-db" db.settings}"
+    else
+      "file-db:${db}";
   gdmProfile = pkgs.writeTextDir "etc/dconf/profile/gdm" (
     lib.concatMapStrings (line: line + "\n") (
-      [
-        "user-db:user"
+      lib.optional gdmProfileCfg.enableUserDb "user-db:user"
+      ++ [
         "file-db:/var/lib/gdm/greeter-db"
         "file-db:${
           dconfDb "gdm-greeter-defaults" {
@@ -37,29 +43,7 @@ let
           }
         }"
       ]
-      ++
-        lib.optional (!gdmCfg.autoSuspend)
-          "file-db:${
-            dconfDb "gdm-power" {
-              "org/gnome/settings-daemon/plugins/power" = {
-                sleep-inactive-ac-type = "nothing";
-                sleep-inactive-battery-type = "nothing";
-                sleep-inactive-ac-timeout = lib.gvariant.mkInt32 0;
-                sleep-inactive-battery-timeout = lib.gvariant.mkInt32 0;
-              };
-            }
-          }"
-      ++
-        lib.optional (gdmCfg.banner != null)
-          "file-db:${
-            dconfDb "gdm-banner" {
-              "org/gnome/login-screen" = {
-                banner-message-enable = true;
-                banner-message-text = gdmCfg.banner;
-              };
-            }
-          }"
-      ++ [ "file-db:${pkgs.gdm}/share/gdm/greeter-dconf-defaults" ]
+      ++ map toFileDb gdmProfileCfg.databases
     )
   );
 
@@ -68,24 +52,20 @@ let
     runtimeInputs = with pkgs; [
       coreutils
       dconf
-      diffutils
-      systemd
       util-linux
     ];
     text = builtins.readFile ./scripts/greeter-sync.sh;
   };
 in
 {
-  programs.dconf.packages = lib.mkBefore (lib.optionals isGnome [ gdmProfile ]);
+  # avatars need nothing here: gnome and plasma settings set them through
+  # accountsservice, and noctalia syncs its own greeter.
+  programs.dconf.packages = lib.mkIf useGdm (lib.mkBefore [ gdmProfile ]);
 
-  systemd.services.greeter-sync = {
-    description = "Publish avatar and wallpaper for the greeter";
-    after = [
-      "accounts-daemon.service"
-      "systemd-tmpfiles-setup.service"
-    ];
+  systemd.services.greeter-sync = lib.mkIf useGdm {
+    description = "Show the user's wallpaper on the GDM login screen";
+    after = [ "systemd-tmpfiles-setup.service" ];
     before = [ "display-manager.service" ];
-    wants = [ "accounts-daemon.service" ];
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       Type = "oneshot";
@@ -93,47 +73,43 @@ in
       NoNewPrivileges = true;
       PrivateTmp = true;
       PrivateDevices = true;
-      ProtectSystem = "full";
-      # plasma publishes /etc/plasmalogin.conf
-      ReadWritePaths = lib.optionals isPlasma [ "/etc" ];
+      PrivateNetwork = true;
+      ProtectSystem = "strict";
+      ReadWritePaths = [
+        "/var/lib/AccountsService"
+        "/var/lib/gdm"
+      ];
       ProtectKernelTunables = true;
       ProtectKernelModules = true;
+      ProtectKernelLogs = true;
       ProtectControlGroups = true;
       ProtectHostname = true;
       ProtectClock = true;
       RestrictSUIDSGID = true;
       RestrictAddressFamilies = [ "AF_UNIX" ];
+      RestrictNamespaces = true;
       LockPersonality = true;
+      MemoryDenyWriteExecute = true;
       SystemCallArchitectures = "native";
-      Environment = [
-        "GREETER_SYNC_USER=${settings.username}"
-        "GREETER_SYNC_DESKTOP=${desktop}"
-      ];
+      Environment = [ "GREETER_SYNC_USER=${settings.username}" ];
       ExecStart = lib.getExe greeter-sync;
     };
   };
 
-  systemd.paths.greeter-sync = {
-    description = "Watch avatar and wallpaper files";
+  systemd.paths.greeter-sync = lib.mkIf useGdm {
+    description = "Watch the user's dconf database for wallpaper changes";
     wantedBy = [ "multi-user.target" ];
-    pathConfig.PathChanged = [
-      "${home}/.face"
-      "${home}/.face.icon"
-    ]
-    ++ lib.optionals isGnome [ "${home}/.config/dconf/user" ]
-    ++ lib.optionals isPlasma [
-      "${home}/.config/plasma-org.kde.plasma.desktop-appletsrc"
-      "${home}/.config/kscreenlockerrc"
-    ]
-    ++ lib.optionals isNiri [
-      "${home}/.local/state/noctalia/settings.toml"
-      "${home}/.config/noctalia/config.toml"
-    ];
+    pathConfig.PathChanged = [ "/home/${settings.username}/.config/dconf/user" ];
   };
 
-  # greeter home is /var/lib/plasmalogin, not ~/.config
-  systemd.tmpfiles.rules = lib.mkIf isPlasma [
-    "d /var/lib/plasmalogin/.config 0755 plasmalogin plasmalogin -"
-    "L+ /var/lib/plasmalogin/.config/kdeglobals - - - - ${pkgs.writeText "plasmalogin-kdeglobals" kdeDark.ini}"
-  ];
+  systemd.tmpfiles.rules =
+    lib.optionals useGdm [
+      "d /var/lib/gdm 0755 root root -"
+      "d /var/lib/AccountsService/backgrounds 0755 root root -"
+    ]
+    # greeter home is /var/lib/plasmalogin, not ~/.config
+    ++ lib.optionals isPlasma [
+      "d /var/lib/plasmalogin/.config 0755 plasmalogin plasmalogin -"
+      "L+ /var/lib/plasmalogin/.config/kdeglobals - - - - ${pkgs.writeText "plasmalogin-kdeglobals" kdeDark.ini}"
+    ];
 }

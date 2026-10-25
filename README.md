@@ -68,7 +68,8 @@ If you clone this repo directly, put extras in `customize/` (see `customize/apps
 | `persist.nix` | impermanence |
 | `users.nix` | user, sudo, chezmoi |
 | `desktop.nix` | plasma, gnome, or niri |
-| `greeter.nix` | login screen theme, avatar and wallpaper sync |
+| `greeter.nix` | login screen theme; GNOME wallpaper on the GDM screen |
+| `tests/greeter-sync.nix` | VM test for `greeter.nix` (`nix build path:.#checks.x86_64-linux.greeter-sync -L`) |
 | `dns.nix` | Control D (`controld-setup`) |
 | `apps.nix` | packages |
 | `smb.nix` | CIFS mounts from `smb-setup` |
@@ -167,3 +168,11 @@ sudo chmod 600 /persist/passwords/$USER
 
 Hibernation is off. Suspend is fine. SSH is off; `services.openssh.enable = true` in `host.nix` turns it on with the firewall still closed. The ed25519 host key is under `/persist/etc/ssh`.
 
+
+## Login screen
+
+GNOME: your wallpaper is copied to the GDM screen whenever it changes. Files outside your home are only used if anyone can read them, and nothing under `/etc` or other users' homes is ever published.
+
+Plasma: set the login screen wallpaper in System Settings → Login Screen.
+
+Avatars: set them in GNOME Settings or Plasma System Settings. niri uses Noctalia's own greeter sync.
