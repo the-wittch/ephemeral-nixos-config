@@ -24,7 +24,6 @@ in
   ];
 
   environment.persistence."/persist".directories = [
-    "/var/lib/flatpak"
     "/var/lib/containers"
     "/var/lib/opensnitch"
   ];
@@ -60,24 +59,6 @@ in
     X-GNOME-Autostart-enabled=true
   '';
 
-  services.flatpak.enable = true;
-
-  systemd.services.flatpak-flathub = {
-    description = "Add Flathub Flatpak remote";
-    wantedBy = [ "multi-user.target" ];
-    wants = [ "network-online.target" ];
-    after = [ "network-online.target" ];
-    path = [ pkgs.flatpak ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-    };
-    script = ''
-      flatpak remote-add --system --if-not-exists flathub \
-        https://dl.flathub.org/repo/flathub.flatpakrepo
-    '';
-  };
-
   services.syncthing = {
     enable = true;
     user = settings.username;
@@ -111,6 +92,7 @@ in
       update-pass-cli
       settings-from-pass
       ssh-pubs-from-pass
+      luks-header-backup
     ])
     ++ (with pkgs; [
       vscode

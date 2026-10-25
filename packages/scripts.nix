@@ -63,6 +63,14 @@ with pkgs;
     gnused
   ];
 
+  luks-header-backup = mkScript "luks-header-backup" ../scripts/luks-header-backup.sh [
+    coreutils
+    cryptsetup
+    gawk
+    gnugrep
+    util-linux
+  ];
+
   greeter-sync = writeShellApplication {
     name = "greeter-sync";
     runtimeInputs = [

@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-SHARED=(boot.nix persist.nix users.nix disko.nix unfree.nix lib/read-data.nix)
+SHARED=(boot.nix persist.nix users.nix disko.nix unfree.nix hardening.nix flathub.nix lib/read-data.nix)
 INSTALLER_URL=${INSTALLER_URL:-https://github.com/the-wittch/ephemeral-nixos.git}
 INSTALLER_REF=${INSTALLER_REF:-main}
 

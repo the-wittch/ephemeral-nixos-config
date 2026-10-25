@@ -76,6 +76,10 @@ If you clone this repo directly, put extras in `customize/` (see `customize/apps
 | `dns.nix` | Control D (`controld-setup`) |
 | `apps.nix` | packages |
 | `smb.nix` | CIFS mounts from `smb-setup` |
+| `snapshots.nix` | hourly/daily/weekly snapper snapshots of `/persist` |
+| `hardening.nix` | kernel sysctls and module blacklist (shared with the installer) |
+| `flathub.nix` | Flathub remote from a pinned repo file (shared with the installer) |
+| `tests/boot.nix` | VM test: three boots with a wiped root, checks units, persistence, snapshots |
 | `home.nix` | home-manager |
 | `packages/pass-cli.nix` | local pass-cli fallback (`useFlakePassCli = true`); pin in `pass-cli.json` |
 | `settings.example.json` | copy to `settings.json` next to the *host* flake |
@@ -207,3 +211,24 @@ GNOME: your wallpaper is copied to the GDM screen whenever it changes. Files out
 Plasma: set the login screen wallpaper in System Settings → Login Screen.
 
 Avatars: set them in GNOME Settings or Plasma System Settings. niri uses Noctalia's own greeter sync.
+
+## Snapshots
+
+snapper keeps read-only snapshots of `/persist`, and so of your home: 24 hourly, 7 daily, 4 weekly. They undo deletes and bad edits. They live on the same disk, so they don't replace a backup.
+
+```bash
+sudo snapper -c persist list
+sudo cp -a /persist/.snapshots/<n>/snapshot/home/$USER/path/to/file ~/path/to/
+```
+
+Only root can read them, since old snapshots still hold old password hashes and keys. Exclude `/persist/.snapshots` from Borg (or any other backup of `/persist`), or every snapshot gets backed up again.
+
+## LUKS header backup
+
+If the LUKS header at the start of the disk is damaged, the disk can't be unlocked, even with the right passphrase. Keep a copy on a USB stick:
+
+```bash
+luks-header-backup /run/media/$USER/<stick>/luks-header.img
+```
+
+It refuses a destination on the encrypted disk itself or in memory. The copy unlocks with every passphrase that existed when it was made, so after changing or removing a passphrase, make a new copy and destroy the old ones.
