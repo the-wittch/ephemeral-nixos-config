@@ -101,6 +101,18 @@ in
       flags = [ "--all" ];
     };
   };
+  
+    # prebuilt binaries that expect /lib64/ld-linux, e.g. the claude code
+  # binary the vscode extension downloads
+  programs.nix-ld = {
+    enable = true;
+    libraries = with pkgs; [
+      stdenv.cc.cc.lib
+      zlib
+      openssl
+      curl
+    ];
+  };
 
   environment.systemPackages =
     (with scripts; [
