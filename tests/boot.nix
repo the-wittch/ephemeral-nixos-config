@@ -125,6 +125,13 @@ pkgs.testers.runNixOSTest {
         machine.succeed("test -s /persist/var/lib/systemd/credential.secret")
         machine.succeed("test ! -L /var/lib/systemd/credential.secret && findmnt -n /var/lib/systemd/credential.secret")
 
+    with subtest("a new user's first shell has no zsh wizard"):
+        machine.fail("test -e /home/alice/.zshrc")
+        out = machine.succeed(
+            "timeout 20 runuser -u alice -- script -qec 'zsh -i -c true' /dev/null </dev/null 2>&1 || true"
+        )
+        assert "zsh-newuser-install" not in out, f"zsh wizard ran:\n{out}"
+
     with subtest("hardening is on"):
         assert machine.succeed("sysctl -n kernel.kptr_restrict").strip() == "2"
         assert machine.succeed("sysctl -n kernel.unprivileged_bpf_disabled").strip() == "1"
