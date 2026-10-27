@@ -156,6 +156,8 @@ To use another [base16 scheme](https://github.com/tinted-theming/schemes):
 }
 ```
 
+Pointing at a scheme file means Nix has to build `base16-schemes` while evaluating, which `nix flake check --no-build` refuses. To keep that check working, copy the scheme's colours inline, the way `modules/stylix.nix` does.
+
 Some Stylix features are switched off:
 
 - Its package overlays rebuild GNOME Shell and a few libraries from source on every update. Without them the GDM login screen isn't themed, but it is still dark.
