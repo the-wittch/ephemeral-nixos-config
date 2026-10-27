@@ -1,14 +1,11 @@
 # shellcheck shell=bash
-# prepended to the packaged scripts in packages/scripts.nix
 
-# not every command uses every helper
 # shellcheck disable=SC2329
 die() {
   echo "error: $*" >&2
   exit 1
 }
 
-# jq_edit <file> <jq args...>: rewrite a JSON file in place, keeping its mode
 # shellcheck disable=SC2329
 jq_edit() {
   local file=$1 tmp mode
@@ -24,7 +21,6 @@ jq_edit() {
   mv -f "$tmp" "$file"
 }
 
-# settings_json <flake dir>: path of settings.json, or how to get one
 # shellcheck disable=SC2329
 settings_json() {
   local dir=$1

@@ -1,237 +1,290 @@
 # Ephemeral Nix Config
+
 [![CI](https://github.com/the-wittch/ephemeral-nixos-config/actions/workflows/ci.yml/badge.svg)](https://github.com/the-wittch/ephemeral-nixos-config/actions/workflows/ci.yml)
 
 <img width="3840" height="2160" alt="wallpaper" src="https://github.com/user-attachments/assets/b4e08080-876a-4ab3-911f-4055a4f2de0d" />
 
-Post-install flake for [ephemeral-nixos](https://github.com/the-wittch/ephemeral-nixos). Root rolls back every boot. `/home` and a few paths stay on `/persist`.
+The full NixOS config for machines installed with [ephemeral-nixos](https://github.com/the-wittch/ephemeral-nixos). `/` is wiped on every boot; `/home` and a short list of system paths live on `/persist`.
 
-Opinionated: desktop apps and services are included that you may want to trim in a private `host.nix` or fork.
+On top of the installer's base system it adds:
 
-Personal machines: private flake that takes this repo as an input (`examples/private-flake/`). Packages in private git. Hostname, disk, and resolver id in gitignored `settings.json` or Pass.
+- Home Manager dotfiles: zsh, git, starship, zoxide, neovim, ghostty, yazi, btop, fastfetch. chezmoi is supported instead, if you prefer it.
+- A dark Catppuccin Mocha theme everywhere, through [Stylix](https://github.com/nix-community/stylix).
+- Hourly snapper snapshots of `/persist`.
+- OpenSnitch, Syncthing, Podman, Flatpak with Flathub, Steam and the usual desktop apps.
+- Optional DNS over TLS through Control D, SMB mounts, and machine settings pulled from Proton Pass.
 
-Or clone this tree and use `customize/` for extras.
+It's opinionated. Trim what you don't want in your own modules (see below).
 
-## New machine (private flake)
+## Setup
 
-1. Install from [ephemeral-nixos](https://github.com/the-wittch/ephemeral-nixos).
-2. Boot, unlock LUKS, log in. The password hash is already in `/persist/passwords/`.
-3. Put a private flake on the installed system:
+Keep your changes in a private flake that uses this repo as an input. Your packages and tweaks stay in your own git repo, and updates here are one command away. Machine details stay in the gitignored `settings.json` the installer already wrote.
 
-   ```bash
-   cd /persist/etc/nixos
+On an installed machine:
 
-   BASE=https://raw.githubusercontent.com/the-wittch/ephemeral-nixos-config/main
-   curl -fsSL -o flake.nix "$BASE/examples/private-flake/flake.nix"
-   curl -fsSL -o host.nix "$BASE/examples/private-flake/host.nix"
-   curl -fsSL -o .gitignore "$BASE/examples/private-flake/.gitignore"
-   curl -fsSL -o settings.json "$BASE/settings.example.json"
+```bash
+mkdir -p ~/nixos/modules
+cd ~/nixos
+BASE=https://raw.githubusercontent.com/the-wittch/ephemeral-nixos-config/main/examples/private-flake
+curl -fsSL -o flake.nix "$BASE/flake.nix"
+curl -fsSL -o .gitignore "$BASE/.gitignore"
+curl -fsSL -o modules/ephemeral.nix "$BASE/modules/ephemeral.nix"
+curl -fsSL -o modules/apps.nix "$BASE/modules/apps.nix"
+cp /persist/etc/nixos/settings.json /persist/etc/nixos/hardware-configuration.nix .
+nix flake lock
+sudo nixos-rebuild switch --flake path:.#nixos
+```
 
-   # hardware-configuration.nix from the install (keep or copy into this directory)
+Once that works, make it the system config and put it in git:
 
-   nix flake update
-   sudo nixos-rebuild switch --flake path:.#nixos
-   ```
+```bash
+sudo mv /persist/etc/nixos /persist/etc/nixos.installer
+sudo mv ~/nixos /persist/etc/nixos
+cd /persist/etc/nixos
+git init
+git add -A
+git commit -m "private flake"
+```
 
-4. Edit `settings.json` and `host.nix`. `flake.nix` already points at this template.
+`settings.json` and `hardware-configuration.nix` are gitignored, so they stay on the machine. Always build with `path:`; a plain `.#nixos` only sees files tracked by git and won't find them.
 
-`path:.` is required so Nix sees gitignored `settings.json` and `hardware-configuration.nix`.
-
-Leave password hashes and SSH host keys on `/persist`.
-
-## Rebuild
+## Rebuild and update
 
 ```bash
 ephemeral-update
 ```
 
-That runs `sudo nixos-rebuild switch --flake path:/persist/etc/nixos#nixos`.
-
-## Updates (private flake)
+That's `sudo nixos-rebuild switch --flake path:/persist/etc/nixos#nixos`. To move to a newer version of this repo:
 
 ```bash
 nix flake update ephemeral --flake /persist/etc/nixos
 ephemeral-update
 ```
 
-## Fork with customize/ (optional)
+## How it's organized
 
-If you clone this repo directly, put extras in `customize/` (see `customize/apps.example.nix`). `customize/default.nix` imports every other `.nix` in that folder. Update with `git pull upstream main`.
+The config follows the [dendritic pattern](https://github.com/mightyiam/dendritic):
 
-## Layout
+- Every `.nix` file under `modules/` is a [flake-parts](https://flake.parts) module. [import-tree](https://github.com/vic/import-tree) loads all of them, so there's no import list to keep up to date. Paths containing `/_` are skipped.
+- Each file is one feature: Syncthing, the boot splash, zsh, the theme. A single file can set NixOS and Home Manager options together.
+- Files don't import each other. They add to a few shared modules, such as `flake.modules.nixos.pc` or `flake.modules.homeManager.dotfiles`, and a machine is built by combining those.
+- Settings are a normal NixOS option (`config.ephemeral.settings`), not extra function arguments.
 
-| path | what |
-|------|------|
-| `flake.nix` | inputs; exports `lib.mkNixos` |
-| `lib/mk-nixos.nix` | builds the system for this tree or a private wrapper |
-| `lib/load-settings.nix` | defaults, then `settings.json`, then the pass overlay |
-| `lib/read-data.nix` | loads a JSON machine file (or its legacy `.nix`) |
-| `unfree.nix` | unfree allowlist (`ephemeral.unfreePackages`) |
-| `packages/scripts.nix` | every packaged command; also exported as flake packages |
-| `disko.nix` | disk layout |
-| `configuration.nix` | imports, ssh, nix settings |
-| `boot.nix` | bootloader, plymouth, root rollback |
-| `persist.nix` | impermanence |
-| `users.nix` | user, sudo, chezmoi |
-| `desktop.nix` | plasma, gnome, or niri |
-| `dns.nix` | Control D (`controld-setup`) |
-| `apps.nix` | packages |
-| `smb.nix` | CIFS mounts from `smb-setup` |
-| `snapshots.nix` | hourly/daily/weekly snapper snapshots of `/persist` |
-| `hardening.nix` | kernel sysctls and module blacklist (shared with the installer) |
-| `flathub.nix` | Flathub remote from a pinned repo file (shared with the installer) |
-| `wallpaper.nix`, `assets/wallpaper.svg` | default wallpaper and login background (shared with the installer) |
-| `tests/boot.nix` | VM test: three boots with a wiped root, checks units, persistence, snapshots |
-| `home.nix` | home-manager |
-| `packages/pass-cli.nix` | local pass-cli fallback (`useFlakePassCli = true`); pin in `pass-cli.json` |
-| `settings.example.json` | copy to `settings.json` next to the *host* flake |
-| `customize/` | optional extras when using this tree directly |
-| `examples/private-flake/` | tiny private host flake on top of this template |
-| `scripts/lib.sh` | helpers built into the packaged commands |
-| `scripts/check-no-secrets.sh` | hook and CI secret scan |
-| `scripts/check-shared.sh` | CI check that the shared modules match the installer |
-| `.githooks/` | `git config core.hooksPath .githooks` |
-| `.github/workflows/ci.yml` | secret scan over full history, shellcheck, nixfmt, `nix flake check` |
+Adding a feature means adding a file, and removing one means deleting it. [mightyiam/infra](https://github.com/mightyiam/infra) and [Bad3r/nixos](https://github.com/Bad3r/nixos) are larger configs built the same way.
+
+## Your own modules
+
+Your private flake works the same way. These are the shared modules you can add to:
+
+| module | applies to |
+|--------|------------|
+| `flake.modules.nixos.base` | every machine |
+| `flake.modules.nixos.pc` | desktop machines (all of them, here) |
+| `flake.modules.nixos.gnome`, `.plasma`, `.niri` | the desktop chosen in `settings.json` |
+| `flake.modules.homeManager.base` | your user, always |
+| `flake.modules.homeManager.dotfiles` | your user, unless chezmoi manages the dotfiles |
+
+A file in your private flake can add to any of them:
+
+```nix
+{
+  flake.modules.nixos.pc =
+    { pkgs, ... }:
+    {
+      environment.systemPackages = [ pkgs.helix ];
+      services.openssh.enable = true;
+    };
+
+  flake.modules.homeManager.dotfiles = {
+    programs.git.settings.user = {
+      name = "Your Name";
+      email = "you@example.com";
+    };
+  };
+}
+```
+
+Settings are `config.ephemeral.settings` in NixOS modules and `osConfig.ephemeral.settings` in Home Manager. To turn off something this repo sets, use `lib.mkForce`.
+
+The private flake has to declare the `impermanence`, `disko`, `home-manager` and `stylix` inputs as `follows` of `ephemeral`, as the example does, because the modules here refer to them by name.
+
+If you'd rather work in a clone of this repo, put your files in `modules/local/` instead. That folder is gitignored; `modules/local/_example.nix` shows the shape.
 
 ## settings.json
 
-```bash
-cp settings.example.json settings.json
-```
-
-Rebuild with `path:.#nixos` after you edit it.
-
 | key | what |
 |-----|------|
-| `hostname`, `username`, `timeZone` | machine identity |
-| `diskDevice`, `swapSize` | disk layout; the whole disk, not a partition |
-| `desktop` | `plasma`, `gnome`, or `niri` |
-| `useControlD` | DNS over TLS to Control D; the id lives in `/persist/etc/controld-resolver` (`controld-setup`) |
-| `useFlakePassCli` | `true` builds `packages/pass-cli.nix` instead of nixpkgs `proton-pass-cli` |
-| `usePassSettings`, `passSettingsVault`, `passSettingsItem` | merge `settings.from-pass.json` from Proton Pass |
+| `hostname`, `username`, `timeZone` | who and where the machine is |
+| `diskDevice`, `swapSize` | the whole disk (not a partition) and the swap file size |
+| `desktop` | `plasma`, `gnome` or `niri` |
+| `useChezmoi` | chezmoi writes the dotfiles instead of Home Manager |
+| `useControlD` | DNS over TLS through Control D |
+| `usePassSettings`, `passSettingsVault`, `passSettingsItem` | merge settings from Proton Pass |
+| `useFlakePassCli` | build pass-cli from the pinned release here instead of nixpkgs |
 
-An older `settings.nix` still loads, with a warning. Convert it once:
+Every key but `username` has a default. Rebuild after changing it. An older `settings.nix` still loads with a warning; convert it once with:
 
 ```bash
 cd /persist/etc/nixos
-nix eval --json --file settings.nix | nix run nixpkgs#jq -- . > settings.json && rm settings.nix
+nix eval --json --file settings.nix | nix run nixpkgs#jq -- . > settings.json
+rm settings.nix
 ```
 
-The scripts (`controld-setup` and friends) only edit `settings.json`, with `jq`, so convert before using them. Generated files (`settings.from-pass.json`, `smb-shares.json`) are JSON too, so nothing the scripts write is ever run as Nix code.
+All the helper commands edit JSON with `jq`, so nothing they write is ever evaluated as Nix code.
 
-### Unfree packages
+## Dotfiles
 
-Nothing unfree builds unless it's listed. Each module lists the unfree packages it adds, for example `apps.nix`:
+Each file in `modules/dotfiles/` sets up one program in Home Manager: zsh with autosuggestions and syntax highlighting, git, starship, zoxide, neovim as the default editor, ghostty, yazi (`y`), btop and fastfetch. Change them from your own modules, as in the example above. When Home Manager has to replace a file that's already there, it renames the old one to `<name>.hm-backup` first.
+
+### chezmoi instead
+
+Set `"useChezmoi": true` and write `<git-url> <full-commit-hash>` to `/persist/etc/chezmoi-repo` (mode 600), or let the installer or `settings-from-pass` do both. After a rebuild, `chezmoi-init` clones the repo once and runs `chezmoi init --apply`. The Home Manager dotfiles are left out so the two don't fight over the same files; the programs themselves are still installed.
+
+## Theme
+
+Stylix applies the [Catppuccin Mocha](https://catppuccin.com) palette to GTK and Qt apps, GNOME Shell, Plasma, Noctalia on niri, the boot splash, the console and the dotfiles above. Fonts are Noto Sans and Noto Serif, with JetBrains Mono for code. The cursor is Catppuccin Mocha Dark.
+
+To use another [base16 scheme](https://github.com/tinted-theming/schemes):
 
 ```nix
-ephemeral.unfreePackages = [ "steam" "steam-unwrapped" "vscode" "unrar" ];
+{
+  flake.modules.nixos.pc =
+    { lib, pkgs, ... }:
+    {
+      stylix.base16Scheme = lib.mkForce "${pkgs.base16-schemes}/share/themes/tokyo-night-dark.yaml";
+    };
+}
 ```
 
-Add your own in `host.nix` the same way. An unlisted package fails the build and names the package.
+Some Stylix features are switched off:
 
-### Hooks
+- Its package overlays rebuild GNOME Shell and a few libraries from source on every update. Without them the GDM login screen isn't themed, but it is still dark.
+- The VS Code target replaces `settings.json` with a read-only file. Turn it back on with `stylix.targets.vscode.enable = true` in `homeManager.base`.
+- The browser target sets a Chromium/Brave policy, which locks the theme colour and shows "managed by your organization".
+- Setting the wallpaper on every login, so that one you pick yourself sticks.
 
-```bash
-git config core.hooksPath .githooks
-```
+## Wallpaper
 
-Hooks refuse `settings.json`, `settings.from-pass.json`, `smb-shares.json` (and their old `.nix` names), user files under `customize/`, `*.creds`, private keys, and Control D hostnames. pre-push checks every commit being pushed, so a secret added and then deleted is still caught. CI scans the whole history, so skipping the hook locally still fails on GitHub. `SKIP_SECRET_CHECK=1` skips it on purpose.
+`assets/wallpaper.svg` is rendered to a 4K PNG at build time and installed at `/run/current-system/sw/share/backgrounds/ephemeral/wallpaper.png`. It's the default on GNOME (desktop, lock screen and login screen), on niri and on the Plasma login screen. On the Plasma desktop, pick that file in the wallpaper settings. GNOME's own wallpapers are still there to choose from.
 
-### Proton Pass
+The snowflake is the "NixOS Logo" by [Simon Frankau](https://github.com/simon-frankau), [Tim Cuthbertson](https://github.com/timbertson) and [Daniel Baker](https://github.com/djacu) (maintained by the [NixOS Marketing Team](https://nixos.org/community/teams/marketing/)), from [NixOS/branding](https://github.com/NixOS/branding), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). It has been recoloured.
 
-`pass-cli` comes from nixpkgs `proton-pass-cli`. `useFlakePassCli = true` keeps the local package in `packages/pass-cli.nix`. `update-pass-cli` updates its pin in `packages/pass-cli.json`; run it from a checkout of this repo.
+## Features
 
-`settings-from-pass` writes `settings.from-pass.json`. Merge order is defaults, then `settings.json`, then that file. Missing Pass fields are left out, so the file or the defaults stay. `usePassSettings = false` ignores the overlay.
+### Snapshots
 
-Scripts default to vault `Personal` and item `nixos-settings`. Override with `PASS_SETTINGS_VAULT`, `PASS_SETTINGS_ITEM`, and `PASS_SSH_VAULT`.
-
-1. Make a Pass item `nixos-settings` with custom fields for whatever you want pulled: `hostname`, `username`, `diskDevice`, `swapSize`, `timeZone`, `desktop`. The bool `useFlakePassCli` is the string `true` or `false`. `chezmoiRepo` plus `chezmoiRev` (the full 40-character commit hash) are written to `/persist/etc/chezmoi-repo`. `controldResolver` is written to `/persist/etc/controld-resolver` and sets `useControlD = true`.
-2. `pass-cli login`
-3. `"usePassSettings": true` in `settings.json`
-4. Pull and rebuild:
-
-```bash
-settings-from-pass
-sudo nixos-rebuild switch --flake path:.#nixos
-```
-
-```bash
-update-pass-cli
-update-pass-cli --check
-
-ssh-pubs-from-pass --list
-ssh-pubs-from-pass
-```
-
-`ssh-pubs-from-pass` writes `~/.ssh/<title>.pub` for IdentityFile.
-
-Dotfiles (zsh, git, editors) belong in chezmoi. Nix experiments go in `home.nix`.
-
-## direnv
-
-`home.nix` turns on direnv and nix-direnv. The zsh hook is `programs.direnv` in `configuration.nix`, so it lands in `/etc` and chezmoi can keep `~/.zshrc`.
-
-```bash
-echo 'use flake' > .envrc
-direnv allow
-```
-
-## Flatpak
-
-```bash
-flatpak-apps
-```
-
-User Flatpaks. The list is in `scripts/flatpak-tui.sh`.
-
-## SMB
-
-```bash
-smb-setup
-sudo nixos-rebuild switch --flake path:.#nixos
-```
-
-Asks for server, share, user, and password. Creds go to `/persist/etc/smb/<label>.creds` (mode 600). Mounts are written to gitignored `smb-shares.json`. Options are `vers=3.1.1`, `seal`, `nofail`, `_netdev`, and your uid/gid.
-
-## Login password
-
-`passwd` does not stick. The hash is a file:
-
-```bash
-mkpasswd -m yescrypt
-sudo tee /persist/passwords/$USER
-sudo chmod 600 /persist/passwords/$USER
-```
-
-Hibernation is off. Suspend is fine. SSH is off; `services.openssh.enable = true` in `host.nix` turns it on with the firewall still closed. The ed25519 host key is under `/persist/etc/ssh`.
-
-
-## Login screen
-
-The login screen is dark on all three desktops. Its wallpaper and your avatar come from the desktop's own settings: GNOME Settings, Plasma System Settings (Login Screen, Users), or Noctalia's greeter sync on niri. GDM shows the default GNOME background.
-
-## Snapshots
-
-snapper keeps read-only snapshots of `/persist`, and so of your home: 24 hourly, 7 daily, 4 weekly. They undo deletes and bad edits. They live on the same disk, so they don't replace a backup.
+snapper keeps read-only snapshots of `/persist`, and with it your home folder: 24 hourly, 7 daily and 4 weekly. They undo deletes and bad edits, but they're on the same disk, so they aren't a backup.
 
 ```bash
 sudo snapper -c persist list
 sudo cp -a /persist/.snapshots/<n>/snapshot/home/$USER/path/to/file ~/path/to/
 ```
 
-Only root can read them, since old snapshots still hold old password hashes and keys. Exclude `/persist/.snapshots` from Borg (or any other backup of `/persist`), or every snapshot gets backed up again.
+Only root can read them, because old snapshots still contain old password hashes and keys. Exclude `/persist/.snapshots` from Borg or any other backup of `/persist`, or every snapshot is backed up again.
 
-## LUKS header backup
+### LUKS header backup
 
-If the LUKS header at the start of the disk is damaged, the disk can't be unlocked, even with the right passphrase. Keep a copy on a USB stick:
+If the LUKS header at the start of the disk gets damaged, the disk can't be unlocked even with the right passphrase. Keep a copy on a USB stick:
 
 ```bash
 luks-header-backup /run/media/$USER/<stick>/luks-header.img
 ```
 
-It refuses a destination on the encrypted disk itself or in memory. The copy unlocks with every passphrase that existed when it was made, so after changing or removing a passphrase, make a new copy and destroy the old ones.
+It refuses to write onto the encrypted disk itself or into memory. The copy unlocks with every passphrase the disk had when it was made, so after changing or removing one, make a new copy and destroy the old ones.
 
-## Wallpaper
+### Control D
 
-`assets/wallpaper.svg` is rendered to a 4K PNG at build time and installed at `/run/current-system/sw/share/backgrounds/ephemeral/wallpaper.png`. It's the default on GNOME (desktop, lock screen, and the GDM login screen) and on the Plasma login screen; on Plasma's desktop or niri, pick that file in the wallpaper settings. A wallpaper you choose yourself always wins.
+```bash
+controld-setup
+ephemeral-update
+```
 
-The snowflake is the [NixOS logo](https://github.com/NixOS/nixos-artwork) by Tim Cuthbertson, used under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) and recoloured.
+Stores your resolver id in `/persist/etc/controld-resolver` (root only, never in the Nix store) and sets `useControlD`. All DNS then goes over TLS to Control D, with no fallback servers.
+
+### SMB shares
+
+```bash
+smb-setup
+ephemeral-update
+```
+
+Asks for the server, share, user and password. The password goes to `/persist/etc/smb/<label>.creds` (root only) and the mount to the gitignored `smb-shares.json`. Mounts use SMB 3.1.1 with encryption (`seal`), and don't block booting if the server is away.
+
+### Flatpak
+
+`flatpak-apps` offers a short list of Flatpaks (Flatseal, Heroic, Thunderbird, Vorta and others) to install for your user. Flathub itself is added system-wide from a pinned copy of its repo file, so its signing key can't be swapped.
+
+### direnv
+
+direnv and nix-direnv are on, with the hook in the system zshrc, so they work with either dotfile manager:
+
+```bash
+echo 'use flake' > .envrc
+direnv allow
+```
+
+### Proton Pass
+
+`settings-from-pass` reads an item (default: vault `Personal`, item `nixos-settings`) and writes `settings.from-pass.json`, which is merged over `settings.json` when `usePassSettings` is true. Fields it understands:
+
+- `hostname`, `username`, `diskDevice`, `swapSize`, `timeZone`, `desktop`
+- `useFlakePassCli`, as the text `true` or `false`
+- `chezmoiRepo` and `chezmoiRev`, written to `/persist/etc/chezmoi-repo`; they also turn on `useChezmoi`
+- `controldResolver`, written to `/persist/etc/controld-resolver`; it also turns on `useControlD`
+
+```bash
+pass-cli login
+settings-from-pass
+ephemeral-update
+```
+
+`ssh-pubs-from-pass` writes the public half of each SSH key item to `~/.ssh/<title>.pub`, for `IdentityFile` lines. `--list` shows what it would write. `PASS_SETTINGS_VAULT`, `PASS_SETTINGS_ITEM` and `PASS_SSH_VAULT` change where they look.
+
+## Security notes
+
+- The disk is LUKS2 with argon2id. `/boot` is not encrypted, and Secure Boot is not set up.
+- `/` starts empty on every boot, so anything that isn't explicitly kept on `/persist` disappears.
+- Users are defined by the config, so `passwd` doesn't stick. To change your password:
+
+  ```bash
+  mkpasswd -m yescrypt | sudo tee /persist/passwords/$USER
+  sudo chmod 600 /persist/passwords/$USER
+  ```
+
+- Root has no password. sudo is limited to the `wheel` group, and so is the Nix daemon.
+- The firewall is on, SSH is off, and OpenSnitch blocks outgoing connections you haven't allowed.
+- Kernel hardening: no unprivileged BPF, restricted ptrace and kernel pointers, a few rarely used network protocols blocked, and no kexec. That last one also rules out hibernation.
+- Unfree packages must be listed by name in `ephemeral.unfreePackages`.
+- The setup services this repo adds (Control D, chezmoi, Flathub) run sandboxed by systemd.
+
+## Working on this repo
+
+| path | what |
+|------|------|
+| `modules/flake/` | flake outputs: packages, checks, formatter, and the module private flakes import |
+| `modules/host-builder.nix`, `modules/hosts/` | builds machines from `settings.json` |
+| `modules/settings/` | the settings options and loader |
+| `modules/desktop/` | Plasma, GNOME, niri |
+| `modules/dotfiles/` | Home Manager dotfiles and chezmoi |
+| `modules/packages/` | the helper commands and the pinned pass-cli |
+| `modules/tests/boot.nix` | the VM boot test |
+| `examples/private-flake/` | the starting point for a private flake |
+| `scripts/` | the helper commands' source, the secret scanner and the shared-file check |
+
+Most of the base system is shared byte for byte with the installer; `scripts/check-shared.sh` lists the files and CI fails if they differ. Change them in both repos together.
+
+Turn on the git hooks once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+They refuse machine files (`settings.json`, `smb-shares.json`, `hardware-configuration.nix`), `modules/local/`, credentials, private keys and API tokens. pre-push checks every commit you're pushing, so a secret that was added and later deleted is still caught, and CI scans the whole history. `SKIP_SECRET_CHECK=1` skips them on purpose.
+
+CI runs the secret scan, shellcheck, nixfmt and `nix flake check` on every pull request. The VM boot test boots three times with a wiped root and checks services, persistence, snapshots, theming and the LUKS header backup. It runs on `v*` tags and manual runs, and on a pull request once you add the `boot-test` label. To run it locally:
+
+```bash
+cp settings.example.json settings.json
+cp hardware-configuration.example.nix hardware-configuration.nix
+nix build path:.#checks.x86_64-linux.boot -L
+```

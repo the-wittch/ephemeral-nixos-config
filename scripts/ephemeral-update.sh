@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Rebuild the installed machine. Extra args are passed to nixos-rebuild.
 
 set -euo pipefail
 

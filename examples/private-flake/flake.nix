@@ -3,17 +3,15 @@
 
   inputs = {
     ephemeral.url = "github:the-wittch/ephemeral-nixos-config/v1.5.3";
+    # the template's modules use these by name
     nixpkgs.follows = "ephemeral/nixpkgs";
+    flake-parts.follows = "ephemeral/flake-parts";
+    import-tree.follows = "ephemeral/import-tree";
+    impermanence.follows = "ephemeral/impermanence";
+    disko.follows = "ephemeral/disko";
+    home-manager.follows = "ephemeral/home-manager";
+    stylix.follows = "ephemeral/stylix";
   };
 
-  outputs =
-    { ephemeral, ... }:
-    {
-      nixosConfigurations.nixos = ephemeral.lib.mkNixos {
-        flakeRoot = ./.;
-        modules = [
-          ./host.nix
-        ];
-      };
-    };
+  outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } (inputs.import-tree ./modules);
 }

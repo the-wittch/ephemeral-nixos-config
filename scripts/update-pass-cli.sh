@@ -1,24 +1,17 @@
 #!/usr/bin/env bash
-# Bump or verify packages/pass-cli.json against GitHub releases.
-# Run from a checkout of this repo, or set FLAKE_DIR.
-#
-#   update-pass-cli              # latest release
-#   update-pass-cli 2.4.2        # specific version
-#   update-pass-cli --check      # verify pinned version hash; rewrite if wrong
-#   update-pass-cli --check-only # verify only (exit 1 if mismatch, no write)
 
 set -euo pipefail
 
 usage() {
   cat <<'USAGE'
 update-pass-cli [--check | --check-only] [x.y.z]
-Bump or verify packages/pass-cli.json against GitHub releases.
+Bump or verify modules/packages/pass-cli.json against GitHub releases.
 Run from a checkout of the config repo, or set FLAKE_DIR.
 USAGE
 }
 
 REPO_ROOT=${FLAKE_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || true)}
-PIN="$REPO_ROOT/packages/pass-cli.json"
+PIN="$REPO_ROOT/modules/packages/pass-cli.json"
 ASSET=pass-cli-linux-x86_64
 API=https://api.github.com/repos/protonpass/pass-cli/releases
 
@@ -43,7 +36,7 @@ for arg in "$@"; do
   esac
 done
 
-[[ -f $PIN ]] || die "no packages/pass-cli.json under ${REPO_ROOT:-the current directory} (cd into the config repo or set FLAKE_DIR)"
+[[ -f $PIN ]] || die "no modules/packages/pass-cli.json under ${REPO_ROOT:-the current directory} (cd into the config repo or set FLAKE_DIR)"
 
 pinned_ver=$(jq -r .version "$PIN")
 pinned_hash=$(jq -r .hash "$PIN")
@@ -56,17 +49,15 @@ else
   echo "Target version: $target_ver (pinned was $pinned_ver)"
 fi
 
-# it ends up in a download URL
 [[ $target_ver =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "refusing version that is not x.y.z: $target_ver"
 
-# file is: "<hex>  pass-cli-linux-x86_64"
 hex=$(curl -fsSL "https://github.com/protonpass/pass-cli/releases/download/${target_ver}/${ASSET}.sha256" | awk '{print $1}')
 [[ $hex =~ ^[0-9a-f]{64}$ ]] || die "bad upstream sha256 for $target_ver: $hex"
 sri=$(nix hash convert --hash-algo sha256 --to sri "$hex")
 echo "Upstream: $sri"
 
 if [[ $target_ver == "$pinned_ver" && $sri == "$pinned_hash" ]]; then
-  echo "ok: packages/pass-cli.json already matches upstream."
+  echo "ok: modules/packages/pass-cli.json already matches upstream."
   exit 0
 fi
 

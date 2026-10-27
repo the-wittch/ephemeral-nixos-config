@@ -1,10 +1,4 @@
 #!/usr/bin/env bash
-# Block commits/pushes that look like secrets.
-# Used by .githooks/pre-commit, .githooks/pre-push, and CI.
-#
-#   check-no-secrets                    # tracked files in the working tree
-#   check-no-secrets --staged           # the index, as it will be committed
-#   check-no-secrets --range <revs...>  # every commit in a range, e.g. HEAD or a..b
 
 set -euo pipefail
 
@@ -56,6 +50,8 @@ FORBIDDEN_PATHS=(
   '(^|/)passwords/'
   '(^|/)id_rsa$'
   '(^|/)id_ed25519$'
+  '(^|/)id_ecdsa$'
+  '\.key$'
   '\.pem$'
   '\.age$'
 )
@@ -68,15 +64,17 @@ CONTENT_PATTERNS=(
   'ghp_[A-Za-z0-9]{20,}'
   'github_pat_[A-Za-z0-9_]{20,}'
   'sk-[A-Za-z0-9]{20,}'
+  'AKIA[0-9A-Z]{16}'
+  'AGE-SECRET-KEY-1[0-9A-Z]{50,}'
+  'xox[abprs]-[A-Za-z0-9-]{10,}'
+  'glpat-[A-Za-z0-9_-]{20,}'
   '[0-9a-z]{8,}\.dns\.controld\.com'
 )
 
-# The scanner file contains the patterns themselves.
-# customize/default.nix and *.example.nix are tracked starters.
 skip_file() {
   case $1 in
     scripts/check-no-secrets.sh | .githooks/*) return 0 ;;
-    customize/default.nix | customize/*.example.nix) return 0 ;;
+    modules/local/_example.nix) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -86,10 +84,9 @@ is_forbidden_path() {
   for re in "${FORBIDDEN_PATHS[@]}"; do
     [[ $p =~ $re ]] && return 0
   done
-  # user files under customize/ stay local
   case $p in
-    customize/default.nix | customize/*.example.nix) return 1 ;;
-    customize/*) return 0 ;;
+    modules/local/_example.nix) return 1 ;;
+    modules/local/*) return 0 ;;
   esac
   return 1
 }
@@ -102,7 +99,6 @@ list_paths() {
   esac
 }
 
-# "<where>\t<path>\t<text>" for every line that has to be checked
 content_lines() {
   local p
   case $mode in

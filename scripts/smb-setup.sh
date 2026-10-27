@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# smb-setup. creds in /persist/etc/smb, mounts in smb-shares.json (gitignored).
 
 set -euo pipefail
 

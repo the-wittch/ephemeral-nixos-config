@@ -4,11 +4,10 @@ set -euo pipefail
 ROOT=$(git rev-parse --show-toplevel)
 zero=0000000000000000000000000000000000000000
 
-# stdin: <local ref> <local sha> <remote ref> <remote sha>, one line per ref
+# stdin: <local ref> <local sha> <remote ref> <remote sha>
 while read -r _ local_sha _ remote_sha; do
   [[ $local_sha == "$zero" ]] && continue
   if [[ $remote_sha == "$zero" ]]; then
-    # new branch: everything not already on a remote
     "$ROOT/scripts/check-no-secrets.sh" --range "$local_sha" --not --remotes
   else
     "$ROOT/scripts/check-no-secrets.sh" --range "$remote_sha..$local_sha"

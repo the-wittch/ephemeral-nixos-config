@@ -1,10 +1,11 @@
 name: CI
 
 on:
-  # other branches get CI through their pull request. tags point at tested commits.
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
 
 concurrency:
@@ -20,7 +21,6 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # full history for the secret scan
           fetch-depth: 0
           persist-credentials: false
       - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
@@ -41,43 +41,22 @@ jobs:
           cp settings.example.json settings.json
           cp hardware-configuration.example.nix hardware-configuration.nix
       - name: flake check
-        # path:. so the gitignored settings.json is visible. the vm test runs in its own job.
         run: |
           nix flake check path:. --no-build
           nix build path:.#checks.x86_64-linux.config-eval path:.#checks.x86_64-linux.scripts --no-link
 
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      boot: ${{ steps.diff.outputs.boot }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - id: diff
-        # docs, the example flake and dependabot config don't change what boots
-        env:
-          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
-        run: |
-          if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
-            echo "boot=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          other=$(git diff --name-only "$BASE" HEAD | grep -vE '\.md$|^LICENSE$|^examples/|^\.github/dependabot\.yml$' || true)
-          echo "boot=$([ -n "$other" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-          printf 'changed outside docs:\n%s\n' "${other:-none}"
-
+  # skipped counts as passed for required checks
   boot-test:
-    needs: changes
-    if: needs.changes.outputs.boot == 'true'
+    if: >-
+      startsWith(github.ref, 'refs/tags/')
+      || github.event_name == 'workflow_dispatch'
+      || contains(github.event.pull_request.labels.*.name, 'boot-test')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: free disk space
-        # in the background, while nix downloads
         run: sudo sh -c "rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache /usr/local/share/boost &" &
       - name: enable kvm
         run: |

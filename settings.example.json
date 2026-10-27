@@ -6,6 +6,7 @@
   "timeZone": "UTC",
   "desktop": "plasma",
   "useControlD": false,
+  "useChezmoi": false,
   "useFlakePassCli": false,
   "usePassSettings": false,
   "passSettingsVault": "Personal",

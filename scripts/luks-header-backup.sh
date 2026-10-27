@@ -1,9 +1,4 @@
 #!/usr/bin/env bash
-# copy the root disk's luks header to another disk.
-#
-#   luks-header-backup /run/media/$USER/usb/luks-header.img
-#
-# the copy opens with every passphrase it had. after changing one, make a new copy.
 
 set -euo pipefail
 
@@ -28,11 +23,9 @@ dir=$(dirname -- "$dest")
 [[ -d $dir ]] || die "no directory $dir"
 dir=$(cd -- "$dir" && pwd)
 
-# the partition under /dev/mapper/cryptroot
 luks=$(sudo cryptsetup status cryptroot | awk '$1 == "device:" { print $2 }')
 [[ -b $luks ]] || die "could not find the device behind cryptroot"
 
-# a copy on the same disk dies with it
 src=$(findmnt -no SOURCE -T "$dir")
 src=${src%%\[*}
 fstype=$(findmnt -no FSTYPE -T "$dir")
