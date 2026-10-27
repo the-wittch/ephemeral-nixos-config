@@ -83,10 +83,10 @@
     };
 
   flake.modules.nixos.gnome =
-    { pkgs, ... }:
+    { lib, pkgs, ... }:
     {
-      # qt is themed system-wide here
-      home-manager.sharedModules = [ { stylix.targets.qt.enable = false; } ];
+      # the gnome platform theme (qgnomeplatform) breaks qt tray icons on wayland
+      stylix.targets.qt.platform = lib.mkForce "qtct";
       # stylix removes them
       environment.systemPackages = [ pkgs.gnome-backgrounds ];
     };
