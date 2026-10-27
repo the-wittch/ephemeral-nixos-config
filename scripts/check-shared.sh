@@ -1,13 +1,38 @@
 #!/usr/bin/env bash
-# shared modules must match the installer's copy
-#
-#   check-shared                                     # compare with installer main
-#   INSTALLER_DIR=~/Projects/ephemeral-nixos check-shared
-#   INSTALLER_REF=v1.2.0 check-shared
+# INSTALLER_DIR=<checkout> or INSTALLER_REF=<tag> compares another copy
 
 set -euo pipefail
 
-SHARED=(boot.nix persist.nix users.nix disko.nix unfree.nix hardening.nix flathub.nix wallpaper.nix assets/wallpaper.svg lib/read-data.nix)
+SHARED=(
+  assets/wallpaper.svg
+  modules/flake/parts.nix
+  modules/host-builder.nix
+  modules/hosts/nixos.nix
+  modules/settings/_load.nix
+  modules/settings/_read-data.nix
+  modules/settings/options.nix
+  modules/pc.nix
+  modules/system.nix
+  modules/nix.nix
+  modules/networking.nix
+  modules/ssh.nix
+  modules/memory.nix
+  modules/boot.nix
+  modules/disko.nix
+  modules/persist.nix
+  modules/users.nix
+  modules/unfree.nix
+  modules/hardening.nix
+  modules/audio.nix
+  modules/hardware.nix
+  modules/printing.nix
+  modules/fonts.nix
+  modules/podman.nix
+  modules/flathub.nix
+  modules/wallpaper.nix
+  modules/dotfiles/zsh.nix
+  modules/dotfiles/chezmoi.nix
+)
 INSTALLER_URL=${INSTALLER_URL:-https://github.com/the-wittch/ephemeral-nixos.git}
 INSTALLER_REF=${INSTALLER_REF:-main}
 

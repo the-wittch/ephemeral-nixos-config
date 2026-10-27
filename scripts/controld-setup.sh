@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# controld-setup. id in /persist/etc/controld-resolver, flag in settings.json.
 
 set -euo pipefail
 
@@ -13,7 +12,6 @@ SETTINGS=$(settings_json "$FLAKE_DIR")
 PASS_SETTINGS="$FLAKE_DIR/settings.from-pass.json"
 ID_FILE=/persist/etc/controld-resolver
 
-# prints true/false, or nothing when the file or key is missing
 flag_in() {
   local file=$1
   [[ -f $file ]] || return 0

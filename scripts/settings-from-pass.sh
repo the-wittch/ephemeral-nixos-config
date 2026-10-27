@@ -1,10 +1,4 @@
 #!/usr/bin/env bash
-# settings.from-pass.json from Proton Pass.
-# merge: defaults // settings.json // settings.from-pass.json
-# usePassSettings = false ignores the file.
-#
-#   settings-from-pass
-#   PASS_SETTINGS_VAULT=Personal PASS_SETTINGS_ITEM=nixos-settings settings-from-pass
 
 set -euo pipefail
 
@@ -15,7 +9,6 @@ OUT="$REPO_ROOT/settings.from-pass.json"
 VAULT=${PASS_SETTINGS_VAULT:-Personal}
 ITEM=${PASS_SETTINGS_ITEM:-nixos-settings}
 
-# bools in Pass are the strings true/false
 STRING_KEYS=(
   hostname
   username
@@ -48,7 +41,6 @@ write_root_file() {
   rm -f "$tmp"
 }
 
-# empty if the field isn't there
 get_field() {
   local key=$1
   local uri="pass://${VAULT}/${ITEM}/${key}"
@@ -56,7 +48,6 @@ get_field() {
   if ! out=$(pass-cli item view "$uri" 2>/dev/null); then
     return 0
   fi
-  # item view prints the value with a trailing newline
   printf '%s' "$out" | tr -d '\r' | sed -z 's/\n$//'
 }
 
@@ -115,7 +106,9 @@ if [[ -n ${repo:-} || -n ${rev:-} ]]; then
       ;;
   esac
   write_root_file /persist/etc/chezmoi-repo "$repo $rev"
+  obj=$(jq '.useChezmoi = true' <<<"$obj")
   echo "  + chezmoi-repo"
+  found=$((found + 1))
 fi
 
 resolver=$(get_field controldResolver || true)
@@ -130,7 +123,6 @@ if [[ -n ${resolver:-} ]]; then
   found=$((found + 1))
 fi
 
-# owner-only from the moment it exists
 (
   umask 077
   printf '%s\n' "$obj" >"$OUT.tmp"

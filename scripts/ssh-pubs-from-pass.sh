@@ -1,15 +1,4 @@
 #!/usr/bin/env bash
-# ~/.ssh/<title>.pub from Proton Pass SSH items.
-#
-#   ssh-pubs-from-pass
-#   ssh-pubs-from-pass --list
-#   ssh-pubs-from-pass --debug
-#   ssh-pubs-from-pass --dry-run
-#   ssh-pubs-from-pass github
-#   PASS_SSH_VAULT=Personal ssh-pubs-from-pass
-#
-# PASS_SSH_VAULT   default Personal
-# PASS_SSH_DIR     default ~/.ssh
 
 set -euo pipefail
 
@@ -207,7 +196,6 @@ title_wanted() {
   return 1
 }
 
-# titles[i] lines up with pubs[i]
 discover_ssh_keys() {
   local title typ pub
   FOUND_TITLES=()
@@ -274,7 +262,6 @@ discover_ssh_keys
 
 count=${#FOUND_TITLES[@]}
 
-# two titles must not write the same file
 declare -A seen=()
 for i in "${!FOUND_TITLES[@]}"; do
   f=$(file_for_title "${FOUND_TITLES[$i]}")

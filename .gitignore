@@ -1,18 +1,14 @@
-# machine files (next to the flake; copy from *.example.json). .nix are the old names.
-settings.json
-settings.nix
-settings.from-pass.json
-settings.from-pass.nix
-hardware-configuration.nix
-smb-shares.json
-smb-shares.nix
+/settings.json
+/settings.nix
+/settings.from-pass.json
+/settings.from-pass.nix
+/hardware-configuration.nix
+/smb-shares.json
+/smb-shares.nix
 
-# machine-only edits under customize/ (loader default.nix stays tracked)
-customize/*
-!customize/default.nix
-!customize/*.example.nix
+modules/local/*
+!modules/local/_example.nix
 
-# secrets / local material
 passwords/
 *.key
 *.pem
@@ -24,19 +20,15 @@ secrets.nix
 .env
 .env.*
 
-# nix
 result
 result-*
 
-# editors / tools
 .direnv/
 *.swp
 *~
 .DS_Store
 
-# syncthing, if this tree is a synced folder
 .stfolder/
 .stignore
 
-# local pin/release notes
-local/
+/local/

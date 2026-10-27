@@ -1,7 +1,6 @@
 {
   "recommendations": [
     "jnoortheen.nix-ide",
-    "christian-kohler.path-intellisense",
-    "EditorConfig.EditorConfig"
+    "christian-kohler.path-intellisense"
   ]
 }

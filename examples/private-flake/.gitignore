@@ -1,10 +1,10 @@
-settings.json
-settings.nix
-settings.from-pass.json
-settings.from-pass.nix
-hardware-configuration.nix
-smb-shares.json
-smb-shares.nix
+/settings.json
+/settings.nix
+/settings.from-pass.json
+/settings.from-pass.nix
+/hardware-configuration.nix
+/smb-shares.json
+/smb-shares.nix
 
 passwords/
 *.key

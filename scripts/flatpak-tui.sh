@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# flatpak-apps. user installs, don't sudo.
 
 set -euo pipefail
 
@@ -10,7 +9,6 @@ if ! command -v gum >/dev/null || ! command -v flatpak >/dev/null; then
   exit 1
 fi
 
-# id|display name
 APPS=(
   "com.github.tchx84.Flatseal|Flatseal"
   "com.mattjakeman.ExtensionManager|Extension Manager"
@@ -32,13 +30,11 @@ is_installed() {
 }
 
 ensure_user_dirs() {
-  # flatpak bind-mounts this directory. an index.theme here replaces the
-  # system hicolor theme, and an empty one hides every icon.
+  # an index.theme here would hide the system icons in flatpaks
   mkdir -p "$HOME/.local/share/icons/hicolor" "$HOME/.local/share/flatpak"
 }
 
 ensure_flathub() {
-  # --user needs its own flathub remote. the system one isn't enough.
   if ! flatpak remote-list --user --columns=name 2>/dev/null | grep -qx flathub; then
     gum style --foreground 212 "Adding Flathub remote (user)…"
     flatpak remote-add --user --if-not-exists flathub \
