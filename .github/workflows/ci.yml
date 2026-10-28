@@ -43,7 +43,7 @@ jobs:
       - name: flake check
         run: |
           nix flake check path:. --no-build
-          nix build path:.#checks.x86_64-linux.config-eval path:.#checks.x86_64-linux.scripts --no-link
+          nix build path:.#checks.x86_64-linux.config-eval path:.#checks.x86_64-linux.scripts path:.#checks.x86_64-linux.settings-example path:.#checks.x86_64-linux.extras-eval path:.#checks.x86_64-linux.apps-eval --no-link
 
   # skipped counts as passed for required checks
   boot-test:

@@ -4,7 +4,7 @@
 
     system.activationScripts.controldSecret.text = ''
       if [ -f /persist/etc/controld-resolver ]; then
-        chown root:root /persist/etc/controld-resolver
+        chown 0:0 /persist/etc/controld-resolver
         chmod 600 /persist/etc/controld-resolver
       fi
     '';

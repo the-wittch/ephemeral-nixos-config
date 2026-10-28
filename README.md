@@ -8,15 +8,25 @@ The full NixOS config for machines installed with [ephemeral-nixos](https://gith
 
 On top of the installer's base system it adds:
 
-- Home Manager dotfiles: zsh, git, starship, zoxide, neovim, ghostty, yazi, btop, fastfetch. chezmoi is supported instead, if you prefer it.
-- A dark Catppuccin Mocha theme everywhere, through [Stylix](https://github.com/nix-community/stylix).
-- Hourly snapper snapshots of `/persist`.
-- OpenSnitch, Syncthing, Podman, Flatpak with Flathub, Steam and the usual desktop apps.
-- Optional DNS over TLS through Control D, SMB mounts, and machine settings pulled from Proton Pass.
+- Home Manager dotfiles: zsh, git, starship, zoxide, neovim and ghostty. chezmoi is supported instead, if you prefer it.
+- A dark Catppuccin Mocha theme everywhere, through [Stylix](https://github.com/nix-community/stylix), with the snowflake as the default user picture.
+- Hourly snapper snapshots of `/persist`, and desktop warnings when a disk starts failing.
+- OpenSnitch, Syncthing, Podman, Flatpak with Flathub, Firefox and scanning.
+- Rebuilds through [nh](https://github.com/nix-community/nh), with a summary of what changed.
+- Laptop extras (thermald, battery reporting, fingerprint login) when the hardware is there.
+- Optional NVIDIA drivers, Tailscale, DNS over TLS through Control D, SMB mounts, and machine settings pulled from Proton Pass.
 
-It's opinionated. Trim what you don't want in your own modules (see below).
+A fresh install stays lean. `"extras": true` adds the bigger things:
+
+- Steam, VS Code, Brave, VLC, distrobox, Syncthing Tray, 7-Zip and unrar.
+- atuin, fzf, bat, tealdeer, yazi, btop and fastfetch in the shell.
+- `,` to run any program once without installing it, and command-not-found suggestions.
+
+The installer asks about extras. Anything else you don't want can be switched off in your own modules (see below).
 
 ## Setup
+
+> **Just want to get going?** Do the steps below, then run `ephemeral-apps` and tick the apps you want. That's it: no Nix files to edit. Your picks are saved to `apps.json` and installed on the next rebuild, and you can run it again any time to add or remove apps. The first `ephemeral-update` offers to start it for you.
 
 Keep your changes in a private flake that uses this repo as an input. Your packages and tweaks stay in your own git repo, and updates here are one command away. Machine details stay in the gitignored `settings.json` the installer already wrote.
 
@@ -54,12 +64,29 @@ git commit -m "private flake"
 ephemeral-update
 ```
 
-That's `sudo nixos-rebuild switch --flake path:/persist/etc/nixos#nixos`. To move to a newer version of this repo:
+That's `nh os switch path:/persist/etc/nixos`: the same rebuild as `nixos-rebuild`, with readable progress and a list of what changed at the end. To move to a newer version of this repo:
 
 ```bash
 nix flake update ephemeral --flake /persist/etc/nixos
 ephemeral-update
 ```
+
+## Commands
+
+`ephemeral-help` lists these, so there's no need to remember them:
+
+| command | what |
+|---------|------|
+| `ephemeral-update` | rebuild and switch to `/persist/etc/nixos`, then show what changed |
+| `controld-setup` | set or turn off the Control D resolver id |
+| `smb-setup` | add or remove SMB shares |
+| `ephemeral-apps` | pick extra apps by category, then rebuild |
+| `luks-header-backup <file>` | copy the LUKS header to a USB stick |
+| `settings-from-pass` | pull settings from Proton Pass |
+| `ssh-pubs-from-pass` | write SSH public keys from Proton Pass to `~/.ssh` |
+| `update-pass-cli` | bump or check the pinned pass-cli (run in a checkout of this repo) |
+
+Most of them ask what to do; `--help` on one shows its options. The ones that change `settings.json` or the shares tell you to rebuild afterwards.
 
 ## How it's organized
 
@@ -83,6 +110,7 @@ Your private flake works the same way. These are the shared modules you can add 
 | `flake.modules.nixos.gnome`, `.plasma`, `.niri` | the desktop chosen in `settings.json` |
 | `flake.modules.homeManager.base` | your user, always |
 | `flake.modules.homeManager.dotfiles` | your user, unless chezmoi manages the dotfiles |
+| `flake.modules.nixos.extras`, `flake.modules.homeManager.extras` | machines with `"extras": true` |
 
 A file in your private flake can add to any of them:
 
@@ -106,19 +134,28 @@ A file in your private flake can add to any of them:
 
 Settings are `config.ephemeral.settings` in NixOS modules and `osConfig.ephemeral.settings` in Home Manager. To turn off something this repo sets, use `lib.mkForce`.
 
-The private flake has to declare the `impermanence`, `disko`, `home-manager` and `stylix` inputs as `follows` of `ephemeral`, as the example does, because the modules here refer to them by name.
+The private flake has to pass this repo's inputs through as `follows` of `ephemeral` (`nixpkgs`, `flake-parts`, `import-tree`, `impermanence`, `disko`, `home-manager`, `stylix` and `nix-index-database`), as the example does, because the modules here refer to them by name.
 
 If you'd rather work in a clone of this repo, put your files in `modules/local/` instead. That folder is gitignored; `modules/local/_example.nix` shows the shape.
 
 ## settings.json
 
+[`settings.example.json`](settings.example.json) lists every key with its default. CI fails if a setting or a default changes without it.
+
 | key | what |
 |-----|------|
 | `hostname`, `username`, `timeZone` | who and where the machine is |
+| `locale` | language, e.g. `de_DE.UTF-8` |
+| `keyboardLayout`, `keyboardVariant` | e.g. `de` and `nodeadkeys`; also used at the LUKS prompt |
 | `diskDevice`, `swapSize` | the whole disk (not a partition) and the swap file size |
 | `desktop` | `plasma`, `gnome` or `niri` |
+| `nvidia` | `none`, `open` (RTX 20 / GTX 16 series and newer) or `legacy` (GTX 900 / 10 series) |
+| `extras` | the extra apps and shell tools listed at the top |
+| `laptop` | thermald on Intel, battery reporting, screen rotation and light sensors |
+| `fingerprint` | fingerprint login and sudo |
 | `useChezmoi` | chezmoi writes the dotfiles instead of Home Manager |
 | `useControlD` | DNS over TLS through Control D |
+| `useTailscale` | the Tailscale VPN |
 | `usePassSettings`, `passSettingsVault`, `passSettingsItem` | merge settings from Proton Pass |
 | `useFlakePassCli` | build pass-cli from the pinned release here instead of nixpkgs |
 
@@ -134,7 +171,7 @@ All the helper commands edit JSON with `jq`, so nothing they write is ever evalu
 
 ## Dotfiles
 
-Each file in `modules/dotfiles/` sets up one program in Home Manager: zsh with autosuggestions and syntax highlighting, git, starship, zoxide, neovim, ghostty, yazi (`y`), btop and fastfetch. Change them from your own modules, as in the example above. When Home Manager has to replace a file that's already there, it renames the old one to `<name>.hm-backup` first. VS Code (`code --wait`) is the default editor for git and anything else that reads `$EDITOR`.
+Each file in `modules/dotfiles/` sets up one program in Home Manager: zsh with autosuggestions and syntax highlighting, git, starship, zoxide, neovim and ghostty, plus yazi (`y`), btop, fastfetch, atuin, fzf, bat and tealdeer with `extras`. Change them from your own modules, as in the example above. When Home Manager has to replace a file that's already there, it renames the old one to `<name>.hm-backup` first. VS Code (`code --wait`) is the default editor for git and anything else that reads `$EDITOR`.
 
 ### chezmoi instead
 
@@ -164,6 +201,10 @@ Some Stylix features are switched off:
 - The VS Code target replaces `settings.json` with a read-only file. Turn it back on with `stylix.targets.vscode.enable = true` in `homeManager.base`.
 - The browser target sets a Chromium/Brave policy, which locks the theme colour and shows "managed by your organization".
 - Setting the wallpaper on every login, so that one you pick yourself sticks.
+
+## User picture
+
+The snowflake from the wallpaper is the default user picture on the login screen and in the desktop's user settings. It's only filled in when there's no picture yet, so one you pick yourself stays.
 
 ## Wallpaper
 
@@ -212,9 +253,81 @@ ephemeral-update
 
 Asks for the server, share, user and password. The password goes to `/persist/etc/smb/<label>.creds` (root only) and the mount to the gitignored `smb-shares.json`. Mounts use SMB 3.1.1 with encryption (`seal`), and don't block booting if the server is away.
 
+### NVIDIA
+
+The installer asks about drivers when it finds an NVIDIA card, and writes the answer to `nvidia` in `settings.json`. To change it later, edit that key and rebuild. `open` uses the current driver with NVIDIA's open kernel modules; `legacy` uses the 580 driver, the last one for GTX 900 and 10 series cards. The driver isn't in the NixOS binary cache, since it's unfree, so the first build compiles its kernel module and takes a few minutes.
+
+Laptops with both an NVIDIA and an Intel or AMD GPU also need [PRIME](https://wiki.nixos.org/wiki/NVIDIA) set up in a private module, with the bus IDs from `lspci`.
+
+### GNOME extensions
+
+Extension Manager is installed in place of GNOME's own Extensions app. The tray (AppIndicator) and Caffeine extensions come from Nix and are on by default. A copy of an extension in `~/.local/share/gnome-shell/extensions` takes precedence over the Nix one, so remove it there to use the version from this repo.
+
+### Laptops and fingerprint login
+
+The installer sets `laptop` when it finds a battery, and asks about `fingerprint` when it sees a USB device from a fingerprint reader maker. Enroll a finger once with `fprintd-enroll`; after that the login screen and sudo accept it. Enrolled prints are kept on `/persist`.
+
+### WireGuard
+
+NetworkManager handles WireGuard itself, so there's nothing extra to install. On GNOME or Plasma, import a `.conf` file from the network settings (VPN, then import from file); `nmcli connection import type wireguard file wg0.conf` does the same from a terminal.
+
+### Tailscale
+
+Set `"useTailscale": true`, rebuild, then sign in once with `sudo tailscale up`. Its state stays on `/persist`, and OpenSnitch gets a rule that lets `tailscaled` through.
+
+### Scanning and disk health
+
+SANE is set up with the driverless `sane-airscan` backend, and Document Scanner is installed on every desktop, so most USB scanners just work. Network scanners aren't found automatically, because mDNS discovery (Avahi) is off on purpose. Add yours by address in a private module:
+
+```nix
+{
+  flake.modules.nixos.pc.environment.etc."sane.d/airscan.d/local.conf".text = ''
+    [devices]
+    "Office scanner" = http://192.168.1.50/eSCL
+  '';
+}
+```
+
+smartd watches the disks and sends a desktop notification when one starts to fail.
+
+### Running things without installing them
+
+With `extras` on: type a command that isn't installed and the shell names the package that has it. `, cowsay hello` runs it once without installing anything. Both use a prebuilt package index from [nix-index-database](https://github.com/nix-community/nix-index-database).
+
+### Shell
+
+With `extras` on, fzf adds Ctrl-T (pick a file) and Alt-C (jump to a directory). atuin owns Ctrl-R: a searchable history that stays on this machine, with no account or sync. Import your existing history once with `atuin import auto`. `bat` is `cat` with syntax highlighting, and `tldr <command>` shows short examples.
+
+### Extra apps
+
+`ephemeral-apps` offers nearly 50 common apps by category: browsers, chat, office, media, graphics, games, development, security and utilities. Labels show which ones are unfree, which come from Flathub, and which carry a warning (Docker and Wireshark add you to a powerful group, LocalSend opens a port). Every warning is shown again before anything is saved.
+
+Your picks are saved to `apps.json` next to `settings.json`, a plain list such as `["discord", "obsidian", "docker"]`. Commit it with the rest of your private flake; it isn't a secret, and it brings the same apps to your next machine. On a rebuild:
+
+- Nix packages are installed system-wide, and unfree ones are added to the allowlist for you.
+- Apps that need more (Docker, Wireshark, GameMode, LocalSend) get their settings, groups and `/persist` folders.
+- Flathub apps are installed for your user at login, from the same pinned Flathub file as the system remote. Unpicking one removes it, but only if it was installed this way; Flatpaks you installed yourself are left alone.
+
+A name in `apps.json` that's no longer in the catalog gives a warning, not a failed build.
+
+Your private flake can add its own apps to the picker:
+
+```nix
+{
+  ephemeral.apps.anki = {
+    label = "Anki";
+    category = "Office";
+    description = "flashcards";
+    package = "anki";
+  };
+}
+```
+
+CI evaluates a machine with every app picked, so a package renamed upstream shows up there before it breaks a rebuild.
+
 ### Flatpak
 
-`flatpak-apps` offers a short list of Flatpaks (Flatseal, Heroic, Thunderbird, Vorta and others) to install for your user. Flathub itself is added system-wide from a pinned copy of its repo file, so its signing key can't be swapped.
+Flathub is added system-wide from a pinned copy of its repo file, so its signing key can't be swapped. Install Flathub apps through `ephemeral-apps`, or with `flatpak install --user flathub <id>` for anything that isn't in the list.
 
 ### direnv
 
@@ -257,18 +370,21 @@ ephemeral-update
 - The firewall is on, SSH is off, and OpenSnitch blocks outgoing connections you haven't allowed.
 - Kernel hardening: no unprivileged BPF, restricted ptrace and kernel pointers, a few rarely used network protocols blocked, and no kexec. That last one also rules out hibernation.
 - Unfree packages must be listed by name in `ephemeral.unfreePackages`.
-- The setup services this repo adds (Control D, chezmoi, Flathub) run sandboxed by systemd.
+- The setup services this repo adds (Control D, chezmoi, Flathub, the default user picture) run sandboxed by systemd.
+- smartd's desktop warnings go over the system bus, which lets any local process show you a notification. That's fine with the single user this setup has; turn it off with `services.smartd.notifications.systembus-notify.enable = false`.
+- With `fingerprint` on, a finger also works for `sudo`. To keep sudo on the password only, set `security.pam.services.sudo.fprintAuth = false` in a private module.
 
 ## Working on this repo
 
 | path | what |
 |------|------|
-| `modules/flake/` | flake outputs: packages, checks, formatter, and the module private flakes import |
+| `modules/flake/` | flake outputs: checks, formatter, and the module private flakes import |
 | `modules/host-builder.nix`, `modules/hosts/` | builds machines from `settings.json` |
-| `modules/settings/` | the settings options and loader |
+| `modules/settings/` | the settings options, their defaults (`_defaults.nix`) and the loader |
 | `modules/desktop/` | Plasma, GNOME, niri |
 | `modules/dotfiles/` | Home Manager dotfiles and chezmoi |
 | `modules/packages/` | the helper commands and the pinned pass-cli |
+| `modules/apps/` | the app catalog for `ephemeral-apps`, one file per category |
 | `modules/tests/boot.nix` | the VM boot test |
 | `examples/private-flake/` | the starting point for a private flake |
 | `scripts/` | the helper commands' source, the secret scanner and the shared-file check |

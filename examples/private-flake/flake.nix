@@ -11,6 +11,7 @@
     disko.follows = "ephemeral/disko";
     home-manager.follows = "ephemeral/home-manager";
     stylix.follows = "ephemeral/stylix";
+    nix-index-database.follows = "ephemeral/nix-index-database";
   };
 
   outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } (inputs.import-tree ./modules);

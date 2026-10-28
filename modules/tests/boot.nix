@@ -21,6 +21,9 @@ in
               nixos.gnome
               nixos.dotfiles
               nixos.controld
+              nixos.laptop
+              nixos.fingerprint
+              nixos.tailscale
             ];
 
             ephemeral.settings = {
@@ -43,7 +46,6 @@ in
               pkgs.file
             ];
 
-            ephemeral.desktopApps = false;
             hardware.enableRedistributableFirmware = lib.mkForce false;
             # keep root locked as on a real machine
             users.users.root.hashedPasswordFile = lib.mkForce null;
@@ -80,9 +82,11 @@ in
           };
 
         testScript = ''
+          from datetime import timedelta
+
           def boot_is_clean(boot):
               machine.wait_for_unit("multi-user.target")
-              machine.wait_until_succeeds("systemctl is-system-running --wait | grep -qxE 'running|degraded'", timeout=180)
+              machine.wait_until_succeeds("systemctl is-system-running --wait | grep -qxE 'running|degraded'", timeout=timedelta(seconds=180))
 
               cycles = machine.succeed("journalctl -b --no-pager -o cat | grep -i 'ordering cycle' || true").strip()
               assert cycles == "", f"boot {boot}: ordering cycle\n{cycles}"
@@ -133,6 +137,26 @@ in
               assert "zsh-newuser-install" not in out, f"zsh wizard ran:\n{out}"
               assert "not found" not in out, f"~/.zshrc has errors:\n{out}"
 
+          with subtest("ephemeral-help lists the commands"):
+              out = machine.succeed("ephemeral-help")
+              for cmd in ["ephemeral-update", "controld-setup", "smb-setup", "luks-header-backup"]:
+                  assert cmd in out, f"{cmd} missing from ephemeral-help:\n{out}"
+
+          with subtest("nh, tailscale and smartd"):
+              machine.succeed("command -v nh")
+              machine.succeed("systemctl is-active --quiet tailscaled.service")
+              machine.succeed("findmnt -n /var/lib/tailscale")
+              machine.succeed("systemctl is-active --quiet smartd.service || systemctl show -p Result smartd.service | grep -qx Result=success")
+
+          with subtest("the snowflake is the default user picture, and a chosen one stays"):
+              machine.succeed("file /persist/var/lib/AccountsService/icons/alice | grep -q 'PNG image data, 512 x 512'")
+              machine.succeed("grep -qx Icon=/var/lib/AccountsService/icons/alice /var/lib/AccountsService/users/alice")
+              modes = machine.succeed("stat -c %a /var/lib/AccountsService/icons/alice /var/lib/AccountsService/users/alice").split()
+              assert modes == ["644", "600"], f"picture and entry modes are {modes}"
+              machine.succeed("stat -c %A /var/lib/AccountsService/icons | grep -q 'r-x$'")
+              machine.succeed("printf mine > /var/lib/AccountsService/icons/alice && systemctl restart ephemeral-avatar.service")
+              assert machine.succeed("cat /var/lib/AccountsService/icons/alice") == "mine"
+
           with subtest("hardening is on"):
               assert machine.succeed("sysctl -n kernel.kptr_restrict").strip() == "2"
               assert machine.succeed("sysctl -n kernel.unprivileged_bpf_disabled").strip() == "1"
@@ -171,18 +195,21 @@ in
               machine.succeed("grep -qx 'Theme=stylix' /etc/plymouth/plymouthd.conf")
               machine.succeed("test -d /run/current-system/sw/share/icons/catppuccin-mocha-dark-cursors")
 
-          with subtest("GNOME has a tray for opensnitch and syncthing"):
+          with subtest("GNOME extensions: tray and caffeine on, extension manager in place of the extensions app"):
               ext = machine.succeed(
                   "runuser -l alice -c 'GSETTINGS_BACKEND=memory gsettings get org.gnome.shell enabled-extensions'"
               ).strip()
               assert "appindicatorsupport@rgcjonas.gmail.com" in ext, f"enabled-extensions is {ext!r}"
+              assert "caffeine@patapon.info" in ext, f"enabled-extensions is {ext!r}"
+              machine.succeed("grep -qx NoDisplay=true /run/current-system/sw/share/applications/org.gnome.Extensions.desktop")
+              machine.succeed("test -e /run/current-system/sw/share/applications/com.mattjakeman.ExtensionManager.desktop")
               machine.succeed("test -d /run/current-system/sw/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com")
 
           with subtest("snapshots of /persist undo a delete, and stay root-only"):
               machine.succeed("echo precious > /persist/home/alice/notes.txt && chown alice /persist/home/alice/notes.txt")
               machine.succeed("systemctl start snapper-timeline.service")
               # the timeline service returns before the snapshot exists
-              machine.wait_until_succeeds("snapper -c persist --csvout list --columns number | tail -n 1 | grep -qvx 0", timeout=30)
+              machine.wait_until_succeeds("snapper -c persist --csvout list --columns number | tail -n 1 | grep -qvx 0", timeout=timedelta(seconds=30))
               n = machine.succeed("snapper -c persist --csvout list --columns number | tail -n 1").strip()
               assert n.isdigit() and n != "0", f"no snapshot taken: {n!r}"
               machine.succeed("rm /home/alice/notes.txt")
