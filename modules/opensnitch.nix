@@ -1,11 +1,6 @@
 {
   flake.modules.nixos.pc =
-    {
-      config,
-      lib,
-      pkgs,
-      ...
-    }:
+    { lib, pkgs, ... }:
     {
       environment.persistence."/persist".directories = [ "/var/lib/opensnitch" ];
 
@@ -17,7 +12,7 @@
         };
       };
 
-      environment.etc."xdg/autostart/opensnitch-ui.desktop" = lib.mkIf config.ephemeral.desktopApps {
+      environment.etc."xdg/autostart/opensnitch-ui.desktop" = {
         text = ''
           [Desktop Entry]
           Type=Application

@@ -6,15 +6,13 @@
         # helix
       ];
 
-      # ephemeral.unfreePackages = [ "vscode" ];
-
+      # ephemeral.unfreePackages = [ "discord" ];
     };
 
-  flake.modules.homeManager.base =
-    { pkgs, ... }:
-    {
-      home.packages = with pkgs; [
-        # hello
-      ];
-    };
+  flake.modules.homeManager.dotfiles = {
+    # programs.git.settings.user = {
+    #   name = "Your Name";
+    #   email = "you@example.com";
+    # };
+  };
 }

@@ -14,7 +14,7 @@
       ];
       services.desktopManager.gnome.extraGSettingsOverrides = ''
         [org.gnome.shell]
-        enabled-extensions=['appindicatorsupport@rgcjonas.gmail.com']
+        enabled-extensions=['appindicatorsupport@rgcjonas.gmail.com', 'caffeine@patapon.info']
       '';
 
       services.gnome.gnome-keyring.enable = true;
@@ -25,7 +25,18 @@
         gnome-text-editor
         loupe
         file-roller
+        gnome-extension-manager
         gnomeExtensions.appindicator
+        gnomeExtensions.caffeine
+        # it ships inside gnome-shell, so hide it instead
+        (lib.hiPrio (
+          runCommand "hide-gnome-extensions-app" { } ''
+            mkdir -p $out/share/applications
+            sed '/^\[Desktop Entry\]$/a NoDisplay=true' \
+              ${gnome-shell}/share/applications/org.gnome.Extensions.desktop \
+              > $out/share/applications/org.gnome.Extensions.desktop
+          ''
+        ))
       ];
     };
 }

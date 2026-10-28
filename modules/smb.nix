@@ -11,6 +11,11 @@
       user = config.users.users.${config.ephemeral.settings.username};
     in
     {
+      assertions = map (s: {
+        assertion = !lib.hasInfix ".." s.mountPoint;
+        message = "smb-shares.json: ${s.mountPoint} can't contain ..";
+      }) shares;
+
       environment.systemPackages = [ pkgs.cifs-utils ];
 
       system.activationScripts.smbSecrets.text = ''

@@ -5,11 +5,13 @@ set -euo pipefail
 
 SHARED=(
   assets/wallpaper.svg
+  settings.example.json
   modules/flake/parts.nix
   modules/host-builder.nix
   modules/hosts/nixos.nix
   modules/settings/_load.nix
   modules/settings/_read-data.nix
+  modules/settings/_defaults.nix
   modules/settings/options.nix
   modules/pc.nix
   modules/system.nix
@@ -30,8 +32,14 @@ SHARED=(
   modules/podman.nix
   modules/flathub.nix
   modules/wallpaper.nix
+  modules/avatar.nix
+  modules/apps/catalog.nix
   modules/dotfiles/zsh.nix
   modules/dotfiles/chezmoi.nix
+  modules/nvidia.nix
+  modules/laptop.nix
+  modules/fingerprint.nix
+  modules/tailscale.nix
 )
 INSTALLER_URL=${INSTALLER_URL:-https://github.com/the-wittch/ephemeral-nixos.git}
 INSTALLER_REF=${INSTALLER_REF:-main}

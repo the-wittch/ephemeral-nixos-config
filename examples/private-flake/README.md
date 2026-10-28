@@ -8,19 +8,13 @@ A starting point for your own config on top of [ephemeral-nixos-config](https://
 
 It follows the [dendritic pattern](https://github.com/mightyiam/dendritic): every `.nix` file under `modules/` is a flake-parts module for one feature, loaded automatically. Files don't import each other; they add to the template's shared modules, like `flake.modules.nixos.pc` or `flake.modules.homeManager.base`. The template's README lists them.
 
-`settings.json` and `hardware-configuration.nix` come from the installed machine and stay out of git. The template's README has the full setup steps.
+`settings.json` and `hardware-configuration.nix` come from the installed machine and stay out of git. `apps.json`, written by `ephemeral-apps`, is the opposite: commit it, so your apps come along to the next machine. The template's README has the full setup steps.
 
-Rebuild:
-
-```bash
-sudo nixos-rebuild switch --flake path:/persist/etc/nixos#nixos
-```
-
-Move to a newer template:
+Rebuild with `ephemeral-update`. Move to a newer template with:
 
 ```bash
 nix flake update ephemeral --flake /persist/etc/nixos
-sudo nixos-rebuild switch --flake path:/persist/etc/nixos#nixos
+ephemeral-update
 ```
 
-Build with `path:`. Without it, Nix only sees files tracked by git and misses `settings.json`.
+Building by hand works too, as long as it's with `path:`: `sudo nixos-rebuild switch --flake path:/persist/etc/nixos#nixos`. Without `path:`, Nix only sees files tracked by git and misses `settings.json`.
