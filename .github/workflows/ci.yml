@@ -8,8 +8,9 @@ on:
     types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
 
+# per event kind, so opened and labeled don't cancel each other
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.ref }}-${{ github.event.action || github.event_name }}
   cancel-in-progress: true
 
 permissions:
@@ -45,12 +46,12 @@ jobs:
           nix flake check path:. --no-build
           nix build path:.#checks.x86_64-linux.config-eval path:.#checks.x86_64-linux.scripts path:.#checks.x86_64-linux.settings-example path:.#checks.x86_64-linux.extras-eval path:.#checks.x86_64-linux.apps-eval --no-link
 
-  # skipped counts as passed for required checks
+  # skipped counts as passed. not on opened: a label given at creation also fires labeled
   boot-test:
     if: >-
       startsWith(github.ref, 'refs/tags/')
       || github.event_name == 'workflow_dispatch'
-      || contains(github.event.pull_request.labels.*.name, 'boot-test')
+      || (github.event.action != 'opened' && contains(github.event.pull_request.labels.*.name, 'boot-test'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
