@@ -2,7 +2,7 @@
   description = "Private host flake on top of ephemeral-nixos-config";
 
   inputs = {
-    ephemeral.url = "github:the-wittch/ephemeral-nixos-config/v2.1.0";
+    ephemeral.url = "github:the-wittch/ephemeral-nixos-config/v2.2.0";
     # the template's modules use these by name
     nixpkgs.follows = "ephemeral/nixpkgs";
     flake-parts.follows = "ephemeral/flake-parts";
