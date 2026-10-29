@@ -11,6 +11,9 @@ in
     {
       home-manager.sharedModules = [ hm.passSshAgent ];
 
+      # gcr's socket would point SSH_AUTH_SOCK at itself for the whole session, gnome-shell and every app it starts
+      services.gnome.gcr-ssh-agent.enable = false;
+
       services.opensnitch.rules.pass-cli = {
         name = "pass-cli";
         enabled = true;
@@ -74,18 +77,7 @@ in
         Install.WantedBy = [ "graphical-session.target" ];
       };
 
-      # the desktop's own agent stays in use while this one isn't running
-      programs.zsh.envExtra = ''
-        if [ -S "$XDG_RUNTIME_DIR/${socket}" ]; then
-          export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/${socket}"
-        fi
-      '';
-
-      programs.ssh = {
-        enable = true;
-        enableDefaultConfig = false;
-        settings."Match exec \"test -S $XDG_RUNTIME_DIR/${socket}\"".IdentityAgent =
-          "\${XDG_RUNTIME_DIR}/${socket}";
-      };
+      systemd.user.sessionVariables.SSH_AUTH_SOCK = "\${XDG_RUNTIME_DIR}/${socket}";
+      home.sessionVariables.SSH_AUTH_SOCK = "$XDG_RUNTIME_DIR/${socket}";
     };
 }

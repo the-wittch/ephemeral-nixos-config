@@ -360,14 +360,14 @@ ephemeral-update
 
 With `"usePassSshAgent": true`, a user service starts `pass-cli ssh-agent` when you log in and serves the SSH keys in `passSshVault`, so the private keys never have to sit in `~/.ssh`. New keys added to the vault show up within 30 seconds. OpenSnitch gets a rule that lets `pass-cli` reach `proton.me`.
 
-While you're logged out of `pass-cli` the service skips itself, and `ssh` and your shells keep using the desktop's own agent. After `pass-cli login`, start it without logging out:
+It replaces the desktop's own SSH agent (GNOME's gcr), so every app uses it, Flatpaks with SSH access like Pika Backup and Vorta included. While you're logged out of `pass-cli` the service skips itself and there's no agent; `ssh` then only has the key files in `~/.ssh`. After `pass-cli login`, start it without logging out:
 
 ```bash
 systemctl --user start proton-pass-ssh-agent
 ssh-add -l
 ```
 
-Shells opened before the agent started still point at the old agent; open a new one. `journalctl --user -u proton-pass-ssh-agent` shows why it didn't start.
+Turning the setting on takes effect for apps at the next login. `journalctl --user -u proton-pass-ssh-agent` shows why the agent didn't start.
 
 ## Security notes
 
