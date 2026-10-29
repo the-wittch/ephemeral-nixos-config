@@ -157,6 +157,7 @@ If you'd rather work in a clone of this repo, put your files in `modules/local/`
 | `useControlD` | DNS over TLS through Control D |
 | `useTailscale` | the Tailscale VPN |
 | `usePassSettings`, `passSettingsVault`, `passSettingsItem` | merge settings from Proton Pass |
+| `usePassSshAgent`, `passSshVault` | the Proton Pass SSH agent at login, serving the keys in that vault |
 | `useFlakePassCli` | build pass-cli from the pinned release here instead of nixpkgs |
 
 Every key but `username` has a default. Rebuild after changing it. An older `settings.nix` still loads with a warning; convert it once with:
@@ -353,7 +354,20 @@ settings-from-pass
 ephemeral-update
 ```
 
-`ssh-pubs-from-pass` writes the public half of each SSH key item to `~/.ssh/<title>.pub`, for `IdentityFile` lines. `--list` shows what it would write. `PASS_SETTINGS_VAULT`, `PASS_SETTINGS_ITEM` and `PASS_SSH_VAULT` change where they look.
+`ssh-pubs-from-pass` writes the public half of each SSH key item in `passSshVault` to `~/.ssh/<title>.pub`, for `IdentityFile` lines. `--list` shows what it would write. `PASS_SETTINGS_VAULT`, `PASS_SETTINGS_ITEM` and `PASS_SSH_VAULT` change where they look.
+
+#### SSH agent
+
+With `"usePassSshAgent": true`, a user service starts `pass-cli ssh-agent` when you log in and serves the SSH keys in `passSshVault`, so the private keys never have to sit in `~/.ssh`. New keys added to the vault show up within 30 seconds. OpenSnitch gets a rule that lets `pass-cli` reach `proton.me`.
+
+While you're logged out of `pass-cli` the service skips itself, and `ssh` and your shells keep using the desktop's own agent. After `pass-cli login`, start it without logging out:
+
+```bash
+systemctl --user start proton-pass-ssh-agent
+ssh-add -l
+```
+
+Shells opened before the agent started still point at the old agent; open a new one. `journalctl --user -u proton-pass-ssh-agent` shows why it didn't start.
 
 ## Security notes
 

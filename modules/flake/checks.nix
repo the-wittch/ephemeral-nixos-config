@@ -2,6 +2,7 @@
 let
   nixos = config.flake.nixosConfigurations.nixos;
   withExtras = nixos.extendModules { modules = [ config.flake.modules.nixos.extras ]; };
+  withPassSshAgent = nixos.extendModules { modules = [ config.flake.modules.nixos.passSshAgent ]; };
   withAllApps = nixos.extendModules {
     modules = [
       { ephemeral.pickedApps = lib.attrNames config.ephemeral.apps; }
@@ -26,6 +27,9 @@ in
         );
         extras-eval = pkgs.writeText "extras-eval" (
           builtins.unsafeDiscardStringContext withExtras.config.system.build.toplevel.drvPath
+        );
+        pass-ssh-agent-eval = pkgs.writeText "pass-ssh-agent-eval" (
+          builtins.unsafeDiscardStringContext withPassSshAgent.config.system.build.toplevel.drvPath
         );
         apps-eval = pkgs.writeText "apps-eval" (
           builtins.unsafeDiscardStringContext withAllApps.config.system.build.toplevel.drvPath
