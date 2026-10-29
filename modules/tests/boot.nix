@@ -17,7 +17,9 @@ in
           { lib, pkgs, ... }:
           {
             imports = [
+              nixos.vm
               nixos.pc
+              nixos.full
               nixos.gnome
               nixos.dotfiles
               nixos.controld
@@ -36,9 +38,6 @@ in
               useControlD = true;
             };
 
-            disko.enableConfig = false;
-            boot.initrd.systemd.services.rollback.enable = false;
-            boot.loader.systemd-boot.enable = lib.mkForce false;
             boot.consoleLogLevel = lib.mkForce 7;
             environment.systemPackages = [
               pkgs.cryptsetup
@@ -46,39 +45,12 @@ in
               pkgs.file
             ];
 
-            hardware.enableRedistributableFirmware = lib.mkForce false;
-            # keep root locked as on a real machine
-            users.users.root.hashedPasswordFile = lib.mkForce null;
-            services.speechd.enable = lib.mkForce false;
-
-            virtualisation = {
-              diskImage = null;
-              emptyDiskImages = [
-                {
-                  size = 4096;
-                  driveConfig.deviceExtraOpts.serial = "persist";
-                }
-                {
-                  size = 64;
-                  driveConfig.deviceExtraOpts.serial = "usb";
-                }
-              ];
-              fileSystems = {
-                "/persist" = {
-                  device = "/dev/disk/by-id/virtio-persist";
-                  fsType = "btrfs";
-                  autoFormat = true;
-                  neededForBoot = true;
-                };
-                "/var/log" = {
-                  device = "tmpfs";
-                  fsType = "tmpfs";
-                  neededForBoot = true;
-                };
-              };
-              memorySize = 4096;
-              cores = 2;
-            };
+            virtualisation.emptyDiskImages = [
+              {
+                size = 64;
+                driveConfig.deviceExtraOpts.serial = "usb";
+              }
+            ];
           };
 
         testScript = ''

@@ -31,8 +31,6 @@ jobs:
         run: |
           ./scripts/check-no-secrets.sh
           ./scripts/check-no-secrets.sh --range HEAD
-      - name: shared modules match the installer
-        run: ./scripts/check-shared.sh
       - name: shellcheck
         run: nix run --inputs-from path:. nixpkgs#shellcheck -- -x -P SCRIPTDIR scripts/*.sh .githooks/*
       - name: nixfmt
@@ -44,7 +42,7 @@ jobs:
       - name: flake check
         run: |
           nix flake check path:. --no-build
-          nix build path:.#checks.x86_64-linux.config-eval path:.#checks.x86_64-linux.scripts path:.#checks.x86_64-linux.settings-example path:.#checks.x86_64-linux.extras-eval path:.#checks.x86_64-linux.apps-eval path:.#checks.x86_64-linux.pass-ssh-agent-eval --no-link
+          nix build path:.#checks.x86_64-linux.config-eval path:.#checks.x86_64-linux.scripts path:.#checks.x86_64-linux.settings-example path:.#checks.x86_64-linux.extras-eval path:.#checks.x86_64-linux.apps-eval path:.#checks.x86_64-linux.pass-ssh-agent-eval path:.#checks.x86_64-linux.mkflake-eval --no-link
 
   # skipped counts as passed. not on opened: a label given at creation also fires labeled
   boot-test:

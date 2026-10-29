@@ -4,11 +4,11 @@
 
 <img width="3840" height="2160" alt="wallpaper" src="https://github.com/user-attachments/assets/b4e08080-876a-4ab3-911f-4055a4f2de0d" />
 
-The full NixOS config for machines installed with [ephemeral-nixos](https://github.com/the-wittch/ephemeral-nixos). `/` is wiped on every boot; `/home` and a short list of system paths live on `/persist`.
+The NixOS config for machines installed with [ephemeral-nixos](https://github.com/the-wittch/ephemeral-nixos). `/` is wiped on every boot; `/home` and a short list of system paths live on `/persist`.
 
-On top of the installer's base system it adds:
+The installer sets up the small `minimal` profile from this repo. Switching to the `full` profile (see [Setup](#setup)) adds:
 
-- Home Manager dotfiles: zsh, git, starship, zoxide, neovim and ghostty. chezmoi is supported instead, if you prefer it.
+- Home Manager dotfiles: zsh, git, starship, zoxide, neovim and ghostty.
 - A dark Catppuccin Mocha theme everywhere, through [Stylix](https://github.com/nix-community/stylix), with the snowflake as the default user picture.
 - Hourly snapper snapshots of `/persist`, and desktop warnings when a disk starts failing.
 - OpenSnitch, Syncthing, Podman, Flatpak with Flathub, Firefox and scanning.
@@ -24,39 +24,57 @@ A fresh install stays lean. `"extras": true` adds the bigger things:
 
 The installer asks about extras. Anything else you don't want can be switched off in your own modules (see below).
 
+> **On the full profile, outgoing connections are blocked until you allow them.** OpenSnitch asks the first time each program connects somewhere. If an app can't connect, a missed or denied prompt is the likely cause: open OpenSnitch and check its Rules.
+
 ## Setup
 
-> **Just want to get going?** Do the steps below, then run `ephemeral-apps` and tick the apps you want. That's it: no Nix files to edit. Your picks are saved to `apps.json` and installed on the next rebuild, and you can run it again any time to add or remove apps. The first `ephemeral-update` offers to start it for you.
+The installer leaves a working desktop on the `minimal` profile. Your machine's config is a small flake in `/persist/etc/nixos`:
 
-Keep your changes in a private flake that uses this repo as an input. Your packages and tweaks stay in your own git repo, and updates here are one command away. Machine details stay in the gitignored `settings.json` the installer already wrote.
+```nix
+{
+  inputs.ephemeral.url = "github:the-wittch/ephemeral-nixos-config/v3.0.0";
+  outputs = inputs: inputs.ephemeral.lib.mkFlake { inherit inputs; root = ./.; };
+}
+```
 
-On an installed machine:
+plus `settings.json` and `hardware-configuration.nix`. To switch to the full config, make the folder yours, try the full profile in a VM if you like, then switch:
 
 ```bash
-mkdir -p ~/nixos/modules
-cd ~/nixos
-BASE=https://raw.githubusercontent.com/the-wittch/ephemeral-nixos-config/main/examples/private-flake
-curl -fsSL -o flake.nix "$BASE/flake.nix"
-curl -fsSL -o .gitignore "$BASE/.gitignore"
-curl -fsSL -o modules/ephemeral.nix "$BASE/modules/ephemeral.nix"
-curl -fsSL -o modules/apps.nix "$BASE/modules/apps.nix"
-cp /persist/etc/nixos/settings.json /persist/etc/nixos/hardware-configuration.nix .
-nix flake lock
+sudo chown -R "$USER": /persist/etc/nixos
+cd /persist/etc/nixos
+sed -i 's/"profile": "minimal"/"profile": "full"/' settings.json
+nix run path:.#vm
 sudo nixos-rebuild switch --flake path:.#nixos
 ```
 
-Once that works, make it the system config and put it in git:
+> **Just want to get going?** After that, run `ephemeral-apps` and tick the apps you want. That's it: no Nix files to edit. Your picks are saved to `apps.json` and installed on the next rebuild, and you can run it again any time to add or remove apps.
+
+To keep your changes, put the folder in a private git repo:
 
 ```bash
-sudo mv /persist/etc/nixos /persist/etc/nixos.installer
-sudo mv ~/nixos /persist/etc/nixos
 cd /persist/etc/nixos
 git init
 git add -A
-git commit -m "private flake"
+git commit -m "my machine"
 ```
 
-`settings.json` and `hardware-configuration.nix` are gitignored, so they stay on the machine. Always build with `path:`; a plain `.#nixos` only sees files tracked by git and won't find them.
+`settings.json` and `hardware-configuration.nix` are gitignored, so they stay on the machine. Always build with `path:`; a plain `.#nixos` only sees files tracked by git and won't find them. To go back, set `"profile": "minimal"` and rebuild.
+
+## Try it in a VM
+
+`nix run path:.#vm` boots a machine's config in a throwaway QEMU window: root on tmpfs as usual, `/persist` on a scratch disk that's gone when the VM closes. Log in with your username and the password `ephemeral`. It needs KVM and about 4 GB of free memory.
+
+On an installed machine, run it in `/persist/etc/nixos` to check a change before switching to it. To try this repo without installing anything:
+
+```bash
+git clone https://github.com/the-wittch/ephemeral-nixos-config
+cd ephemeral-nixos-config
+cp settings.example.json settings.json
+cp hardware-configuration.example.nix hardware-configuration.nix
+nix run path:.#vm
+```
+
+The user is `nixuser`; change `username`, `desktop` or anything else in `settings.json` first to try something else.
 
 ## Rebuild and update
 
@@ -64,12 +82,14 @@ git commit -m "private flake"
 ephemeral-update
 ```
 
-That's `nh os switch path:/persist/etc/nixos`: the same rebuild as `nixos-rebuild`, with readable progress and a list of what changed at the end. To move to a newer version of this repo:
+That's `nh os switch path:/persist/etc/nixos`: the same rebuild as `nixos-rebuild`, with readable progress and a list of what changed at the end. To move to a newer release of this repo, change the tag in `flake.nix`, then:
 
 ```bash
 nix flake update ephemeral --flake /persist/etc/nixos
 ephemeral-update
 ```
+
+Read [`CHANGELOG.md`](CHANGELOG.md) before a new major version; it lists what you have to change. Settings that were removed still load with a warning that says what to do.
 
 ## Commands
 
@@ -78,6 +98,7 @@ ephemeral-update
 | command | what |
 |---------|------|
 | `ephemeral-update` | rebuild and switch to `/persist/etc/nixos`, then show what changed |
+| `ephemeral-report` | system details to paste into a bug report |
 | `controld-setup` | set or turn off the Control D resolver id |
 | `smb-setup` | add or remove SMB shares |
 | `ephemeral-apps` | pick extra apps by category, then rebuild |
@@ -101,18 +122,19 @@ Adding a feature means adding a file, and removing one means deleting it. [might
 
 ## Your own modules
 
-Your private flake works the same way. These are the shared modules you can add to:
+Every `.nix` file in `/persist/etc/nixos/modules/` is loaded the same way. These are the shared modules you can add to:
 
 | module | applies to |
 |--------|------------|
-| `flake.modules.nixos.base` | every machine |
-| `flake.modules.nixos.pc` | desktop machines (all of them, here) |
-| `flake.modules.nixos.gnome`, `.plasma`, `.niri` | the desktop chosen in `settings.json` |
-| `flake.modules.homeManager.base` | your user, always |
-| `flake.modules.homeManager.dotfiles` | your user, unless chezmoi manages the dotfiles |
-| `flake.modules.nixos.extras`, `flake.modules.homeManager.extras` | machines with `"extras": true` |
+| `flake.modules.nixos.base`, `flake.modules.nixos.pc` | every machine, both profiles |
+| `flake.modules.nixos.full` | the full profile |
+| `flake.modules.nixos.minimal` | the minimal profile |
+| `flake.modules.nixos.gnome`, `.plasma`, `.niri` | the desktop chosen in `settings.json`, full profile |
+| `flake.modules.nixos.minimal-gnome`, `.minimal-plasma`, `.minimal-niri` | the same, minimal profile |
+| `flake.modules.homeManager.base`, `flake.modules.homeManager.dotfiles` | your user (full profile; minimal has no Home Manager) |
+| `flake.modules.nixos.extras`, `flake.modules.homeManager.extras` | full profile with `"extras": true` |
 
-A file in your private flake can add to any of them:
+A file in `modules/` can add to any of them:
 
 ```nix
 {
@@ -134,7 +156,7 @@ A file in your private flake can add to any of them:
 
 Settings are `config.ephemeral.settings` in NixOS modules and `osConfig.ephemeral.settings` in Home Manager. To turn off something this repo sets, use `lib.mkForce`.
 
-The private flake has to pass this repo's inputs through as `follows` of `ephemeral` (`nixpkgs`, `flake-parts`, `import-tree`, `impermanence`, `disko`, `home-manager`, `stylix` and `nix-index-database`), as the example does, because the modules here refer to them by name.
+`lib.mkFlake` brings this repo's inputs along, so `flake.nix` only names `ephemeral`. Add your own inputs next to it and they're available to your modules as `inputs.<name>`; one named like this repo's (say `nixpkgs`) replaces it.
 
 If you'd rather work in a clone of this repo, put your files in `modules/local/` instead. That folder is gitignored; `modules/local/_example.nix` shows the shape.
 
@@ -149,11 +171,11 @@ If you'd rather work in a clone of this repo, put your files in `modules/local/`
 | `keyboardLayout`, `keyboardVariant` | e.g. `de` and `nodeadkeys`; also used at the LUKS prompt |
 | `diskDevice`, `swapSize` | the whole disk (not a partition) and the swap file size |
 | `desktop` | `plasma`, `gnome` or `niri` |
+| `profile` | `minimal` (what the installer sets up) or `full` (everything in this README) |
 | `nvidia` | `none`, `open` (RTX 20 / GTX 16 series and newer) or `legacy` (GTX 900 / 10 series) |
 | `extras` | the extra apps and shell tools listed at the top |
 | `laptop` | thermald on Intel, battery reporting, screen rotation and light sensors |
 | `fingerprint` | fingerprint login and sudo |
-| `useChezmoi` | chezmoi writes the dotfiles instead of Home Manager |
 | `useControlD` | DNS over TLS through Control D |
 | `useTailscale` | the Tailscale VPN |
 | `usePassSettings`, `passSettingsVault`, `passSettingsItem` | merge settings from Proton Pass |
@@ -173,10 +195,6 @@ All the helper commands edit JSON with `jq`, so nothing they write is ever evalu
 ## Dotfiles
 
 Each file in `modules/dotfiles/` sets up one program in Home Manager: zsh with autosuggestions and syntax highlighting, git, starship, zoxide, neovim and ghostty, plus yazi (`y`), btop, fastfetch, atuin, fzf, bat and tealdeer with `extras`. Change them from your own modules, as in the example above. When Home Manager has to replace a file that's already there, it renames the old one to `<name>.hm-backup` first. VS Code (`code --wait`) is the default editor for git and anything else that reads `$EDITOR`.
-
-### chezmoi instead
-
-Set `"useChezmoi": true` and write `<git-url> <full-commit-hash>` to `/persist/etc/chezmoi-repo` (mode 600), or let the installer or `settings-from-pass` do both. After a rebuild, `chezmoi-init` clones the repo once and runs `chezmoi init --apply`. The Home Manager dotfiles are left out so the two don't fight over the same files; the programs themselves are still installed.
 
 ## Theme
 
@@ -332,7 +350,7 @@ Flathub is added system-wide from a pinned copy of its repo file, so its signing
 
 ### direnv
 
-direnv and nix-direnv are on, with the hook in the system zshrc, so they work with either dotfile manager:
+direnv and nix-direnv are on, with the hook in the system zshrc:
 
 ```bash
 echo 'use flake' > .envrc
@@ -345,7 +363,6 @@ direnv allow
 
 - `hostname`, `username`, `diskDevice`, `swapSize`, `timeZone`, `desktop`
 - `useFlakePassCli`, as the text `true` or `false`
-- `chezmoiRepo` and `chezmoiRev`, written to `/persist/etc/chezmoi-repo`; they also turn on `useChezmoi`
 - `controldResolver`, written to `/persist/etc/controld-resolver`; it also turns on `useControlD`
 
 ```bash
@@ -369,6 +386,42 @@ ssh-add -l
 
 Turning the setting on takes effect for apps at the next login. `journalctl --user -u proton-pass-ssh-agent` shows why the agent didn't start.
 
+## When something breaks
+
+**A rebuild broke the desktop or won't boot.** Every rebuild is a new boot entry, and the last five are kept. Press a key during the 3-second boot menu and pick the previous one. Once you're back in, either fix the config and rebuild, or make the old one stick:
+
+```bash
+sudo nixos-rebuild switch --rollback
+```
+
+**You want the system exactly as it was installed.** Since v3.0.0 the installer keeps a read-only copy of the config it installed in `/persist/etc/nixos-install`, pinned to the same release. Rebuilding from it resets the system, not your files:
+
+```bash
+sudo nixos-rebuild switch --flake path:/persist/etc/nixos-install#nixos
+```
+
+Your own config in `/persist/etc/nixos` is untouched, so switching back to it is a normal rebuild.
+
+**You deleted or broke a file in your home folder.** Copy it back from a snapshot; see [Snapshots](#snapshots).
+
+**The graphical login doesn't come up.** Press Ctrl+Alt+F3 for a text console, log in, and look at `journalctl -b -p err`. Rolling back as above is usually the quickest fix.
+
+**The disk won't unlock with the right passphrase.** The LUKS header may be damaged. Boot the NixOS installer USB and restore the copy you made with [`luks-header-backup`](#luks-header-backup):
+
+```bash
+sudo cryptsetup luksHeaderRestore /dev/disk/by-partlabel/disk-main-luks --header-backup-file /path/to/luks-header.img
+```
+
+**An app can't connect.** Check OpenSnitch's rules first (see the note near the top).
+
+### Reporting a problem
+
+Run `ephemeral-report`, read it, and paste it into a [new issue](https://github.com/the-wittch/ephemeral-nixos-config/issues/new/choose). It lists versions, settings, failed services and recent errors, and leaves out user, host and vault names. On the minimal profile it isn't installed; include the output of `nixos-version` and `systemctl --failed` instead.
+
+### What's tested
+
+This is a personal project shared as-is. x86_64 machines with UEFI are supported. CI evaluates the full profile on Plasma, the minimal profile on GNOME, and every app in the picker, and boots the full profile on GNOME in a VM on each release. niri isn't covered by CI, NVIDIA isn't tested, and there's no Secure Boot.
+
 ## Security notes
 
 - The disk is LUKS2 with argon2id. `/boot` is not encrypted, and Secure Boot is not set up.
@@ -384,7 +437,7 @@ Turning the setting on takes effect for apps at the next login. `journalctl --us
 - The firewall is on, SSH is off, and OpenSnitch blocks outgoing connections you haven't allowed.
 - Kernel hardening: no unprivileged BPF, restricted ptrace and kernel pointers, a few rarely used network protocols blocked, and no kexec. That last one also rules out hibernation.
 - Unfree packages must be listed by name in `ephemeral.unfreePackages`.
-- The setup services this repo adds (Control D, chezmoi, Flathub, the default user picture) run sandboxed by systemd.
+- The setup services this repo adds (Control D, Flathub, the default user picture) run sandboxed by systemd.
 - smartd's desktop warnings go over the system bus, which lets any local process show you a notification. That's fine with the single user this setup has; turn it off with `services.smartd.notifications.systembus-notify.enable = false`.
 - With `fingerprint` on, a finger also works for `sudo`. To keep sudo on the password only, set `security.pam.services.sudo.fprintAuth = false` in a private module.
 
@@ -392,18 +445,20 @@ Turning the setting on takes effect for apps at the next login. `journalctl --us
 
 | path | what |
 |------|------|
-| `modules/flake/` | flake outputs: checks, formatter, and the module private flakes import |
+| `modules/flake/` | flake outputs: checks, formatter, and `lib.mkFlake` for machine flakes |
 | `modules/host-builder.nix`, `modules/hosts/` | builds machines from `settings.json` |
+| `modules/first-boot.nix` | what the minimal profile has instead of the full config |
+| `modules/vm.nix` | the VM used by `nix run .#vm` and the boot test |
 | `modules/settings/` | the settings options, their defaults (`_defaults.nix`) and the loader |
 | `modules/desktop/` | Plasma, GNOME, niri |
-| `modules/dotfiles/` | Home Manager dotfiles and chezmoi |
+| `modules/dotfiles/` | Home Manager dotfiles |
 | `modules/packages/` | the helper commands and the pinned pass-cli |
 | `modules/apps/` | the app catalog for `ephemeral-apps`, one file per category |
 | `modules/tests/boot.nix` | the VM boot test |
-| `examples/private-flake/` | the starting point for a private flake |
-| `scripts/` | the helper commands' source, the secret scanner and the shared-file check |
+| `tests/machine/` | a minimal machine flake that CI builds through `lib.mkFlake` |
+| `scripts/` | the helper commands' source and the secret scanner |
 
-Most of the base system is shared byte for byte with the installer; `scripts/check-shared.sh` lists the files and CI fails if they differ. Change them in both repos together.
+The installer has no modules of its own: its `flake.nix` is the machine flake above, pinned to a release of this repo. A change here reaches new installs once the installer pins a release with it.
 
 Turn on the git hooks once per clone:
 

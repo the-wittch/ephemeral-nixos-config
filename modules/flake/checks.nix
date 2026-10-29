@@ -2,6 +2,14 @@
 let
   nixos = config.flake.nixosConfigurations.nixos;
   withExtras = nixos.extendModules { modules = [ config.flake.modules.nixos.extras ]; };
+  machine =
+    (config.flake.lib.mkFlake {
+      inputs.self = {
+        outPath = ../../tests/machine;
+        inputs = { };
+      };
+      root = ../../tests/machine;
+    }).nixosConfigurations.nixos;
   withPassSshAgent = nixos.extendModules { modules = [ config.flake.modules.nixos.passSshAgent ]; };
   withAllApps = nixos.extendModules {
     modules = [
@@ -31,6 +39,15 @@ in
         pass-ssh-agent-eval = pkgs.writeText "pass-ssh-agent-eval" (
           builtins.unsafeDiscardStringContext withPassSshAgent.config.system.build.toplevel.drvPath
         );
+        mkflake-eval =
+          assert lib.assertMsg (
+            machine.config.environment.etc ? ephemeral-fixture
+          ) "lib.mkFlake didn't load the machine's own modules/";
+          pkgs.writeText "mkflake-eval" (
+            builtins.unsafeDiscardStringContext (
+              machine.config.system.build.toplevel.drvPath + "\n" + machine.config.system.build.vm.drvPath
+            )
+          );
         apps-eval = pkgs.writeText "apps-eval" (
           builtins.unsafeDiscardStringContext withAllApps.config.system.build.toplevel.drvPath
         );

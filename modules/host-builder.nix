@@ -20,11 +20,26 @@ let
           "apps.json has to be a list of app names"
           (builtins.filter (id: config.ephemeral.apps ? ${id}) picked);
       hardware = host.root + "/hardware-configuration.nix";
+      full = settings.profile == "full";
+      nixos = config.flake.modules.nixos;
       system = inputs.nixpkgs.lib.nixosSystem {
         modules = [
-          config.flake.modules.nixos.pc
-          config.flake.modules.nixos.${settings.desktop}
-          config.flake.modules.nixos.${if settings.useChezmoi then "chezmoi" else "dotfiles"}
+          nixos.pc
+        ]
+        ++ (
+          if full then
+            [
+              nixos.full
+              nixos.${settings.desktop}
+              nixos.dotfiles
+            ]
+          else
+            [
+              nixos.minimal
+              nixos."minimal-${settings.desktop}"
+            ]
+        )
+        ++ [
           {
             ephemeral.settings = settings;
             ephemeral.smbShares = readData (host.root + "/smb-shares") [ ];
@@ -41,20 +56,21 @@ let
               }
           )
         ]
-        ++ map (name: config.flake.modules.nixos.${name}) (
+        ++ map (name: nixos.${name}) (
           lib.attrNames (
             lib.filterAttrs (_: on: on) {
-              controld = settings.useControlD;
               nvidia = settings.nvidia != "none";
-              extras = settings.extras;
               laptop = settings.laptop;
               fingerprint = settings.fingerprint;
               tailscale = settings.useTailscale;
-              passSshAgent = settings.usePassSshAgent;
+              # these need the full config
+              controld = full && settings.useControlD;
+              extras = full && settings.extras;
+              passSshAgent = full && settings.usePassSshAgent;
             }
           )
         )
-        ++ map (id: config.ephemeral.apps.${id}.nixos) known
+        ++ lib.optionals full (map (id: config.ephemeral.apps.${id}.nixos) known)
         ++ host.modules;
       };
     in

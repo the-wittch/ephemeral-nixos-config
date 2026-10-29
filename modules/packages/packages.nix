@@ -16,6 +16,16 @@ in
     { pkgs, ... }:
     let
       tools = with pkgs; {
+        ephemeral-report = {
+          description = "system details to paste into a bug report";
+          deps = [
+            coreutils
+            gnugrep
+            gnused
+            jq
+            pciutils
+          ];
+        };
         ephemeral-update = {
           description = "rebuild and switch to /persist/etc/nixos, then show what changed";
           deps = [ nh ];

@@ -1,6 +1,6 @@
 { inputs, ... }:
 {
-  flake.modules.nixos.pc = {
+  flake.modules.nixos.full = {
     programs.nh = {
       enable = true;
       flake = "path:/persist/etc/nixos";

@@ -1,5 +1,34 @@
 let
   uri = "file:///run/current-system/sw/share/backgrounds/ephemeral/wallpaper.png";
+
+  gnome = {
+    services.desktopManager.gnome.extraGSettingsOverrides = ''
+      [org.gnome.desktop.background]
+      picture-uri='${uri}'
+      picture-uri-dark='${uri}'
+      picture-options='zoom'
+
+      [org.gnome.desktop.screensaver]
+      picture-uri='${uri}'
+    '';
+
+    programs.dconf.profiles.gdm.databases = [
+      {
+        settings."org/gnome/desktop/background" = {
+          picture-uri = uri;
+          picture-uri-dark = uri;
+          picture-options = "zoom";
+        };
+      }
+    ];
+  };
+
+  plasma = {
+    services.displayManager.plasma-login-manager.settings = {
+      Greeter.WallpaperPluginId = "org.kde.image";
+      "Greeter][Wallpaper][org.kde.image][General".Image = uri;
+    };
+  };
 in
 {
   flake.modules.nixos.pc =
@@ -34,32 +63,8 @@ in
       };
     };
 
-  flake.modules.nixos.gnome = {
-    services.desktopManager.gnome.extraGSettingsOverrides = ''
-      [org.gnome.desktop.background]
-      picture-uri='${uri}'
-      picture-uri-dark='${uri}'
-      picture-options='zoom'
-
-      [org.gnome.desktop.screensaver]
-      picture-uri='${uri}'
-    '';
-
-    programs.dconf.profiles.gdm.databases = [
-      {
-        settings."org/gnome/desktop/background" = {
-          picture-uri = uri;
-          picture-uri-dark = uri;
-          picture-options = "zoom";
-        };
-      }
-    ];
-  };
-
-  flake.modules.nixos.plasma = {
-    services.displayManager.plasma-login-manager.settings = {
-      Greeter.WallpaperPluginId = "org.kde.image";
-      "Greeter][Wallpaper][org.kde.image][General".Image = uri;
-    };
-  };
+  flake.modules.nixos.gnome = gnome;
+  flake.modules.nixos."minimal-gnome" = gnome;
+  flake.modules.nixos.plasma = plasma;
+  flake.modules.nixos."minimal-plasma" = plasma;
 }

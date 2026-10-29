@@ -1,5 +1,5 @@
 {
-  flake.modules.nixos.pc = {
+  flake.modules.nixos.full = {
     services.smartd = {
       enable = true;
       # no smart disks, as in a vm, is not an error
