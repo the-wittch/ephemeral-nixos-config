@@ -15,6 +15,7 @@
   "fingerprint": false,
   "useControlD": false,
   "useTailscale": false,
+  "useOpenSnitch": true,
   "useFlakePassCli": false,
   "usePassSettings": false,
   "passSettingsVault": "Personal",

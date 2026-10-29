@@ -48,7 +48,6 @@
             usbutils
             pciutils
             wireguard-tools
-            opensnitch-ui
             gum
           ]);
 

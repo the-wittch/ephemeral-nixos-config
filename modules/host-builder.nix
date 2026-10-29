@@ -65,6 +65,7 @@ let
               tailscale = settings.useTailscale;
               # these need the full config
               controld = full && settings.useControlD;
+              opensnitch = full && settings.useOpenSnitch;
               extras = full && settings.extras;
               passSshAgent = full && settings.usePassSshAgent;
             }

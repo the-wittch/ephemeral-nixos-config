@@ -21,8 +21,20 @@ let
   defaults = import ../settings/_defaults.nix;
   example = lib.importJSON ../../settings.example.json;
   differ = lib.filter (name: example.${name} or null != defaults.${name}) (lib.attrNames defaults);
+  hostsUnderTest = [
+    "niri-full"
+    "niri-minimal"
+    "plasma-minimal"
+  ];
+  hostDrvs = lib.concatMapStrings (
+    name: config.flake.nixosConfigurations.${name}.config.system.build.toplevel.drvPath + "\n"
+  ) hostsUnderTest;
 in
 {
+  ephemeral.hosts = lib.genAttrs hostsUnderTest (name: {
+    root = ../../tests/${name};
+  });
+
   perSystem =
     { config, pkgs, ... }:
     {
@@ -48,6 +60,7 @@ in
               machine.config.system.build.toplevel.drvPath + "\n" + machine.config.system.build.vm.drvPath
             )
           );
+        desktops-eval = pkgs.writeText "desktops-eval" (builtins.unsafeDiscardStringContext hostDrvs);
         apps-eval = pkgs.writeText "apps-eval" (
           builtins.unsafeDiscardStringContext withAllApps.config.system.build.toplevel.drvPath
         );

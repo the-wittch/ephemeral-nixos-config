@@ -1,8 +1,9 @@
 {
-  flake.modules.nixos.full =
+  flake.modules.nixos.opensnitch =
     { lib, pkgs, ... }:
     {
       environment.persistence."/persist".directories = [ "/var/lib/opensnitch" ];
+      environment.systemPackages = [ pkgs.opensnitch-ui ];
 
       services.opensnitch = {
         enable = true;
