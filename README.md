@@ -32,7 +32,7 @@ The installer leaves a working desktop on the `minimal` profile. Your machine's 
 
 ```nix
 {
-  inputs.ephemeral.url = "github:the-wittch/ephemeral-nixos-config/v3.0.0";
+  inputs.ephemeral.url = "github:the-wittch/ephemeral-nixos-config/v3.1.0";
   outputs = inputs: inputs.ephemeral.lib.mkFlake { inherit inputs; root = ./.; };
 }
 ```
