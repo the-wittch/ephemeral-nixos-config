@@ -1,6 +1,6 @@
 { withSystem, ... }:
 {
-  flake.modules.nixos.pc =
+  flake.modules.nixos.full =
     {
       config,
       lib,

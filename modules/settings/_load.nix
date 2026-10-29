@@ -23,20 +23,24 @@ let
       throw "settings must set username"
     else
       defaults // fromSettings // fromPass;
+  # old keys still load, so an upgrade doesn't fail on a settings.json nobody has touched yet
+  removed = {
+    allowUnfree = "unfree packages are listed in ephemeral.unfreePackages";
+    useChezmoi = "chezmoi was dropped in v3.0.0; Home Manager writes the dotfiles";
+    chezmoiRepo = "chezmoi was dropped in v3.0.0";
+    chezmoiRev = "chezmoi was dropped in v3.0.0";
+  };
+  stale = lib.filter (key: merged ? ${key}) (lib.attrNames removed);
   merged' =
-    if (merged.controldResolver or "") != "" || (merged.chezmoiRepo or "") != "" then
+    if (merged.controldResolver or "") != "" then
       throw ''
-        Don't put controldResolver or chezmoiRepo in settings.
-        Control D id: /persist/etc/controld-resolver and useControlD = true.
-        chezmoi: /persist/etc/chezmoi-repo as "<git-url> <commit>" and useChezmoi = true.
+        Don't put controldResolver in settings.
+        Write the Control D id to /persist/etc/controld-resolver and set useControlD = true.
       ''
     else
-      lib.warnIf (merged ? allowUnfree)
-        "settings.allowUnfree is no longer used. Unfree packages are listed in ephemeral.unfreePackages."
-        merged;
+      lib.foldl' (
+        acc: key:
+        lib.warn "settings.${key} is no longer used (${removed.${key}}). Delete it from settings.json." acc
+      ) merged stale;
 in
-removeAttrs merged' [
-  "controldResolver"
-  "chezmoiRepo"
-  "allowUnfree"
-]
+removeAttrs merged' ([ "controldResolver" ] ++ lib.attrNames removed)

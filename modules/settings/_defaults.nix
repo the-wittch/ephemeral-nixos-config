@@ -8,11 +8,11 @@
   diskDevice = "/dev/nvme0n1";
   swapSize = "16G";
   desktop = "plasma";
+  profile = "full";
   nvidia = "none";
   extras = false;
   laptop = false;
   fingerprint = false;
-  useChezmoi = false;
   useControlD = false;
   useTailscale = false;
   useFlakePassCli = false;

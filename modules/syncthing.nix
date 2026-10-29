@@ -1,5 +1,5 @@
 {
-  flake.modules.nixos.pc =
+  flake.modules.nixos.full =
     { config, ... }:
     let
       user = config.ephemeral.settings.username;

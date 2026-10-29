@@ -87,30 +87,6 @@ for key in "${BOOL_KEYS[@]}"; do
   esac
 done
 
-repo=$(get_field chezmoiRepo || true)
-rev=$(get_field chezmoiRev || true)
-if [[ -n ${repo:-} || -n ${rev:-} ]]; then
-  if [[ -z ${repo:-} || -z ${rev:-} ]]; then
-    echo "  ! chezmoi needs both chezmoiRepo and chezmoiRev" >&2
-    exit 1
-  fi
-  if [[ ! $rev =~ ^[0-9a-fA-F]{40}$ ]]; then
-    echo "  ! chezmoiRev must be the full 40-character commit hash" >&2
-    exit 1
-  fi
-  case $repo in
-    https://* | ssh://* | git@*) ;;
-    *)
-      echo "  ! chezmoiRepo must start with https://, ssh://, or git@" >&2
-      exit 1
-      ;;
-  esac
-  write_root_file /persist/etc/chezmoi-repo "$repo $rev"
-  obj=$(jq '.useChezmoi = true' <<<"$obj")
-  echo "  + chezmoi-repo"
-  found=$((found + 1))
-fi
-
 resolver=$(get_field controldResolver || true)
 if [[ -n ${resolver:-} ]]; then
   if [[ ! $resolver =~ ^[A-Za-z0-9_-]+$ ]]; then

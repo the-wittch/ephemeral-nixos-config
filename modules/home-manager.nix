@@ -3,7 +3,7 @@ let
   hm = config.flake.modules.homeManager;
 in
 {
-  flake.modules.nixos.base =
+  flake.modules.nixos.full =
     { config, ... }:
     {
       imports = [ inputs.home-manager.nixosModules.home-manager ];

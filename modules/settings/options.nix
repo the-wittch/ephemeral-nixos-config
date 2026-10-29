@@ -58,6 +58,13 @@
                 ];
                 description = "Desktop environment.";
               };
+              profile = {
+                type = types.enum [
+                  "minimal"
+                  "full"
+                ];
+                description = "minimal is the small first-boot system the installer sets up; full is everything here.";
+              };
               nvidia = {
                 type = types.enum [
                   "none"
@@ -69,7 +76,6 @@
               extras = flag "Extra apps and tools: Steam, VS Code, Brave, VLC, atuin, fzf, bat, comma and more.";
               laptop = flag "Laptop extras: thermald on Intel, battery reporting, sensors.";
               fingerprint = flag "Fingerprint login and sudo through fprintd.";
-              useChezmoi = flag "chezmoi from /persist/etc/chezmoi-repo writes the dotfiles instead of Home Manager.";
               useControlD = flag "DNS over TLS to Control D; the id is in /persist/etc/controld-resolver.";
               useTailscale = flag "Tailscale VPN.";
               useFlakePassCli = flag "Build modules/packages/_pass-cli.nix instead of nixpkgs proton-pass-cli.";

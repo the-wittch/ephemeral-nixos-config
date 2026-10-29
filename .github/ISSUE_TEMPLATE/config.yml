@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Install problems
+    url: https://github.com/the-wittch/ephemeral-nixos/issues/new/choose
+    about: The installer has its own issue tracker.

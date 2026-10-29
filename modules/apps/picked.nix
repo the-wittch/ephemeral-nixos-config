@@ -3,7 +3,7 @@ let
   catalog = config.ephemeral.apps;
 in
 {
-  flake.modules.nixos.pc =
+  flake.modules.nixos.full =
     {
       config,
       lib,

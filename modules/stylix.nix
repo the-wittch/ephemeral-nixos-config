@@ -1,6 +1,6 @@
 { inputs, ... }:
 {
-  flake.modules.nixos.pc =
+  flake.modules.nixos.full =
     { config, pkgs, ... }:
     {
       imports = [ inputs.stylix.nixosModules.stylix ];

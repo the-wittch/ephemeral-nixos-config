@@ -1,5 +1,5 @@
 {
-  flake.modules.nixos.pc =
+  flake.modules.nixos.full =
     { lib, pkgs, ... }:
     {
       environment.persistence."/persist".directories = [ "/var/lib/opensnitch" ];
