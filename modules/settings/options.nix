@@ -78,6 +78,7 @@
               fingerprint = flag "Fingerprint login and sudo through fprintd.";
               useControlD = flag "DNS over TLS to Control D; the id is in /persist/etc/controld-resolver.";
               useTailscale = flag "Tailscale VPN.";
+              useOpenSnitch = flag "OpenSnitch: outgoing connections need your OK (full profile).";
               useFlakePassCli = flag "Build modules/packages/_pass-cli.nix instead of nixpkgs proton-pass-cli.";
               usePassSettings = flag "Merge settings.from-pass.json.";
               passSettingsVault = {

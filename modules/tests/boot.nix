@@ -20,6 +20,7 @@ in
               nixos.vm
               nixos.pc
               nixos.full
+              nixos.opensnitch
               nixos.gnome
               nixos.dotfiles
               nixos.controld

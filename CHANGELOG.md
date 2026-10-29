@@ -2,6 +2,14 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 3.1.0
+
+### Added
+
+- `useOpenSnitch` setting, on by default. `false` turns off the outgoing-connection prompts.
+- A boot test for the minimal profile, and CI evaluation of every desktop on both profiles.
+- README sections on keeping data across reboots and on how updates reach a machine.
+
 ## 3.0.0
 
 ### Breaking

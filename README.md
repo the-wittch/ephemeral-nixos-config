@@ -24,7 +24,7 @@ A fresh install stays lean. `"extras": true` adds the bigger things:
 
 The installer asks about extras. Anything else you don't want can be switched off in your own modules (see below).
 
-> **On the full profile, outgoing connections are blocked until you allow them.** OpenSnitch asks the first time each program connects somewhere. If an app can't connect, a missed or denied prompt is the likely cause: open OpenSnitch and check its Rules.
+> **On the full profile, outgoing connections are blocked until you allow them.** OpenSnitch asks the first time each program connects somewhere. If an app can't connect, a missed or denied prompt is the likely cause: open OpenSnitch and check its Rules. `"useOpenSnitch": false` turns it off.
 
 ## Setup
 
@@ -90,6 +90,35 @@ ephemeral-update
 ```
 
 Read [`CHANGELOG.md`](CHANGELOG.md) before a new major version; it lists what you have to change. Settings that were removed still load with a warning that says what to do.
+
+A machine gets new packages, security fixes included, only with a new release here, which comes out about once a month. This repo tracks `nixos-unstable` and moves to the stable 26.11 channel once that's released. For fixes sooner, give your machine its own nixpkgs, which replaces this repo's:
+
+```nix
+inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+```
+
+and update it with `nix flake update nixpkgs --flake /persist/etc/nixos`. That combination isn't tested here, so try it with `nix run path:.#vm` first.
+
+## Keeping things across reboots
+
+`/` is wiped on every boot. Your home folder is kept, and so is a short list of system paths (`modules/persist.nix`), but anything else a program writes outside `/home` is gone after a reboot: a database in `/var/lib`, a file you edited in `/etc`. Apps from `ephemeral-apps` already keep what they need.
+
+To keep more, add the paths in a file in `modules/`:
+
+```nix
+{
+  flake.modules.nixos.pc.environment.persistence."/persist" = {
+    directories = [ "/var/lib/postgresql" ];
+    files = [ "/etc/machine-info" ];
+  };
+}
+```
+
+Rebuild, and they're kept from then on. Whatever was in them before the rebuild isn't copied over, so copy it to `/persist` first if you need it. To see what's on `/` that would be lost:
+
+```bash
+sudo find / -xdev -type f -newermt "$(uptime -s)" -not -path '/tmp/*' 2>/dev/null
+```
 
 ## Commands
 
@@ -178,6 +207,7 @@ If you'd rather work in a clone of this repo, put your files in `modules/local/`
 | `fingerprint` | fingerprint login and sudo |
 | `useControlD` | DNS over TLS through Control D |
 | `useTailscale` | the Tailscale VPN |
+| `useOpenSnitch` | OpenSnitch asks before programs connect out (on by default) |
 | `usePassSettings`, `passSettingsVault`, `passSettingsItem` | merge settings from Proton Pass |
 | `usePassSshAgent`, `passSshVault` | the Proton Pass SSH agent at login, serving the keys in that vault |
 | `useFlakePassCli` | build pass-cli from the pinned release here instead of nixpkgs |
@@ -420,7 +450,7 @@ Run `ephemeral-report`, read it, and paste it into a [new issue](https://github.
 
 ### What's tested
 
-This is a personal project shared as-is. x86_64 machines with UEFI are supported. CI evaluates the full profile on Plasma, the minimal profile on GNOME, and every app in the picker, and boots the full profile on GNOME in a VM on each release. niri isn't covered by CI, NVIDIA isn't tested, and there's no Secure Boot.
+This is a personal project shared as-is. x86_64 machines with UEFI are supported. CI evaluates both profiles on GNOME, Plasma and niri, and every app in the picker. On each release it boots both profiles on GNOME in a VM. NVIDIA isn't tested, and there's no Secure Boot.
 
 ## Security notes
 
@@ -454,8 +484,8 @@ This is a personal project shared as-is. x86_64 machines with UEFI are supported
 | `modules/dotfiles/` | Home Manager dotfiles |
 | `modules/packages/` | the helper commands and the pinned pass-cli |
 | `modules/apps/` | the app catalog for `ephemeral-apps`, one file per category |
-| `modules/tests/boot.nix` | the VM boot test |
-| `tests/machine/` | a minimal machine flake that CI builds through `lib.mkFlake` |
+| `modules/tests/` | the VM boot tests, full and minimal |
+| `tests/` | machines CI evaluates: one built through `lib.mkFlake`, and niri on both profiles |
 | `scripts/` | the helper commands' source and the secret scanner |
 
 The installer has no modules of its own: its `flake.nix` is the machine flake above, pinned to a release of this repo. A change here reaches new installs once the installer pins a release with it.
@@ -468,10 +498,10 @@ git config core.hooksPath .githooks
 
 They refuse machine files (`settings.json`, `smb-shares.json`, `hardware-configuration.nix`), `modules/local/`, credentials, private keys and API tokens. pre-push checks every commit you're pushing, so a secret that was added and later deleted is still caught, and CI scans the whole history. `SKIP_SECRET_CHECK=1` skips them on purpose.
 
-CI runs the secret scan, shellcheck, nixfmt and `nix flake check` on every pull request. The VM boot test boots three times with a wiped root and checks services, persistence, snapshots, theming and the LUKS header backup. It runs on `v*` tags and manual runs, and on a pull request once you add the `boot-test` label. To run it locally:
+CI runs the secret scan, shellcheck, nixfmt and `nix flake check` on every pull request. The boot tests run on `v*` tags and manual runs, and on a pull request once you add the `boot-test` label: `boot` boots the full profile three times with a wiped root and checks services, persistence, snapshots, theming and the LUKS header backup; `boot-minimal` boots the first-boot system twice and checks the wipe, the login screen and that nothing failed. To run them locally:
 
 ```bash
 cp settings.example.json settings.json
 cp hardware-configuration.example.nix hardware-configuration.nix
-nix build path:.#checks.x86_64-linux.boot -L
+nix build path:.#checks.x86_64-linux.boot path:.#checks.x86_64-linux.boot-minimal -L
 ```
