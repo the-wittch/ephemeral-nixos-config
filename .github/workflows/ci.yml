@@ -44,7 +44,7 @@ jobs:
       - name: flake check
         run: |
           nix flake check path:. --no-build
-          nix build path:.#checks.x86_64-linux.config-eval path:.#checks.x86_64-linux.scripts path:.#checks.x86_64-linux.settings-example path:.#checks.x86_64-linux.extras-eval path:.#checks.x86_64-linux.apps-eval --no-link
+          nix build path:.#checks.x86_64-linux.config-eval path:.#checks.x86_64-linux.scripts path:.#checks.x86_64-linux.settings-example path:.#checks.x86_64-linux.extras-eval path:.#checks.x86_64-linux.apps-eval path:.#checks.x86_64-linux.pass-ssh-agent-eval --no-link
 
   # skipped counts as passed. not on opened: a label given at creation also fires labeled
   boot-test:
