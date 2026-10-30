@@ -2,6 +2,16 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 3.1.1
+
+### Added
+
+- A rebuild warning when `settings.json` turns on something the `minimal` profile ignores: `extras`, `useControlD`, `usePassSshAgent`, `useFlakePassCli` or apps in `apps.json`.
+
+### Changed
+
+- The README's Setup section is split into switching to the full profile and keeping the config in git.
+
 ## 3.1.0
 
 ### Added

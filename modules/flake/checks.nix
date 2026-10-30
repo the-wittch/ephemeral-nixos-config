@@ -26,6 +26,8 @@ let
     "niri-minimal"
     "plasma-minimal"
   ];
+  warningsOf = name: lib.concatStrings config.flake.nixosConfigurations.${name}.config.warnings;
+  minimalWarns = warningsOf "plasma-minimal";
   hostDrvs = lib.concatMapStrings (
     name: config.flake.nixosConfigurations.${name}.config.system.build.toplevel.drvPath + "\n"
   ) hostsUnderTest;
@@ -60,7 +62,13 @@ in
               machine.config.system.build.toplevel.drvPath + "\n" + machine.config.system.build.vm.drvPath
             )
           );
-        desktops-eval = pkgs.writeText "desktops-eval" (builtins.unsafeDiscardStringContext hostDrvs);
+        desktops-eval =
+          assert lib.assertMsg (lib.hasInfix "extras, usePassSshAgent: only on the full profile" minimalWarns)
+            "profile minimal didn't warn about full-only settings:\n${minimalWarns}";
+          assert lib.assertMsg (
+            !lib.hasInfix "only on the full profile" (warningsOf "niri-full")
+          ) "profile full warned about full-only settings";
+          pkgs.writeText "desktops-eval" (builtins.unsafeDiscardStringContext hostDrvs);
         apps-eval = pkgs.writeText "apps-eval" (
           builtins.unsafeDiscardStringContext withAllApps.config.system.build.toplevel.drvPath
         );

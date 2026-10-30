@@ -2,5 +2,7 @@
   "hostname": "plasma-minimal",
   "username": "alice",
   "desktop": "plasma",
-  "profile": "minimal"
+  "profile": "minimal",
+  "extras": true,
+  "usePassSshAgent": true
 }

@@ -22,6 +22,16 @@ let
       hardware = host.root + "/hardware-configuration.nix";
       full = settings.profile == "full";
       nixos = config.flake.modules.nixos;
+      # settings that only do something on the full profile, by the module they add
+      fullOnly = {
+        controld = "useControlD";
+        extras = "extras";
+        passSshAgent = "usePassSshAgent";
+      };
+      ignored = lib.optionals (!full) (
+        lib.filter (key: settings.${key}) (lib.attrValues fullOnly ++ [ "useFlakePassCli" ])
+        ++ lib.optional (known != [ ]) "the apps in apps.json"
+      );
       system = inputs.nixpkgs.lib.nixosSystem {
         modules = [
           nixos.pc
@@ -41,6 +51,12 @@ let
         )
         ++ [
           {
+            warnings = lib.optional (ignored != [ ]) ''
+              ${lib.concatStringsSep ", " ignored}: only on the full profile, so nothing happens on this machine (profile is minimal).
+              Set "profile": "full" in settings.json to use them.
+            '';
+          }
+          {
             ephemeral.settings = settings;
             ephemeral.smbShares = readData (host.root + "/smb-shares") [ ];
             ephemeral.pickedApps = picked;
@@ -58,17 +74,16 @@ let
         ]
         ++ map (name: nixos.${name}) (
           lib.attrNames (
-            lib.filterAttrs (_: on: on) {
-              nvidia = settings.nvidia != "none";
-              laptop = settings.laptop;
-              fingerprint = settings.fingerprint;
-              tailscale = settings.useTailscale;
-              # these need the full config
-              controld = full && settings.useControlD;
-              opensnitch = full && settings.useOpenSnitch;
-              extras = full && settings.extras;
-              passSshAgent = full && settings.usePassSshAgent;
-            }
+            lib.filterAttrs (_: on: on) (
+              {
+                nvidia = settings.nvidia != "none";
+                laptop = settings.laptop;
+                fingerprint = settings.fingerprint;
+                tailscale = settings.useTailscale;
+                opensnitch = full && settings.useOpenSnitch;
+              }
+              // lib.mapAttrs (_: key: full && settings.${key}) fullOnly
+            )
           )
         )
         ++ lib.optionals full (map (id: config.ephemeral.apps.${id}.nixos) known)
