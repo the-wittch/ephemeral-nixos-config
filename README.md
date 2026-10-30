@@ -28,28 +28,24 @@ The installer asks about extras. Anything else you don't want can be switched of
 
 ## Setup
 
-The installer leaves a working desktop on the `minimal` profile. Your machine's config is a small flake in `/persist/etc/nixos`:
+The installer leaves the `minimal` profile: a working desktop and little else. The machine's config is in `/persist/etc/nixos`: `settings.json`, `hardware-configuration.nix`, and a short `flake.nix` that pins a release of this repo.
 
-```nix
-{
-  inputs.ephemeral.url = "github:the-wittch/ephemeral-nixos-config/v3.1.0";
-  outputs = inputs: inputs.ephemeral.lib.mkFlake { inherit inputs; root = ./.; };
-}
-```
-
-plus `settings.json` and `hardware-configuration.nix`. To switch to the full config, make the folder yours, try the full profile in a VM if you like, then switch:
+### Switch to the full profile
 
 ```bash
 sudo chown -R "$USER": /persist/etc/nixos
 cd /persist/etc/nixos
 sed -i 's/"profile": "minimal"/"profile": "full"/' settings.json
-nix run path:.#vm
 sudo nixos-rebuild switch --flake path:.#nixos
 ```
 
-> **Just want to get going?** After that, run `ephemeral-apps` and tick the apps you want. That's it: no Nix files to edit. Your picks are saved to `apps.json` and installed on the next rebuild, and you can run it again any time to add or remove apps.
+The first rebuild downloads a lot. Log out and back in when it's done, so the desktop session picks up the new environment.
 
-To keep your changes, put the folder in a private git repo:
+`extras`, `useControlD`, `usePassSshAgent`, `useFlakePassCli` and the apps in `apps.json` only apply to the full profile; on `minimal` the rebuild warns that they're ignored. To go back, set `"profile": "minimal"` and rebuild.
+
+> **Just want to get going?** After switching, run `ephemeral-apps` and tick the apps you want. No Nix files to edit: your picks are saved to `apps.json` and installed on the next rebuild, and you can run it again any time to add or remove apps.
+
+### Keep it in git
 
 ```bash
 cd /persist/etc/nixos
@@ -58,13 +54,13 @@ git add -A
 git commit -m "my machine"
 ```
 
-`settings.json` and `hardware-configuration.nix` are gitignored, so they stay on the machine. Always build with `path:`; a plain `.#nixos` only sees files tracked by git and won't find them. To go back, set `"profile": "minimal"` and rebuild.
+Push it to a private repo. `settings.json` and `hardware-configuration.nix` are gitignored, so they stay on the machine. Always build with `path:`; a plain `.#nixos` only sees files tracked by git and won't find them.
 
 ## Try it in a VM
 
 `nix run path:.#vm` boots a machine's config in a throwaway QEMU window: root on tmpfs as usual, `/persist` on a scratch disk that's gone when the VM closes. Log in with your username and the password `ephemeral`. It needs KVM and about 4 GB of free memory.
 
-On an installed machine, run it in `/persist/etc/nixos` to check a change before switching to it. To try this repo without installing anything:
+On an installed machine, run it in `/persist/etc/nixos` to check a change, such as switching profiles, before you rebuild. To try this repo without installing anything:
 
 ```bash
 git clone https://github.com/the-wittch/ephemeral-nixos-config
@@ -82,7 +78,18 @@ The user is `nixuser`; change `username`, `desktop` or anything else in `setting
 ephemeral-update
 ```
 
-That's `nh os switch path:/persist/etc/nixos`: the same rebuild as `nixos-rebuild`, with readable progress and a list of what changed at the end. To move to a newer release of this repo, change the tag in `flake.nix`, then:
+That's `nh os switch path:/persist/etc/nixos`: the same rebuild as `nixos-rebuild`, with readable progress and a list of what changed at the end.
+
+`flake.nix` pins a release of this repo:
+
+```nix
+{
+  inputs.ephemeral.url = "github:the-wittch/ephemeral-nixos-config/v3.1.0";
+  outputs = inputs: inputs.ephemeral.lib.mkFlake { inherit inputs; root = ./.; };
+}
+```
+
+To move to a newer release, change the tag, then:
 
 ```bash
 nix flake update ephemeral --flake /persist/etc/nixos
