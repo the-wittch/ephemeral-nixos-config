@@ -2,6 +2,12 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 3.2.1
+
+### Fixed
+
+- Stylix's `gnome-shell` source comes from GNOME's GitHub mirror instead of gitlab.gnome.org, which turns away CI runners with HTTP 406. Same commit, same system. The monthly release keeps the mirror on the version Stylix pins.
+
 ## 3.2.0
 
 ### Added
