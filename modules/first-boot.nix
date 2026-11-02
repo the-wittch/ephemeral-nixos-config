@@ -1,8 +1,14 @@
+{ withSystem, ... }:
 {
   flake.modules.nixos.minimal =
     { pkgs, ... }:
     {
-      environment.systemPackages = with pkgs; [
+      environment.systemPackages = [
+        (withSystem pkgs.stdenv.hostPlatform.system (
+          { config, ... }: config.legacyPackages.ephemeralTools.ephemeral-setup
+        ))
+      ]
+      ++ (with pkgs; [
         vim
         git
         curl
@@ -24,7 +30,7 @@
         ripgrep
         wireguard-tools
         xdg-user-dirs
-      ];
+      ]);
 
       environment.sessionVariables.TERMINAL = "ghostty";
 

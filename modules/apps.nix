@@ -25,10 +25,7 @@
 
         environment.systemPackages =
           lib.attrValues (
-            removeAttrs packages [
-              "pass-cli"
-              "check-no-secrets"
-            ]
+            withSystem pkgs.stdenv.hostPlatform.system ({ config, ... }: config.legacyPackages.ephemeralTools)
           )
           ++ [ config.ephemeral.passCli ]
           ++ (with pkgs; [

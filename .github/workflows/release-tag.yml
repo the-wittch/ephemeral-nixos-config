@@ -1,0 +1,23 @@
+name: release tag
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    if: startsWith(github.event.head_commit.message, 'release v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: tag and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          set -euo pipefail
+          tag=$(head -n 1 <<<"$MESSAGE" | sed -nE 's/^release (v[0-9]+\.[0-9]+\.[0-9]+)( \(#[0-9]+\))?$/\1/p')
+          [[ -n $tag ]] || { echo "not a release commit"; exit 0; }
+          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "$tag" --generate-notes
