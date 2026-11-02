@@ -47,6 +47,9 @@ in
 
           boot_is_clean(1)
 
+          with subtest("ephemeral-setup is there to switch to the full profile"):
+              machine.succeed("ephemeral-setup --help")
+
           with subtest("no home manager on the minimal profile, and zsh completion comes from the system"):
               machine.fail("systemctl cat home-manager-alice.service")
               machine.succeed("grep -q compinit /etc/zshrc")

@@ -72,4 +72,4 @@ jobs:
           cp settings.example.json settings.json
           cp hardware-configuration.example.nix hardware-configuration.nix
       - name: boot
-        run: nix build path:.#checks.x86_64-linux.boot path:.#checks.x86_64-linux.boot-minimal -L --no-link
+        run: nix build path:.#checks.x86_64-linux.boot path:.#checks.x86_64-linux.boot-minimal path:.#checks.x86_64-linux.upgrade -L --no-link

@@ -2,6 +2,21 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 3.2.0
+
+### Added
+
+- `ephemeral-setup`, on both profiles: switch profile, turn the main options on or off, and rebuild.
+- The installer (from v3.2.0) asks what to install and installs the full system by default; the README's Setup section is rewritten around that.
+- An upgrade test: CI boots a machine on the previous release and switches it to the new code.
+- A monthly patch release with updated inputs, merged and tagged on its own once the boot tests pass. It replaces the weekly lock-update PR.
+- [The first hour](docs/first-hour.md), and a short list of limits in the README.
+- The README is split: the overview stays, the reference moves to `docs/`, one topic per page.
+
+### Fixed
+
+- The full profile installed every package a machine flake defined, not just this repo's commands.
+
 ## 3.1.1
 
 ### Added

@@ -1,0 +1,32 @@
+# settings.json
+
+[`settings.example.json`](../settings.example.json) lists every key with its default. CI fails if a setting or a default changes without it.
+
+| key | what |
+|-----|------|
+| `hostname`, `username`, `timeZone` | who and where the machine is |
+| `locale` | language, e.g. `de_DE.UTF-8` |
+| `keyboardLayout`, `keyboardVariant` | e.g. `de` and `nodeadkeys`; also used at the LUKS prompt |
+| `diskDevice`, `swapSize` | the whole disk (not a partition) and the swap file size |
+| `desktop` | `plasma`, `gnome` or `niri` |
+| `profile` | `full` (everything in these docs) or `minimal` (the installer's small install) |
+| `nvidia` | `none`, `open` (RTX 20 / GTX 16 series and newer) or `legacy` (GTX 900 / 10 series) |
+| `extras` | the extra apps and shell tools listed at the top |
+| `laptop` | thermald on Intel, battery reporting, screen rotation and light sensors |
+| `fingerprint` | fingerprint login and sudo |
+| `useControlD` | DNS over TLS through Control D |
+| `useTailscale` | the Tailscale VPN |
+| `useOpenSnitch` | OpenSnitch asks before programs connect out (on by default) |
+| `usePassSettings`, `passSettingsVault`, `passSettingsItem` | merge settings from Proton Pass |
+| `usePassSshAgent`, `passSshVault` | the Proton Pass SSH agent at login, serving the keys in that vault |
+| `useFlakePassCli` | build pass-cli from the pinned release here instead of nixpkgs |
+
+Every key but `username` has a default. Rebuild after changing it. An older `settings.nix` still loads with a warning; convert it once with:
+
+```bash
+cd /persist/etc/nixos
+nix eval --json --file settings.nix | nix run nixpkgs#jq -- . > settings.json
+rm settings.nix
+```
+
+All the helper commands edit JSON with `jq`, so nothing they write is ever evaluated as Nix code.

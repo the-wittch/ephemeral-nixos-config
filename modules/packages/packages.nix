@@ -26,6 +26,15 @@ in
             pciutils
           ];
         };
+        ephemeral-setup = {
+          description = "switch profile and turn the main options on or off, then rebuild";
+          deps = [
+            gum
+            jq
+            coreutils
+            gnugrep
+          ];
+        };
         ephemeral-update = {
           description = "rebuild and switch to /persist/etc/nixos, then show what changed";
           deps = [ nh ];
@@ -125,10 +134,15 @@ in
           EOF
         '';
       };
+      commands = lib.mapAttrs script tools // {
+        ephemeral-help = help;
+      };
     in
     {
-      packages = lib.mapAttrs script tools // {
-        ephemeral-help = help;
+      # what machines install; packages a machine flake defines itself stay out
+      legacyPackages.ephemeralTools = commands;
+
+      packages = commands // {
         pass-cli = pkgs.callPackage ./_pass-cli.nix { };
 
         check-no-secrets = pkgs.writeShellApplication {

@@ -1,0 +1,59 @@
+name: patch release
+
+on:
+  schedule:
+    - cron: "0 6 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: patch-release
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          # PRs pushed with the default token don't trigger CI
+          token: ${{ secrets.FLAKE_UPDATE_TOKEN }}
+      - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
+        with:
+          github_access_token: ${{ github.token }}
+      - name: update inputs and open the release PR
+        env:
+          GH_TOKEN: ${{ secrets.FLAKE_UPDATE_TOKEN }}
+        run: |
+          set -euo pipefail
+          last=$(git describe --tags --abbrev=0 --match 'v*.*.*')
+          IFS=. read -r major minor patch <<<"${last#v}"
+          next="v$major.$minor.$((patch + 1))"
+          if git ls-remote --exit-code origin "refs/heads/release/$next" >/dev/null; then
+            echo "release/$next is already open"
+            exit 0
+          fi
+
+          nix flake update
+          if git diff --quiet flake.lock; then
+            echo "no input changed since $last"
+            exit 0
+          fi
+
+          sed -i -E "s#(ephemeral-nixos-config/)v[0-9]+\.[0-9]+\.[0-9]+\"#\1$next\"#" README.md
+          jq -n --arg tag "$last" --arg rev "$(git rev-list -n 1 "$last")" '{tag: $tag, rev: $rev}' \
+            >tests/upgrade/previous.json
+          entry="## ${next#v}\n\n### Changed\n\n- nixpkgs and the other inputs updated to $(date -u +%Y-%m-%d).\n"
+          awk -v entry="$entry" '!done && /^## /{ printf "%s\n", entry; done = 1 } { print }' CHANGELOG.md >CHANGELOG.new
+          mv CHANGELOG.new CHANGELOG.md
+
+          git switch -c "release/$next"
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -am "release $next"
+          git push origin "release/$next"
+          gh pr create --base main --head "release/$next" --title "release $next" --label boot-test \
+            --body "Monthly input update. Merges itself once CI and the boot tests pass; merging tags $next."
+          gh pr merge "release/$next" --squash --auto --delete-branch
