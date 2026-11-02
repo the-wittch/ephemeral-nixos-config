@@ -25,6 +25,11 @@
       url = "github:nix-community/stylix";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-parts.follows = "flake-parts";
+      # gitlab.gnome.org turns away CI runners; this is GNOME's own mirror
+      inputs.gnome-shell = {
+        url = "github:GNOME/gnome-shell/50.1";
+        flake = false;
+      };
     };
     nix-index-database = {
       url = "github:nix-community/nix-index-database";

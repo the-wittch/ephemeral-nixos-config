@@ -38,6 +38,13 @@ jobs:
           fi
 
           nix flake update
+          # stylix pins gnome-shell to a GNOME release; keep the GitHub mirror on the same one
+          stylix=$(nix flake metadata --json | jq -r '.locks.nodes.stylix.locked | "github:\(.owner)/\(.repo)/\(.rev)"')
+          src=$(nix flake prefetch --json "$stylix" | jq -r .storePath)
+          ref=$(sed -nE 's#.*"gitlab:GNOME/gnome-shell/([0-9][0-9.]*)[?"].*#\1#p' "$src/flake.nix" | head -n 1)
+          [[ -n $ref ]] || { echo "can't read stylix's gnome-shell version"; exit 1; }
+          sed -i -E "s#(github:GNOME/gnome-shell/)[0-9][0-9.]*\"#\1$ref\"#" flake.nix
+          nix flake lock
           if git diff --quiet flake.lock; then
             echo "no input changed since $last"
             exit 0
