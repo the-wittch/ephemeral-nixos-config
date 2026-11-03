@@ -2,6 +2,13 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 3.3.1
+
+### Fixed
+
+- `$EDITOR` pointed at VS Code even without `extras`, which is what installs it. It's now neovim, and VS Code with `extras`.
+- lazydocker works when `XDG_RUNTIME_DIR` isn't set, as under `sudo`.
+
 ## 3.3.0
 
 ### Added

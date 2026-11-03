@@ -10,7 +10,7 @@
   ```
 
 - Root has no password. sudo is limited to the `wheel` group, and so is the Nix daemon.
-- The firewall is on, SSH is off, and OpenSnitch blocks outgoing connections you haven't allowed.
+- The firewall is on and SSH is off. On the full profile, OpenSnitch blocks outgoing connections you haven't allowed.
 - Kernel hardening: no unprivileged BPF, restricted ptrace and kernel pointers, a few rarely used network protocols blocked, and no kexec. That last one also rules out hibernation.
 - Unfree packages must be listed by name in `ephemeral.unfreePackages`.
 - The setup services this repo adds (Control D, Flathub, the default user picture) run sandboxed by systemd.
