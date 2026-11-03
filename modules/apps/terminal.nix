@@ -85,7 +85,7 @@ in
               name = "lazydocker";
               text = ''
                 if [[ -z ''${DOCKER_HOST:-} && ! -S /run/docker.sock ]]; then
-                  export DOCKER_HOST="unix://$XDG_RUNTIME_DIR/podman/podman.sock"
+                  export DOCKER_HOST="unix://''${XDG_RUNTIME_DIR:-/run/user/$UID}/podman/podman.sock"
                 fi
                 exec ${lib.getExe pkgs.lazydocker} "$@"
               '';

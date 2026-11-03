@@ -21,6 +21,10 @@ luks-header-backup /run/media/$USER/<stick>/luks-header.img
 
 It refuses to write onto the encrypted disk itself or into memory. The copy unlocks with every passphrase the disk had when it was made, so after changing or removing one, make a new copy and destroy the old ones.
 
+## Disk health
+
+smartd watches the disks and sends a desktop notification when one starts to fail.
+
 ## Control D
 
 ```bash
@@ -61,7 +65,7 @@ NetworkManager handles WireGuard itself, so there's nothing extra to install. On
 
 Set `"useTailscale": true`, rebuild, then sign in once with `sudo tailscale up`. Its state stays on `/persist`, and OpenSnitch gets a rule that lets `tailscaled` through.
 
-## Scanning and disk health
+## Scanners
 
 SANE is set up with the driverless `sane-airscan` backend, and Document Scanner is installed on every desktop, so most USB scanners just work. Network scanners aren't found automatically, because mDNS discovery (Avahi) is off on purpose. Add yours by address in a private module:
 
@@ -73,8 +77,6 @@ SANE is set up with the driverless `sane-airscan` backend, and Document Scanner 
   '';
 }
 ```
-
-smartd watches the disks and sends a desktop notification when one starts to fail.
 
 ## Running things without installing them
 

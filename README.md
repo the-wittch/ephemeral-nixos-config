@@ -35,6 +35,7 @@ New here? Start with [the first hour](docs/first-hour.md).
 - One user per machine.
 - Suspend works; hibernation doesn't.
 - The disk unlocks with a passphrase only, no TPM.
+- It's opinionated: Catppuccin, Ghostty and zsh out of the box. Changing them takes a module of your own ([appearance](docs/appearance.md)).
 
 ## Setup
 

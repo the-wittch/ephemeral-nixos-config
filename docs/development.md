@@ -13,7 +13,7 @@
 | `modules/apps/` | the app catalog for `ephemeral-apps`, one file per category |
 | `modules/tests/` | the VM boot tests, full and minimal |
 | `tests/` | machines CI evaluates, and `upgrade/previous.json`, the release the upgrade test starts from |
-| `docs/` | the first-hour guide |
+| `docs/` | the user docs; the README links each page |
 | `scripts/` | the helper commands' source and the secret scanner |
 
 The installer has no modules of its own: its `flake.nix` is the machine flake from the [README](../README.md#rebuild-and-update), pinned to a release of this repo. A change here reaches new installs once the installer pins a release with it.

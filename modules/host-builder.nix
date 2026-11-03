@@ -22,7 +22,6 @@ let
       hardware = host.root + "/hardware-configuration.nix";
       full = settings.profile == "full";
       nixos = config.flake.modules.nixos;
-      # settings that only do something on the full profile, by the module they add
       fullOnly = {
         controld = "useControlD";
         extras = "extras";

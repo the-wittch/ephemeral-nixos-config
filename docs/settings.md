@@ -11,7 +11,7 @@
 | `desktop` | `plasma`, `gnome` or `niri` |
 | `profile` | `full` (everything in these docs) or `minimal` (the installer's small install) |
 | `nvidia` | `none`, `open` (RTX 20 / GTX 16 series and newer) or `legacy` (GTX 900 / 10 series) |
-| `extras` | the extra apps and shell tools listed at the top |
+| `extras` | the extra apps and shell tools listed in the [README](../README.md) |
 | `laptop` | thermald on Intel, battery reporting, screen rotation and light sensors |
 | `fingerprint` | fingerprint login and sudo |
 | `useControlD` | DNS over TLS through Control D |

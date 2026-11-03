@@ -70,7 +70,6 @@
       home-manager.sharedModules = [
         {
           stylix.targets = {
-            # the wallpaper is only a default
             gnome.image.enable = false;
             kde.useWallpaper = false;
             # makes settings.json read-only
