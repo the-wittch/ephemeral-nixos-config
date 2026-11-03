@@ -2,6 +2,16 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 3.3.0
+
+### Added
+
+- A Terminal category in `ephemeral-apps`: lazydocker, k9s, tmux, Zellij, Helix, NeoMutt, aerc, Browsh, Newsboat, WeeChat, cmus, VisiData, bottom, nix-tree and more. lazydocker works with the rootless Podman socket when Docker isn't installed.
+
+### Changed
+
+- lazygit moves from Development to Terminal. It stays picked if you had it.
+
 ## 3.2.1
 
 ### Fixed

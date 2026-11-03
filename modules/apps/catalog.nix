@@ -26,6 +26,7 @@ in
                 "Gaming"
                 "Development"
                 "Security"
+                "Terminal"
                 "Utilities"
               ];
             };
