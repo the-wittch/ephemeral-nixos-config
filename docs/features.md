@@ -86,7 +86,7 @@ With `extras` on, fzf adds Ctrl-T (pick a file) and Alt-C (jump to a directory).
 
 ## Extra apps
 
-`ephemeral-apps` offers nearly 50 common apps by category: browsers, chat, office, media, graphics, games, development, security and utilities. Labels show which ones are unfree, which come from Flathub, and which carry a warning (Docker and Wireshark add you to a powerful group, LocalSend opens a port). Every warning is shown again before anything is saved.
+`ephemeral-apps` offers over 80 common apps by category: browsers, chat, office, media, graphics, games, development, security, terminal apps and utilities. Labels show which ones are unfree, which come from Flathub, and which carry a warning (Docker and Wireshark add you to a powerful group, LocalSend opens a port). Every warning is shown again before anything is saved.
 
 Your picks are saved to `apps.json` next to `settings.json`, a plain list such as `["discord", "obsidian", "docker"]`. Commit it with the rest of your private flake; it isn't a secret, and it brings the same apps to your next machine. On a rebuild:
 

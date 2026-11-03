@@ -1,11 +1,5 @@
 {
   ephemeral.apps = {
-    lazygit = {
-      label = "lazygit";
-      category = "Development";
-      description = "git in the terminal";
-      package = "lazygit";
-    };
     just = {
       label = "just";
       category = "Development";
