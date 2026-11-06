@@ -24,6 +24,15 @@ Your own config in `/persist/etc/nixos` is untouched, so switching back to it is
 sudo cryptsetup luksHeaderRestore /dev/disk/by-partlabel/disk-main-luks --header-backup-file /path/to/luks-header.img
 ```
 
+**A device stopped working after v3.4.0.** That release turned on the IOMMU for every device. To turn it back off, add this to a module of your own and rebuild:
+
+```nix
+{ lib, ... }:
+{
+  flake.modules.nixos.pc.boot.kernelParams = lib.mkAfter [ "iommu.passthrough=1" ];
+}
+```
+
 **An app can't connect.** Check OpenSnitch's rules first (see the note in the [README](../README.md)).
 
 ## Reporting a problem

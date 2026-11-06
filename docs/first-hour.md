@@ -1,7 +1,7 @@
 # The first hour
 
 1. **Log in.** If you picked the small install, run `ephemeral-setup` first and choose the full system. `ephemeral-setup` is also how you change the options you picked later.
-2. **Run `ephemeral-apps`** and tick the apps you want.
+2. **Run `ephemeral-apps`** and tick the apps you want, if you didn't pick them during the install.
 3. **Allow what you use.** OpenSnitch, if you kept it on, asks the first time a program connects out. If something can't connect later, check its rules.
 4. **Using the Proton Pass SSH agent?** Run `pass-cli login`, then log out and back in.
 5. **Keep the config in git:**
