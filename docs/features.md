@@ -2,7 +2,7 @@
 
 ## Snapshots
 
-snapper keeps read-only snapshots of `/persist`, and with it your home folder: 24 hourly, 7 daily and 4 weekly. They undo deletes and bad edits, but they're on the same disk, so they aren't a backup.
+snapper keeps read-only snapshots of `/persist`, and with it your home folder: 24 hourly, 7 daily and 4 weekly. They undo deletes and bad edits, but they're on the same disk, so they aren't a [backup](backup.md).
 
 ```bash
 sudo snapper -c persist list
@@ -128,7 +128,7 @@ direnv allow
 
 ## Proton Pass
 
-`settings-from-pass` reads an item (default: vault `Personal`, item `nixos-settings`) and writes `settings.from-pass.json`, which is merged over `settings.json` when `usePassSettings` is true. Fields it understands:
+`settings-from-pass` reads an item (vault `passSettingsVault` and item `passSettingsItem`, by default `Personal` and `nixos-settings`) and writes `settings.from-pass.json`, which is merged over `settings.json` when `usePassSettings` is true. Fields it understands, and the only ones the rebuild takes from that file:
 
 - `hostname`, `username`, `diskDevice`, `swapSize`, `timeZone`, `desktop`
 - `useFlakePassCli`, as the text `true` or `false`

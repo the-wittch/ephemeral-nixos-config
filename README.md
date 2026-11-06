@@ -18,7 +18,7 @@ The installer sets up the full system by default. Next to a plain desktop, it ad
 
 A fresh install stays lean. `"extras": true` adds the bigger things:
 
-- Steam, VS Code, Brave, VLC, distrobox, Syncthing Tray, 7-Zip and unrar.
+- Steam, VS Code, Brave, VLC, distrobox, Syncthing Tray, 7-Zip, unrar, git-crypt and age.
 - atuin, fzf, bat, tealdeer, yazi, btop and fastfetch in the shell.
 - `,` to run any program once without installing it, and command-not-found suggestions.
 
@@ -35,7 +35,7 @@ New here? Start with [the first hour](docs/first-hour.md).
 - One user per machine.
 - Suspend works; hibernation doesn't.
 - The disk unlocks with a passphrase only, no TPM.
-- It's opinionated: Catppuccin, Ghostty and zsh out of the box. Changing them takes a module of your own ([appearance](docs/appearance.md)).
+- It's opinionated: Catppuccin, Ghostty and zsh by default. Changing them takes a module of your own ([appearance](docs/appearance.md)).
 
 ## Setup
 
@@ -124,6 +124,7 @@ Most of them ask what to do; `--help` on one shows its options. The ones that ch
 - [settings.json](docs/settings.md): every setting
 - [Customizing](docs/customizing.md): your own modules, and how this repo is organized
 - [Keeping things across reboots](docs/persistence.md)
+- [Backups](docs/backup.md): what to copy off the machine, and restoring after a reinstall
 - [Dotfiles and appearance](docs/appearance.md): dotfiles, theme, wallpaper
 - [Try it in a VM](docs/vm.md)
 - [When something breaks](docs/troubleshooting.md): recovery, bug reports, what's tested

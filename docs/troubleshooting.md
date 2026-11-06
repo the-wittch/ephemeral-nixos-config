@@ -24,6 +24,8 @@ Your own config in `/persist/etc/nixos` is untouched, so switching back to it is
 sudo cryptsetup luksHeaderRestore /dev/disk/by-partlabel/disk-main-luks --header-backup-file /path/to/luks-header.img
 ```
 
+**`root-reset-check` failed.** `/` wasn't reset this boot, so the machine is working but not wiping its root. `journalctl -b -u rollback` shows why. The usual cause is a missing `root-blank` snapshot. Your files are fine: they're on `/persist`, which the reset never touches.
+
 **A device stopped working after v3.4.0.** That release turned on the IOMMU for every device. To turn it back off, add this to a module of your own and rebuild:
 
 ```nix

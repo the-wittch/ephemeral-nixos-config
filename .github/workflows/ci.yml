@@ -32,7 +32,7 @@ jobs:
           ./scripts/check-no-secrets.sh
           ./scripts/check-no-secrets.sh --range HEAD
       - name: shellcheck
-        run: nix run --inputs-from path:. nixpkgs#shellcheck -- -x -P SCRIPTDIR scripts/*.sh .githooks/*
+        run: nix run --inputs-from path:. nixpkgs#shellcheck -- -x -P SCRIPTDIR scripts/*.sh .github/*.sh .githooks/*
       - name: nixfmt
         run: git ls-files -z '*.nix' | xargs -0 nix run --inputs-from path:. nixpkgs#nixfmt -- --check
       - name: example settings

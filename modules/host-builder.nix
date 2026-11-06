@@ -76,8 +76,7 @@ let
             lib.filterAttrs (_: on: on) (
               {
                 nvidia = settings.nvidia != "none";
-                laptop = settings.laptop;
-                fingerprint = settings.fingerprint;
+                inherit (settings) laptop fingerprint;
                 tailscale = settings.useTailscale;
                 opensnitch = full && settings.useOpenSnitch;
               }

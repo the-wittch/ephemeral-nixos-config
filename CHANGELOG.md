@@ -2,6 +2,31 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 3.5.0
+
+### Added
+
+- `root-reset-check` fails, and shows up in `systemctl --failed`, when `/` wasn't reset on this boot. The reset never stops a boot, so before this a broken one went unnoticed. The check starts from the second boot after updating.
+- Backups and "what survives what" in the docs, plus CONTRIBUTING.md and SECURITY.md.
+
+### Changed
+
+- Thunderbolt approvals, the power profile and colour profiles survive a reboot.
+- The full and small installs of each desktop share one module for what they have in common, so they can't drift apart. The systems they build are unchanged, apart from the niri fix below.
+- The monthly release stops at its first step with a clear message when `FLAKE_UPDATE_TOKEN` has expired.
+- The pinned pass-cli, used with `useFlakePassCli`, moves from 2.4.2 to 2.5.1.
+
+### Fixed
+
+- On the full niri profile, logging in didn't unlock the GNOME keyring, so apps that keep passwords in it asked for it again.
+- A Proton Pass vault name in `settings.json` went unescaped into the login shell's environment, so one containing `"$(...)"` would run that command in every shell. Vault names can't contain quotes, `$`, backticks or backslashes now. Neither can the disk, swap size or timezone have anything a shell would act on. If a rebuild says a setting "is not of type", fix that value in `settings.json`.
+- `settings.from-pass.json` could set any setting, not just the ones `settings-from-pass` writes. The rebuild now ignores the rest, so the file can't turn off OpenSnitch.
+- `passSettingsVault` and `passSettingsItem` did nothing; `settings-from-pass` only read `PASS_SETTINGS_VAULT` and `PASS_SETTINGS_ITEM`. It now reads both settings, and the variables still win.
+- `ephemeral-report` left your username in the error log it includes, though it says it leaves it out. Check reports you've already posted.
+- The secret scanner missed newer OpenAI and Anthropic keys (`sk-proj-`, `sk-ant-`). It now catches them, and Tailscale auth keys too.
+- The docs' way to turn Stylix's VS Code theming back on failed to build. It needs `lib.mkForce`.
+- When the CHANGELOG already had an entry for the next version, the monthly release would have added a second heading for it.
+
 ## 3.4.0
 
 ### Changed

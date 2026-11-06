@@ -135,6 +135,9 @@ in
               assert machine.succeed("sysctl -n kernel.unprivileged_bpf_disabled").strip() == "1"
               machine.succeed("grep -qx 'blacklist sctp' /etc/modprobe.d/nixos.conf")
               machine.fail("grep -qw '^sctp' /proc/modules")
+              machine.succeed("grep -qw iommu.strict=1 /proc/cmdline")
+              machine.succeed("resolvectl status | grep -q -- -LLMNR")
+              machine.succeed("grep -qx wifi.cloned-mac-address=stable /etc/NetworkManager/NetworkManager.conf")
 
           with subtest("nix daemon is for wheel only"):
               machine.succeed("runuser -u alice -- nix store info")

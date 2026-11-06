@@ -1,6 +1,6 @@
-{
-  flake.modules.nixos.gnome =
-    { lib, pkgs, ... }:
+let
+  common =
+    { pkgs, ... }:
     {
       environment.persistence."/persist".directories = [ "/var/lib/gdm" ];
 
@@ -8,14 +8,6 @@
 
       services.displayManager.gdm.enable = true;
       services.desktopManager.gnome.enable = true;
-      # first db wins
-      programs.dconf.profiles.gdm.databases = lib.mkBefore [
-        { settings."org/gnome/desktop/interface".color-scheme = "prefer-dark"; }
-      ];
-      services.desktopManager.gnome.extraGSettingsOverrides = ''
-        [org.gnome.shell]
-        enabled-extensions=['appindicatorsupport@rgcjonas.gmail.com', 'caffeine@patapon.info']
-      '';
 
       services.gnome.gnome-keyring.enable = true;
 
@@ -25,6 +17,25 @@
         gnome-text-editor
         loupe
         file-roller
+      ];
+    };
+in
+{
+  flake.modules.nixos.gnome =
+    { lib, pkgs, ... }:
+    {
+      imports = [ common ];
+
+      # first db wins
+      programs.dconf.profiles.gdm.databases = lib.mkBefore [
+        { settings."org/gnome/desktop/interface".color-scheme = "prefer-dark"; }
+      ];
+      services.desktopManager.gnome.extraGSettingsOverrides = ''
+        [org.gnome.shell]
+        enabled-extensions=['appindicatorsupport@rgcjonas.gmail.com', 'caffeine@patapon.info']
+      '';
+
+      environment.systemPackages = with pkgs; [
         gnome-extension-manager
         gnomeExtensions.appindicator
         gnomeExtensions.caffeine
@@ -40,26 +51,8 @@
       ];
     };
 
-  flake.modules.nixos."minimal-gnome" =
-    { pkgs, ... }:
-    {
-      environment.persistence."/persist".directories = [ "/var/lib/gdm" ];
-
-      services.xserver.enable = true;
-
-      services.displayManager.gdm.enable = true;
-      services.desktopManager.gnome.enable = true;
-      services.gnome.gnome-initial-setup.enable = false;
-
-      services.gnome.gnome-keyring.enable = true;
-      security.pam.services.login.enableGnomeKeyring = true;
-
-      environment.systemPackages = with pkgs; [
-        gnome-tweaks
-        nautilus
-        gnome-text-editor
-        loupe
-        file-roller
-      ];
-    };
+  flake.modules.nixos."minimal-gnome" = {
+    imports = [ common ];
+    services.gnome.gnome-initial-setup.enable = false;
+  };
 }
