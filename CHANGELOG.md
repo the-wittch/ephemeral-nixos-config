@@ -2,6 +2,12 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 3.6.2
+
+### Changed
+
+- Zork lists your saves when you start a game, newest first. Enter continues the newest, a number loads that one, N starts a new game.
+
 ## 3.6.1
 
 ### Changed
