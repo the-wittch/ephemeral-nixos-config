@@ -2,6 +2,18 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 3.4.0
+
+### Changed
+
+- Wi-Fi uses a different MAC address on each network, the same one every time you join it, so networks can't follow the laptop from place to place. Routers see it as a new device once; update any fixed IP or MAC filter you set for it. To keep the hardware address, set `networking.networkmanager.wifi.macAddress = "preserve"` in a private module.
+- LLMNR is off. Local `.local` names still work through mDNS.
+- The IOMMU is on and translates every device's memory access, so a Thunderbolt or USB4 device can't read memory it wasn't given. If a device stops working after the update, see [When something breaks](docs/troubleshooting.md) and open an issue.
+
+### Added
+
+- The app catalog is a package, `app-catalog`, so the installer can offer the same apps as `ephemeral-apps`.
+
 ## 3.3.1
 
 ### Fixed

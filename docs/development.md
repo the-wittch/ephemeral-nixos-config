@@ -9,7 +9,7 @@
 | `modules/settings/` | the settings options, their defaults (`_defaults.nix`) and the loader |
 | `modules/desktop/` | Plasma, GNOME, niri |
 | `modules/dotfiles/` | Home Manager dotfiles |
-| `modules/packages/` | the helper commands and the pinned pass-cli |
+| `modules/packages/` | the helper commands, the pinned pass-cli, and `app-catalog`, which the installer reads |
 | `modules/apps/` | the app catalog for `ephemeral-apps`, one file per category |
 | `modules/tests/` | the VM boot tests, full and minimal |
 | `tests/` | machines CI evaluates, and `upgrade/previous.json`, the release the upgrade test starts from |

@@ -15,6 +15,7 @@ in
   perSystem =
     { pkgs, ... }:
     let
+      catalogJson = pkgs.writeText "app-catalog.json" (builtins.toJSON catalog);
       tools = with pkgs; {
         ephemeral-report = {
           description = "system details to paste into a bug report";
@@ -64,7 +65,7 @@ in
             jq
             coreutils
           ];
-          env.CATALOG = pkgs.writeText "app-catalog.json" (builtins.toJSON catalog);
+          env.CATALOG = catalogJson;
         };
         luks-header-backup = {
           description = "copy the LUKS header to a USB stick";
@@ -143,6 +144,8 @@ in
       legacyPackages.ephemeralTools = commands;
 
       packages = commands // {
+        # the installer reads it to offer the same apps
+        app-catalog = catalogJson;
         pass-cli = pkgs.callPackage ./_pass-cli.nix { };
 
         check-no-secrets = pkgs.writeShellApplication {
