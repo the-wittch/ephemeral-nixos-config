@@ -2,6 +2,12 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 3.6.1
+
+### Changed
+
+- Zork has one entry in the app menu, which opens its menu. Set `programs.zork-nix.gameEntries = true` to list Zork I, II and III as well.
+
 ## 3.6.0
 
 ### Added
