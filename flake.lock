@@ -417,11 +417,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1793938302,
-        "narHash": "sha256-i7CRRMvaTwkUtihtTlLjyuUXexATX2LLnNab0f3cWkE=",
+        "lastModified": 1793939943,
+        "narHash": "sha256-oaC8HldpUjzqy23dvLcpfvGpL/7YlqzKMCnTRU5nr28=",
         "owner": "the-wittch",
         "repo": "zork-nix",
-        "rev": "0a0773fcaa7b515cd3cb19910fa735379c6b83d5",
+        "rev": "b4c4da089cb93416fc6e21b787002dcb63dcdd2a",
         "type": "github"
       },
       "original": {
