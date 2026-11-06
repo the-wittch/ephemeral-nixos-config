@@ -8,10 +8,10 @@ zero=0000000000000000000000000000000000000000
 while read -r _ local_sha _ remote_sha; do
   [[ $local_sha == "$zero" ]] && continue
   if [[ $remote_sha == "$zero" ]]; then
-    "$ROOT/scripts/check-no-secrets.sh" --range "$local_sha" --not --remotes
+    "$ROOT/scripts/check-no-secrets.sh" --range "$local_sha" --not --remotes >/dev/null
   else
-    "$ROOT/scripts/check-no-secrets.sh" --range "$remote_sha..$local_sha"
+    "$ROOT/scripts/check-no-secrets.sh" --range "$remote_sha..$local_sha" >/dev/null
   fi
 done
 
-exec "$ROOT/scripts/check-no-secrets.sh"
+exec "$ROOT/scripts/check-no-secrets.sh" >/dev/null
