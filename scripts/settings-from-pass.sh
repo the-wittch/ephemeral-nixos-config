@@ -6,8 +6,9 @@ REPO_ROOT=${FLAKE_DIR:-/persist/etc/nixos}
 [[ -f $REPO_ROOT/flake.nix ]] || die "no flake at $REPO_ROOT (set FLAKE_DIR)"
 
 OUT="$REPO_ROOT/settings.from-pass.json"
-VAULT=${PASS_SETTINGS_VAULT:-Personal}
-ITEM=${PASS_SETTINGS_ITEM:-nixos-settings}
+SETTINGS=$(settings_json "$REPO_ROOT")
+VAULT=${PASS_SETTINGS_VAULT:-$(jq -r '.passSettingsVault // "Personal"' "$SETTINGS")}
+ITEM=${PASS_SETTINGS_ITEM:-$(jq -r '.passSettingsItem // "nixos-settings"' "$SETTINGS")}
 
 STRING_KEYS=(
   hostname
@@ -106,4 +107,4 @@ fi
 mv -f "$OUT.tmp" "$OUT"
 echo
 echo "Wrote $found field(s) → $OUT"
-echo "Next: sudo nixos-rebuild switch --flake path:.#nixos"
+echo "Next: sudo nixos-rebuild switch --flake path:$REPO_ROOT#nixos"

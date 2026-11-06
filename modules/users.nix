@@ -1,6 +1,6 @@
 {
   flake.modules.nixos.base =
-    { config, pkgs, ... }:
+    { config, ... }:
     let
       settings = config.ephemeral.settings;
     in
@@ -8,7 +8,6 @@
       users.mutableUsers = false;
       users.users.${settings.username} = {
         isNormalUser = true;
-        shell = pkgs.zsh;
         extraGroups = [
           "wheel"
           "networkmanager"

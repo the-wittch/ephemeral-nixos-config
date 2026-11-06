@@ -11,7 +11,7 @@ in
     {
       home-manager.sharedModules = [ hm.passSshAgent ];
 
-      # gcr's socket would point SSH_AUTH_SOCK at itself for the whole session, gnome-shell and every app it starts
+      # gcr would take over SSH_AUTH_SOCK for the whole session
       services.gnome.gcr-ssh-agent.enable = false;
 
       services.opensnitch.rules.pass-cli = {

@@ -8,6 +8,8 @@
         type = types.bool;
         inherit description;
       };
+      # these end up in shell scripts, such as the login environment
+      vaultName = types.strMatching "[^\"$`\\\\[:cntrl:]]+";
     in
     {
       options.ephemeral = {
@@ -27,7 +29,7 @@
                 description = "The one login user.";
               };
               timeZone = {
-                type = types.nonEmptyStr;
+                type = types.strMatching "[A-Za-z0-9_/+-]+";
                 description = "Time zone, e.g. Europe/Berlin.";
               };
               locale = {
@@ -43,11 +45,11 @@
                 description = "XKB variant, e.g. nodeadkeys. Empty for the default.";
               };
               diskDevice = {
-                type = types.nonEmptyStr;
+                type = types.addCheck (types.strMatching "/dev/[A-Za-z0-9/_.:+-]+") (d: !lib.hasInfix ".." d);
                 description = "Whole disk the system is installed on.";
               };
               swapSize = {
-                type = types.nonEmptyStr;
+                type = types.strMatching "[0-9]+[KMGT]?";
                 description = "Swap file size, e.g. 16G.";
               };
               desktop = {
@@ -82,16 +84,16 @@
               useFlakePassCli = flag "Build modules/packages/_pass-cli.nix instead of nixpkgs proton-pass-cli.";
               usePassSettings = flag "Merge settings.from-pass.json.";
               passSettingsVault = {
-                type = types.str;
+                type = vaultName;
                 description = "Proton Pass vault for settings-from-pass.";
               };
               passSettingsItem = {
-                type = types.str;
+                type = vaultName;
                 description = "Proton Pass item for settings-from-pass.";
               };
               usePassSshAgent = flag "Proton Pass SSH agent at login, serving the keys in passSshVault.";
               passSshVault = {
-                type = types.nonEmptyStr;
+                type = vaultName;
                 description = "Proton Pass vault the SSH agent and ssh-pubs-from-pass read keys from.";
               };
             };

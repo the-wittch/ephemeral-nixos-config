@@ -13,7 +13,7 @@ body:
     id: report
     attributes:
       label: ephemeral-report
-      description: Paste the output of `ephemeral-report`. Read it first and remove anything you'd rather not share.
+      description: Paste the output of `ephemeral-report`. Read it first and remove anything you'd rather not share. The small install doesn't have it; paste `nixos-version` and `systemctl --failed` instead.
       render: markdown
     validations:
       required: true

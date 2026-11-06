@@ -48,5 +48,5 @@ echo
 echo "### errors this boot (last 30)"
 echo
 echo '```'
-journalctl -b -p err --no-pager -o short-monotonic 2>/dev/null | tail -n 30 | sed "s/ $(hostname) / /" || true
+journalctl -b -p err --no-pager -o short-monotonic 2>/dev/null | tail -n 30 | sed -e "s/ $(hostname) / /" -e "s/\\<$(id -un)\\>/<user>/g" || true
 echo '```'

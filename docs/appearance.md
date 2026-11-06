@@ -2,7 +2,7 @@
 
 ## Dotfiles
 
-Each file in `modules/dotfiles/` sets up one program in Home Manager: zsh with autosuggestions and syntax highlighting, git, starship, zoxide, neovim and ghostty, plus yazi (`y`), btop, fastfetch, atuin, fzf, bat and tealdeer with `extras`. Change them from your own modules, as in the example above. When Home Manager has to replace a file that's already there, it renames the old one to `<name>.hm-backup` first. `$EDITOR` is neovim, or VS Code (`code --wait`) with `extras`.
+Each file in `modules/dotfiles/` sets up one program in Home Manager: zsh with autosuggestions and syntax highlighting, git, starship, zoxide, neovim and ghostty, plus yazi (`y`), btop, fastfetch, atuin, fzf, bat and tealdeer with `extras`. Change them from your own modules, as shown in [Customizing](customizing.md#your-own-modules). When Home Manager has to replace a file that's already there, it renames the old one to `<name>.hm-backup` first. `$EDITOR` is neovim, or VS Code (`code --wait`) with `extras`.
 
 ## Theme
 
@@ -25,7 +25,7 @@ Pointing at a scheme file means Nix has to build `base16-schemes` while evaluati
 Some Stylix features are switched off:
 
 - Its package overlays rebuild GNOME Shell and a few libraries from source on every update. Without them the GDM login screen isn't themed, but it is still dark.
-- The VS Code target replaces `settings.json` with a read-only file. Turn it back on with `stylix.targets.vscode.enable = true` in `homeManager.base`.
+- The VS Code target replaces `settings.json` with a read-only file. Turn it back on with `stylix.targets.vscode.enable = lib.mkForce true` in `flake.modules.homeManager.base`.
 - The browser target sets a Chromium/Brave policy, which locks the theme colour and shows "managed by your organization".
 - Setting the wallpaper on every login, so that one you pick yourself sticks.
 

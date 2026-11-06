@@ -2,7 +2,7 @@
   flake.modules.nixos.full = {
     services.smartd = {
       enable = true;
-      # no smart disks, as in a vm, is not an error
+      # a VM has no SMART disks; that's not an error
       extraOptions = [
         "-q"
         "nodev0"

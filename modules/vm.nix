@@ -3,7 +3,6 @@ let
   nixos = config.flake.modules.nixos;
 in
 {
-  # the machine as a throwaway VM: root on tmpfs, /persist on a scratch btrfs disk
   flake.modules.nixos.vm =
     { config, lib, ... }:
     let

@@ -16,7 +16,22 @@ let
   # the pass file can't turn itself on
   usePass = (defaults // fromSettings).usePassSettings or false;
 
-  fromPass = if usePass then readData (flakeRoot + "/settings.from-pass") { } else { };
+  # only what settings-from-pass writes, so the file can't turn off OpenSnitch or the like
+  passKeys = lib.genAttrs [
+    "hostname"
+    "username"
+    "diskDevice"
+    "swapSize"
+    "timeZone"
+    "desktop"
+    "useFlakePassCli"
+    "useControlD"
+  ] (_: null);
+  fromPass =
+    if usePass then
+      builtins.intersectAttrs passKeys (readData (flakeRoot + "/settings.from-pass") { })
+    else
+      { };
 
   merged =
     if !(fromSettings ? username) || fromSettings.username == "" then

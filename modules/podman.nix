@@ -2,7 +2,7 @@
   flake.modules.nixos.pc = {
     environment.persistence."/persist".directories = [ "/var/lib/containers" ];
 
-    # rootless. the podman group is root-equivalent
+    # rootless; don't add yourself to the podman group, it's root-equivalent
     virtualisation.podman = {
       enable = true;
       dockerCompat = true;

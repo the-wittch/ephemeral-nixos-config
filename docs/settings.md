@@ -21,7 +21,7 @@
 | `usePassSshAgent`, `passSshVault` | the Proton Pass SSH agent at login, serving the keys in that vault |
 | `useFlakePassCli` | build pass-cli from the pinned release here instead of nixpkgs |
 
-Every key but `username` has a default. Rebuild after changing it. An older `settings.nix` still loads with a warning; convert it once with:
+Every key but `username` has a default. Rebuild after changing it. Values are checked on the rebuild: a disk has to be a `/dev/` path, swap a size like `16G`, and vault names can't contain quotes, `$`, backticks or backslashes, since some of them end up in shell scripts. An older `settings.nix` still loads with a warning; convert it once with:
 
 ```bash
 cd /persist/etc/nixos

@@ -1,26 +1,21 @@
 { config, ... }:
 let
   hm = config.flake.modules.homeManager;
-in
-{
-  flake.modules.nixos.niri =
-    { config, pkgs, ... }:
-    {
-      environment.persistence."/persist".directories = [ "/var/lib/noctalia-greeter" ];
 
+  common =
+    { pkgs, ... }:
+    {
       programs.niri.enable = true;
       programs.noctalia = {
         enable = true;
         systemd.enable = true;
         recommendedServices.enable = true;
       };
-      services.displayManager.noctalia-greeter = {
-        enable = true;
-        passwordlessSyncUsers = [ config.ephemeral.settings.username ];
-        settings.appearance.theme_mode = "dark";
-      };
+      services.displayManager.noctalia-greeter.enable = true;
 
       services.gnome.gnome-keyring.enable = true;
+      # the greeter logs in through greetd
+      security.pam.services.greetd.enableGnomeKeyring = true;
 
       environment.systemPackages = with pkgs; [
         xwayland-satellite
@@ -28,6 +23,20 @@ in
         brightnessctl
         playerctl
       ];
+    };
+in
+{
+  flake.modules.nixos.niri =
+    { config, ... }:
+    {
+      imports = [ common ];
+
+      environment.persistence."/persist".directories = [ "/var/lib/noctalia-greeter" ];
+
+      services.displayManager.noctalia-greeter = {
+        passwordlessSyncUsers = [ config.ephemeral.settings.username ];
+        settings.appearance.theme_mode = "dark";
+      };
 
       home-manager.sharedModules = [ hm.niri ];
     };
@@ -45,26 +54,5 @@ in
     };
   };
 
-  flake.modules.nixos."minimal-niri" =
-    { pkgs, ... }:
-    {
-      programs.niri.enable = true;
-      programs.noctalia = {
-        enable = true;
-        systemd.enable = true;
-        recommendedServices.enable = true;
-      };
-      services.displayManager.noctalia-greeter.enable = true;
-
-      services.gnome.gnome-keyring.enable = true;
-      security.pam.services.login.enableGnomeKeyring = true;
-      security.pam.services.greetd.enableGnomeKeyring = true;
-
-      environment.systemPackages = with pkgs; [
-        xwayland-satellite
-        fuzzel
-        brightnessctl
-        playerctl
-      ];
-    };
+  flake.modules.nixos."minimal-niri".imports = [ common ];
 }

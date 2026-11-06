@@ -10,7 +10,6 @@
       '';
     in
     {
-      # default only: a picture set in the desktop's settings stays
       systemd.services.ephemeral-avatar = {
         description = "Default user picture";
         wantedBy = [ "accounts-daemon.service" ];

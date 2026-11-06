@@ -72,7 +72,11 @@ fi
 vault=$(get passSshVault)
 if [[ ${on[usePassSshAgent]:-false} == true ]]; then
   vault=$(gum input --header "Proton Pass vault with your SSH keys" --value "${vault:-Personal}") || exit 0
-  [[ -n $vault ]] || die "the vault name can't be empty"
+  case $vault in
+    "" | *[[:cntrl:]]* | *'"'* | *'$'* | *'`'* | *\\*)
+      die "the vault name can't be empty or have quotes, \$, backticks or backslashes"
+      ;;
+  esac
 fi
 
 args=(--arg profile "$profile")
