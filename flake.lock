@@ -285,7 +285,8 @@
         "import-tree": "import-tree",
         "nix-index-database": "nix-index-database",
         "nixpkgs": "nixpkgs",
-        "stylix": "stylix"
+        "stylix": "stylix",
+        "zork-nix": "zork-nix"
       }
     },
     "stylix": {
@@ -400,6 +401,32 @@
       "original": {
         "owner": "tinted-theming",
         "repo": "base16-zed",
+        "type": "github"
+      }
+    },
+    "zork-nix": {
+      "inputs": {
+        "flake-parts": [
+          "flake-parts"
+        ],
+        "import-tree": [
+          "import-tree"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1793938302,
+        "narHash": "sha256-i7CRRMvaTwkUtihtTlLjyuUXexATX2LLnNab0f3cWkE=",
+        "owner": "the-wittch",
+        "repo": "zork-nix",
+        "rev": "0a0773fcaa7b515cd3cb19910fa735379c6b83d5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "the-wittch",
+        "repo": "zork-nix",
         "type": "github"
       }
     }
