@@ -1,3 +1,4 @@
+{ inputs, ... }:
 {
   ephemeral.apps = {
     lutris = {
@@ -35,6 +36,15 @@
       category = "Gaming";
       description = "install Proton-GE and Wine-GE";
       package = "protonup-qt";
+    };
+    zork = {
+      label = "Zork I-III";
+      category = "Gaming";
+      description = "the Infocom text adventures in a CRT terminal";
+      nixos = {
+        imports = [ inputs.zork-nix.nixosModules.default ];
+        programs.zork-nix.enable = true;
+      };
     };
   };
 }

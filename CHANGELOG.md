@@ -2,6 +2,12 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 3.6.0
+
+### Added
+
+- Zork I-III in `ephemeral-apps`, under Gaming: the Infocom text adventures in cool-retro-term with an amber CRT look. It comes from [zork-nix](https://github.com/the-wittch/zork-nix); set `programs.zork-nix.phosphor`, `fullscreen` or `profile` in a module of your own to change the look.
+
 ## 3.5.0
 
 ### Added
