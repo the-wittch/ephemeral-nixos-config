@@ -2,6 +2,13 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 3.8.1
+
+### Changed
+
+- A new Ghostty window opens with fastfetch in boxed sections (System, Hardware, Desktop, Terminal), next to the wallpaper's glitchy snowflake drawn in colored characters with EPHEMERAL under it. Ghostty opens at 151×43 so both fit. The pre-rendered spin from 3.8.0 is gone.
+- Troubleshooting shows how to make a missing `root-blank` again. The security notes now say what the unencrypted `/boot`, TRIM and the IOMMU do and don't protect against.
+
 ## 3.8.0
 
 ### Added

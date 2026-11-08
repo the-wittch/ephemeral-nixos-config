@@ -3,7 +3,7 @@
     # also blocks hibernation
     security.protectKernelImage = true;
 
-    # blocks DMA attacks over Thunderbolt and USB4
+    # keeps Thunderbolt and USB4 devices to their own memory
     boot.kernelParams = [
       "intel_iommu=on"
       "iommu.passthrough=0"

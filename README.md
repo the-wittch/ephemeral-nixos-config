@@ -19,7 +19,7 @@ The installer sets up the full system by default. Next to a plain desktop, it ad
 A fresh install stays lean. `"extras": true` adds the bigger things:
 
 - Steam, VS Code, Brave, VLC, distrobox, Syncthing Tray, 7-Zip, unrar, git-crypt and age.
-- atuin, fzf, bat, tealdeer, yazi, btop and fastfetch in the shell, and a spinning Nix logo when Ghostty opens.
+- atuin, fzf, bat, tealdeer, yazi, btop and fastfetch in the shell; it greets each new Ghostty window with the wallpaper's snowflake.
 - `,` to run any program once without installing it, and command-not-found suggestions.
 
 The installer asks about extras. Anything else you don't want can be switched off in your own modules ([Customizing](docs/customizing.md)).
