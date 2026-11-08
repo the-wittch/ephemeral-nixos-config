@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Draws the fastfetch logo from the wallpaper: its snowflake and pixels in truecolor
 # characters, with EPHEMERAL under them. Args: wallpaper.svg out-file
 set -euo pipefail

@@ -75,7 +75,8 @@ fetch_vault_json() {
   JSON_FILE=$(mktemp)
   err=$(mktemp)
 
-  if ! pass-cli item list --vault-name "$VAULT" --output json >"$JSON_FILE" 2>"$err"; then
+  # only SSH key items, so logins and notes are never opened
+  if ! pass-cli item list --vault-name "$VAULT" --filter-type ssh-key --output json >"$JSON_FILE" 2>"$err"; then
     echo "failed to list vault: $VAULT" >&2
     cat "$err" >&2 || true
     rm -f -- "$err"
@@ -301,7 +302,7 @@ if [[ $count -eq 0 ]]; then
     echo "requested: ${TITLES[*]}" >&2
   fi
   echo >&2
-  echo "Items in vault (title / type):" >&2
+  echo "SSH key items in vault (title / type):" >&2
   list_item_rows | while IFS=$'\t' read -r title typ; do
     [[ -z $title ]] && continue
     printf '  - %s (%s)\n' "$title" "${typ:-?}" >&2

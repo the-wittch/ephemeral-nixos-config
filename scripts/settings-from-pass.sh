@@ -32,14 +32,7 @@ need() {
 need pass-cli
 
 write_root_file() {
-  local dest=$1
-  local content=$2
-  local tmp
-  tmp=$(mktemp)
-  printf '%s\n' "$content" >"$tmp"
-  sudo mkdir -p /persist/etc
-  sudo install -m 600 "$tmp" "$dest"
-  rm -f "$tmp"
+  printf '%s\n' "$2" | sudo install -D -m 600 /dev/stdin "$1"
 }
 
 get_field() {
@@ -107,4 +100,7 @@ fi
 mv -f "$OUT.tmp" "$OUT"
 echo
 echo "Wrote $found field(s) → $OUT"
-echo "Next: sudo nixos-rebuild switch --flake path:$REPO_ROOT#nixos"
+if [[ $(jq -r '.usePassSettings // false' "$SETTINGS") != true ]]; then
+  echo "settings.json doesn't have \"usePassSettings\": true, so the rebuild ignores this file." >&2
+fi
+echo "Next: ephemeral-update"

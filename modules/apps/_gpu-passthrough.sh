@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # libvirt qemu hook: <guest> <operation> <sub-operation>, the domain XML on stdin.
 # Only acts when the guest is given the GPU the host booted on. libvirt binds it to
 # vfio-pci and back itself (managed host devices); this frees it first and restores

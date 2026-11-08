@@ -156,7 +156,7 @@ settings-from-pass
 ephemeral-update
 ```
 
-`ssh-pubs-from-pass` writes the public half of each SSH key item in `passSshVault` to `~/.ssh/<title>.pub`, for `IdentityFile` lines. `--list` shows what it would write. `PASS_SETTINGS_VAULT`, `PASS_SETTINGS_ITEM` and `PASS_SSH_VAULT` change where they look.
+`ssh-pubs-from-pass` writes the public half of each SSH key item in `passSshVault` to `~/.ssh/<title>.pub` (lowercased, with anything but letters, digits, `.`, `_` and `-` turned into `_`), for `IdentityFile` lines. It only opens SSH key items. `--list` shows what it would write. `PASS_SETTINGS_VAULT`, `PASS_SETTINGS_ITEM` and `PASS_SSH_VAULT` change where they look.
 
 ### SSH agent
 
