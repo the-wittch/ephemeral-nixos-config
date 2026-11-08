@@ -43,7 +43,10 @@
                 MNTPOINT=$(mktemp -d)
                 mount /dev/mapper/cryptroot "$MNTPOINT" -o subvol=/
                 trap 'umount "$MNTPOINT" || true; rmdir "$MNTPOINT" || true' EXIT
-                btrfs subvolume snapshot -r "$MNTPOINT/root" "$MNTPOINT/root-blank"
+                # also runs when disko formats a disk that already has the layout
+                if [[ ! -e "$MNTPOINT/root-blank" ]]; then
+                  btrfs subvolume snapshot -r "$MNTPOINT/root" "$MNTPOINT/root-blank"
+                fi
               '';
               subvolumes = {
                 "/root" = {
