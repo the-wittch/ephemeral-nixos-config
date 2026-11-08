@@ -7,7 +7,7 @@
 | `modules/first-boot.nix` | what the small install (profile `minimal`) has instead of the full system |
 | `modules/vm.nix` | the VM used by `nix run .#vm` and the boot test |
 | `modules/settings/` | the settings options, their defaults (`_defaults.nix`) and the loader |
-| `modules/desktop/` | Plasma, GNOME, niri |
+| `modules/desktop/` | Plasma, GNOME, niri, Umbriel, and the Noctalia shell niri and Umbriel share |
 | `modules/dotfiles/` | Home Manager dotfiles |
 | `modules/packages/` | the helper commands, the pinned pass-cli, and `app-catalog`, which the installer reads |
 | `modules/apps/` | the app catalog for `ephemeral-apps`, one file per category |

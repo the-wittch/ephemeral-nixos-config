@@ -8,7 +8,7 @@
 | `locale` | language, e.g. `de_DE.UTF-8` |
 | `keyboardLayout`, `keyboardVariant` | e.g. `de` and `nodeadkeys`; also used at the LUKS prompt |
 | `diskDevice`, `swapSize` | the whole disk (not a partition) and the swap file size |
-| `desktop` | `plasma`, `gnome` or `niri` |
+| `desktop` | `plasma`, `gnome`, `niri` or `umbriel` |
 | `profile` | `full` (everything in these docs) or `minimal` (the installer's small install) |
 | `nvidia` | `none`, `open` (RTX 20 / GTX 16 series and newer) or `legacy` (GTX 900 / 10 series) |
 | `extras` | the extra apps and shell tools listed in the [README](../README.md) |

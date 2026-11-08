@@ -2,6 +2,18 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 3.8.0
+
+### Added
+
+- Umbriel as a fourth desktop, with the Noctalia shell and greeter like niri. Set `"desktop": "umbriel"` in `settings.json`, or pick it in the installer. Your own Umbriel settings go in `~/.config/umbriel/local.toml`.
+- Plasma on the full profile is set up with plasma-manager: Krohnkite tiles windows, and matugen makes the color scheme from the desktop wallpaper, again whenever the wallpaper changes. See [Plasma](docs/appearance.md#plasma).
+
+### Changed
+
+- Plasma no longer uses Stylix's Catppuccin colors; fonts and the cursor stay the same.
+- The Ghostty splash is drawn from the official Nix snowflake: it spins once in its two blues above EPHEMERAL, then settles into the fastfetch logo beside the system info. areofyl's `fetch` is gone; its 3D shading broke the flake into specks. fastfetch now cuts long lines at the window edge instead of wrapping them.
+
 ## 3.7.0
 
 ### Added

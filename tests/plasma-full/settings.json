@@ -1,0 +1,8 @@
+{
+  "hostname": "plasma-full",
+  "username": "alice",
+  "desktop": "plasma",
+  "profile": "full",
+  "extras": true,
+  "usePassSshAgent": true
+}
