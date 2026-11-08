@@ -2,6 +2,15 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 3.7.0
+
+### Added
+
+- A Virtualization category in `ephemeral-apps`: virt-manager with a TPM and Secure Boot firmware for Windows 11 guests, VM Curator, and single-GPU passthrough for virt-manager VMs on desktops. See [Virtual machines](docs/features.md#virtual-machines).
+- A System category, all off unless picked: profile-sync-daemon, ananicy-cpp with the CachyOS rules, and bpftune.
+- RustDesk under Utilities.
+- With `extras`, a new Ghostty window opens with the Nix snowflake and EPHEMERAL spinning in 3D next to the system info, until you press a key.
+
 ## 3.6.2
 
 ### Changed

@@ -84,11 +84,11 @@ With `extras` on: type a command that isn't installed and the shell names the pa
 
 ## Shell
 
-With `extras` on, fzf adds Ctrl-T (pick a file) and Alt-C (jump to a directory). atuin owns Ctrl-R: a searchable history that stays on this machine, with no account or sync. Import your existing history once with `atuin import auto`. `bat` is `cat` with syntax highlighting, and `tldr <command>` shows short examples.
+With `extras` on, each new Ghostty window opens with the Nix snowflake and EPHEMERAL spinning in 3D next to the system info, drawn by [fetch](https://github.com/areofyl/fetch). It keeps spinning until you press a key, and that key goes on to the prompt. Run `fetch` to see it again, or change the logo in `~/.config/fetch/logo.txt` from a module of your own. fzf adds Ctrl-T (pick a file) and Alt-C (jump to a directory). atuin owns Ctrl-R: a searchable history that stays on this machine, with no account or sync. Import your existing history once with `atuin import auto`. `bat` is `cat` with syntax highlighting, and `tldr <command>` shows short examples.
 
 ## Extra apps
 
-`ephemeral-apps` offers over 80 common apps by category: browsers, chat, office, media, graphics, games, development, security, terminal apps and utilities. Labels show which ones are unfree, which come from Flathub, and which carry a warning (Docker and Wireshark add you to a powerful group, LocalSend opens a port). Every warning is shown again before anything is saved.
+`ephemeral-apps` offers over 80 common apps by category: browsers, chat, office, media, graphics, games, development, security, terminal apps, utilities, system tuning and virtual machines. Labels show which ones are unfree, which come from Flathub, and which carry a warning (Docker and Wireshark add you to a powerful group, LocalSend opens a port). Every warning is shown again before anything is saved.
 
 The installer offers the same list. Your picks are saved to `apps.json` next to `settings.json`, a plain list such as `["discord", "obsidian", "docker"]`. Commit it with the rest of your private flake; it isn't a secret, and it brings the same apps to your next machine. On a rebuild:
 
@@ -112,6 +112,22 @@ Your private flake can add its own apps to the picker:
 ```
 
 CI evaluates a machine with every app picked, so a package renamed upstream shows up there before it breaks a rebuild.
+
+## System tuning
+
+zram swap and systemd-oomd are always on. Three more are in `ephemeral-apps` under System, off unless you pick them:
+
+- **Profile-sync-daemon** keeps Firefox and Chromium-based browser profiles in RAM and copies them back every 10 minutes and at logout. It helps on slow disks; on an SSD you won't notice much.
+- **ananicy-cpp** raises or lowers the CPU and IO priority of known programs, using CachyOS's rules: games and audio up, compilers and indexers down.
+- **bpftune** watches the network and memory and adjusts kernel settings such as TCP buffer sizes as the load changes. None of what it changes overlaps with the hardening settings.
+
+## Virtual machines
+
+`ephemeral-apps` has a Virtualization category:
+
+- **virt-manager** runs VMs through libvirt. Windows 11 works out of the box: pick Windows 11 as the OS and virt-manager adds the TPM 2.0 it needs. For Secure Boot, tick "Customize configuration before install" and check that Firmware under Overview is the `secure` UEFI image. The Secure Boot keys aren't enrolled, which Windows 11 accepts. VM disks and settings are kept in `/var/lib/libvirt`.
+- **VM Curator** is a terminal UI that runs QEMU directly, with ready-made profiles for over 130 systems. Its VMs live in a folder in your home, and it finds the UEFI firmware and TPM on its own.
+- **GPU passthrough** gives a virt-manager VM the only graphics card on a desktop. In the VM's settings, add the card and its HDMI audio as PCI host devices. Starting the VM logs you out, unloads the GPU driver and hands the card to the guest, so its monitor shows the guest. When the guest shuts down, the card comes back and the login screen returns. If the driver won't let go, the start fails and you're back at the login screen; `journalctl -u libvirtd` says what held it. NVIDIA cards often need their vBIOS as a ROM file on the host device. A VM that gets a second GPU instead isn't affected.
 
 ## Flatpak
 

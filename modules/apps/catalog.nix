@@ -28,6 +28,8 @@ in
                 "Security"
                 "Terminal"
                 "Utilities"
+                "System"
+                "Virtualization"
               ];
             };
             description = mkOption { type = text; };
