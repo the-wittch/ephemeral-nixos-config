@@ -4,6 +4,8 @@
 
 Each file in `modules/dotfiles/` sets up one program in Home Manager: zsh with autosuggestions and syntax highlighting, git, starship, zoxide, neovim and ghostty, plus yazi (`y`), btop, fastfetch, atuin, fzf, bat and tealdeer with `extras`. Change them from your own modules, as shown in [Customizing](customizing.md#your-own-modules). When Home Manager has to replace a file that's already there, it renames the old one to `<name>.hm-backup` first. `$EDITOR` is neovim, or VS Code (`code --wait`) with `extras`.
 
+![fastfetch in a new Ghostty window, the wallpaper's snowflake beside boxed system info](images/terminal.png)
+
 ## Theme
 
 Stylix applies the [Catppuccin Mocha](https://catppuccin.com) palette to GTK and Qt apps, GNOME Shell, Noctalia on niri and Umbriel, the boot splash, the console and the dotfiles above. Plasma takes its colors from the wallpaper instead (see [Plasma](#plasma)). Fonts are Noto Sans and Noto Serif, with JetBrains Mono for code. The cursor is Catppuccin Mocha Dark.
