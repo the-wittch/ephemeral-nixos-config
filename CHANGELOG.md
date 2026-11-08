@@ -2,6 +2,12 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 3.8.2
+
+### Changed
+
+- The README and the appearance docs show a screenshot of a new Ghostty window.
+
 ## 3.8.1
 
 ### Changed

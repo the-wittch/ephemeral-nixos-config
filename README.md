@@ -22,6 +22,10 @@ A fresh install stays lean. `"extras": true` adds the bigger things:
 - atuin, fzf, bat, tealdeer, yazi, btop and fastfetch in the shell; it greets each new Ghostty window with the wallpaper's snowflake.
 - `,` to run any program once without installing it, and command-not-found suggestions.
 
+![A new Ghostty window with extras: fastfetch, with btop and areofyl's fetch below it](docs/images/terminal.png)
+
+fastfetch on a new Ghostty window, with btop (bottom left) and [fetch](https://github.com/areofyl/fetch) (bottom right, not included).
+
 The installer asks about extras. Anything else you don't want can be switched off in your own modules ([Customizing](docs/customizing.md)).
 
 > **On the full profile, outgoing connections are blocked until you allow them.** OpenSnitch asks the first time each program connects somewhere. If an app can't connect, a missed or denied prompt is the likely cause: open OpenSnitch and check its Rules. `"useOpenSnitch": false` turns it off.
