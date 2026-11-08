@@ -57,6 +57,7 @@
                   "plasma"
                   "gnome"
                   "niri"
+                  "umbriel"
                 ];
                 description = "Desktop environment.";
               };

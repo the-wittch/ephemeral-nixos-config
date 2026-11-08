@@ -20,8 +20,8 @@ Every `.nix` file in `/persist/etc/nixos/modules/` is loaded the same way. These
 | `flake.modules.nixos.base`, `flake.modules.nixos.pc` | every machine, both profiles |
 | `flake.modules.nixos.full` | the full profile |
 | `flake.modules.nixos.minimal` | the minimal profile |
-| `flake.modules.nixos.gnome`, `.plasma`, `.niri` | the desktop chosen in `settings.json`, full profile |
-| `flake.modules.nixos.minimal-gnome`, `.minimal-plasma`, `.minimal-niri` | the same, minimal profile |
+| `flake.modules.nixos.gnome`, `.plasma`, `.niri`, `.umbriel` | the desktop chosen in `settings.json`, full profile |
+| `flake.modules.nixos.minimal-gnome`, `.minimal-plasma`, `.minimal-niri`, `.minimal-umbriel` | the same, minimal profile |
 | `flake.modules.homeManager.base`, `flake.modules.homeManager.dotfiles` | your user (full profile; minimal has no Home Manager) |
 | `flake.modules.nixos.extras`, `flake.modules.homeManager.extras` | full profile with `"extras": true` |
 

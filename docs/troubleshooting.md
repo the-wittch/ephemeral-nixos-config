@@ -43,4 +43,4 @@ Run `ephemeral-report`, read it, and paste it into a [new issue](https://github.
 
 ## What's tested
 
-This is a personal project shared as-is. x86_64 machines with UEFI are supported. CI evaluates both profiles on GNOME, Plasma and niri, and every app in the picker. On each release it boots both profiles on GNOME in a VM and switches a machine from the previous release to the new one. NVIDIA isn't tested, and there's no Secure Boot.
+This is a personal project shared as-is. x86_64 machines with UEFI are supported. CI evaluates both profiles on GNOME, Plasma, niri and Umbriel, and every app in the picker. On each release it boots both profiles on GNOME in a VM and switches a machine from the previous release to the new one. NVIDIA isn't tested, and there's no Secure Boot.

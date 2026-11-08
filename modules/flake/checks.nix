@@ -24,7 +24,10 @@ let
   hostsUnderTest = [
     "niri-full"
     "niri-minimal"
+    "plasma-full"
     "plasma-minimal"
+    "umbriel-full"
+    "umbriel-minimal"
   ];
   warningsOf = name: lib.concatStrings config.flake.nixosConfigurations.${name}.config.warnings;
   minimalWarns = warningsOf "plasma-minimal";

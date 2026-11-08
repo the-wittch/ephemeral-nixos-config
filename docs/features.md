@@ -84,7 +84,7 @@ With `extras` on: type a command that isn't installed and the shell names the pa
 
 ## Shell
 
-With `extras` on, each new Ghostty window opens with the Nix snowflake and EPHEMERAL spinning in 3D next to the system info, drawn by [fetch](https://github.com/areofyl/fetch). It keeps spinning until you press a key, and that key goes on to the prompt. Run `fetch` to see it again, or change the logo in `~/.config/fetch/logo.txt` from a module of your own. fzf adds Ctrl-T (pick a file) and Alt-C (jump to a directory). atuin owns Ctrl-R: a searchable history that stays on this machine, with no account or sync. Import your existing history once with `atuin import auto`. `bat` is `cat` with syntax highlighting, and `tldr <command>` shows short examples.
+With `extras` on, each new Ghostty window opens with the Nix snowflake spinning above EPHEMERAL. It turns once and settles into the fastfetch logo next to the system info. A key pressed during the spin stops it and goes on to the prompt. Run `fastfetch` to see it again; the logo is drawn from the official snowflake when the system is built, in `modules/dotfiles/splash/`. fzf adds Ctrl-T (pick a file) and Alt-C (jump to a directory). atuin owns Ctrl-R: a searchable history that stays on this machine, with no account or sync. Import your existing history once with `atuin import auto`. `bat` is `cat` with syntax highlighting, and `tldr <command>` shows short examples.
 
 ## Extra apps
 

@@ -1,4 +1,7 @@
+{ config, ... }:
 let
+  hm = config.flake.modules.homeManager;
+
   common =
     { pkgs, ... }:
     {
@@ -37,6 +40,8 @@ in
 
       # kwallet is the secret service here
       services.gnome.gnome-keyring.enable = false;
+
+      home-manager.sharedModules = [ hm.plasma ];
     };
 
   flake.modules.nixos."minimal-plasma" =
