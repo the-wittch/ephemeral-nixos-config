@@ -30,6 +30,12 @@
       description = "remote desktop client";
       flatpak = "org.remmina.Remmina";
     };
+    rustdesk = {
+      label = "RustDesk";
+      category = "Utilities";
+      description = "remote desktop that works through NAT";
+      package = "rustdesk-flutter";
+    };
     localsend = {
       label = "LocalSend";
       category = "Utilities";
