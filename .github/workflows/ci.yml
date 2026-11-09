@@ -96,4 +96,8 @@ jobs:
           cp hardware-configuration.example.nix hardware-configuration.nix
       - name: boot
         if: steps.changes.outputs.code == 'true'
-        run: nix build path:.#checks.x86_64-linux.boot path:.#checks.x86_64-linux.boot-minimal path:.#checks.x86_64-linux.upgrade path:.#checks.x86_64-linux.disk -L --no-link
+        run: nix build path:.#checks.x86_64-linux.boot path:.#checks.x86_64-linux.boot-minimal path:.#checks.x86_64-linux.upgrade -L --no-link
+      # on its own: a fourth VM at the same time slows the others past their timeouts
+      - name: disk
+        if: steps.changes.outputs.code == 'true'
+        run: nix build path:.#checks.x86_64-linux.disk -L --no-link

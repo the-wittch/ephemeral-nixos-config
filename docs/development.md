@@ -31,5 +31,6 @@ CI runs the secret scan, shellcheck, nixfmt and `nix flake check` on every pull 
 ```bash
 cp settings.example.json settings.json
 cp hardware-configuration.example.nix hardware-configuration.nix
-nix build path:.#checks.x86_64-linux.boot path:.#checks.x86_64-linux.boot-minimal path:.#checks.x86_64-linux.upgrade path:.#checks.x86_64-linux.disk -L
+nix build path:.#checks.x86_64-linux.boot path:.#checks.x86_64-linux.boot-minimal path:.#checks.x86_64-linux.upgrade -L
+nix build path:.#checks.x86_64-linux.disk -L
 ```
