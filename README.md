@@ -22,7 +22,7 @@ A fresh install stays lean. `"extras": true` adds the bigger things:
 - atuin, fzf, bat, tealdeer, yazi, btop and fastfetch in the shell; it greets each new Ghostty window with the wallpaper's snowflake.
 - `,` to run any program once without installing it, and command-not-found suggestions.
 
-![A new Ghostty window with extras: fastfetch, with btop and areofyl's fetch below it](docs/images/terminal.png)
+![A new Ghostty window with extras: fastfetch, with btop and areofyl's fetch below it](docs/images/terminal.gif)
 
 fastfetch on a new Ghostty window, with btop (bottom left) and [fetch](https://github.com/areofyl/fetch) (bottom right, not included).
 

@@ -2,6 +2,19 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 3.8.3
+
+### Fixed
+
+- Formatting a disk that already has the layout no longer fails: the `root-blank` snapshot is only made when it's missing. The new disk test found this.
+- `ssh-pubs-from-pass` only reads SSH key items. Before, it opened every item in the vault, logins and notes included, while looking for public keys.
+- `settings-from-pass` says when `settings.json` doesn't have `"usePassSettings": true`, since the rebuild ignores the file without it. The Control D id no longer passes through a temporary file.
+
+### Changed
+
+- A VM test installs the real disk layout and checks the wipe, what survives it, and the `root-blank` recovery steps in Troubleshooting.
+- The README and appearance docs show an animated screenshot.
+
 ## 3.8.2
 
 ### Changed

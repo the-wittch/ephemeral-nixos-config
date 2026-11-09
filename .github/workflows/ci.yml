@@ -16,6 +16,7 @@ concurrency:
 permissions:
   contents: read
 
+# both jobs are required checks, so a docs-only change runs them and skips only their Nix steps
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -24,22 +25,33 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
-        with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
       - name: secret scan
         run: |
           ./scripts/check-no-secrets.sh
           ./scripts/check-no-secrets.sh --range HEAD
+      - name: what changed
+        id: changes
+        run: ./.github/changed.sh
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+      - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
+        if: steps.changes.outputs.code == 'true'
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
       - name: shellcheck
+        if: steps.changes.outputs.code == 'true'
         run: nix run --inputs-from path:. nixpkgs#shellcheck -- -x -P SCRIPTDIR scripts/*.sh .github/*.sh .githooks/*
       - name: nixfmt
+        if: steps.changes.outputs.code == 'true'
         run: git ls-files -z '*.nix' | xargs -0 nix run --inputs-from path:. nixpkgs#nixfmt -- --check
       - name: example settings
+        if: steps.changes.outputs.code == 'true'
         run: |
           cp settings.example.json settings.json
           cp hardware-configuration.example.nix hardware-configuration.nix
       - name: flake check
+        if: steps.changes.outputs.code == 'true'
         run: |
           nix flake check path:. --no-build
           nix build path:.#checks.x86_64-linux.config-eval path:.#checks.x86_64-linux.scripts path:.#checks.x86_64-linux.settings-example path:.#checks.x86_64-linux.extras-eval path:.#checks.x86_64-linux.apps-eval path:.#checks.x86_64-linux.pass-ssh-agent-eval path:.#checks.x86_64-linux.mkflake-eval path:.#checks.x86_64-linux.desktops-eval --no-link
@@ -55,21 +67,37 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
+      - name: what changed
+        id: changes
+        run: ./.github/changed.sh
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
       - name: free disk space
+        if: steps.changes.outputs.code == 'true'
         run: sudo sh -c "rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache /usr/local/share/boost &" &
       - name: enable kvm
+        if: steps.changes.outputs.code == 'true'
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
+        if: steps.changes.outputs.code == 'true'
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
           extra_nix_config: system-features = nixos-test benchmark big-parallel kvm
       - name: example settings
+        if: steps.changes.outputs.code == 'true'
         run: |
           cp settings.example.json settings.json
           cp hardware-configuration.example.nix hardware-configuration.nix
       - name: boot
+        if: steps.changes.outputs.code == 'true'
         run: nix build path:.#checks.x86_64-linux.boot path:.#checks.x86_64-linux.boot-minimal path:.#checks.x86_64-linux.upgrade -L --no-link
+      # on its own: a fourth VM at the same time slows the others past their timeouts
+      - name: disk
+        if: steps.changes.outputs.code == 'true'
+        run: nix build path:.#checks.x86_64-linux.disk -L --no-link

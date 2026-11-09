@@ -174,7 +174,6 @@
         };
       };
 
-      # new colors at login and whenever the desktop wallpaper changes
       systemd.user.services.plasma-wallpaper-colors = {
         Unit = {
           Description = "Plasma colors from the wallpaper";
