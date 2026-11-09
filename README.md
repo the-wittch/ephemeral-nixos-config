@@ -80,7 +80,7 @@ That's `nh os switch path:/persist/etc/nixos`: the same rebuild as `nixos-rebuil
 
 ```nix
 {
-  inputs.ephemeral.url = "github:the-wittch/ephemeral-nixos-config/v3.8.3";
+  inputs.ephemeral.url = "github:the-wittch/ephemeral-nixos-config/v3.9.0";
   outputs = inputs: inputs.ephemeral.lib.mkFlake { inherit inputs; root = ./.; };
 }
 ```
