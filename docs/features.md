@@ -88,7 +88,7 @@ With `extras` on, each new Ghostty window opens with fastfetch: the wallpaper's 
 
 ## Extra apps
 
-`ephemeral-apps` offers over 80 common apps by category: browsers, chat, office, media, graphics, games, development, security, terminal apps, utilities, system tuning and virtual machines. Labels show which ones are unfree, which come from Flathub, and which carry a warning (Docker and Wireshark add you to a powerful group, LocalSend opens a port). Every warning is shown again before anything is saved.
+`ephemeral-apps` offers over 100 common apps by category: browsers, chat, office, media, graphics, games, development, security and penetration testing (Metasploit, Nmap, Burp Suite, Ghidra and more), terminal apps, utilities, system tuning and virtual machines. Labels show which ones are unfree, which come from Flathub, and which carry a warning (Docker and Wireshark add you to a powerful group, LocalSend opens a port, Nmap notes that OpenSnitch asks about each host a scan reaches). Every warning is shown again before anything is saved.
 
 The installer offers the same list. Your picks are saved to `apps.json` next to `settings.json`, a plain list such as `["discord", "obsidian", "docker"]`. Commit it with the rest of your private flake; it isn't a secret, and it brings the same apps to your next machine. On a rebuild:
 

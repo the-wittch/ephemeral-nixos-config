@@ -2,6 +2,12 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 3.9.0
+
+### Added
+
+- `ephemeral-apps` has security and penetration testing tools under Security: Metasploit, Nmap, ZAP, Burp Suite Community (unfree), sqlmap, ffuf, Gobuster, mitmproxy, Hashcat, John the Ripper, SecLists, Exploit-DB, NetExec, Ghidra, radare2 and binwalk, plus Lynis to audit the machine itself. SecLists' wordlists are in `/run/current-system/sw/share/wordlists/seclists`. Nmap warns that with OpenSnitch on, you're asked about each host a scan reaches.
+
 ## 3.8.3
 
 ### Fixed
