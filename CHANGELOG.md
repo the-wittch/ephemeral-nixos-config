@@ -2,6 +2,19 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 3.11.0
+
+### Added
+
+- `ephemeral-update` checks for a newer release before it rebuilds. If there is one, it links the changelog, warns when it's a new major version, and asks whether to move to it; on yes it changes the tag in `flake.nix`, updates the lock and rebuilds. Offline, or when GitHub doesn't answer within 5 seconds, it rebuilds what's pinned.
+- When `/persist/etc/nixos` still belongs to root, `ephemeral-update` offers to make it yours, the way `ephemeral-setup` does. Say no and it uses `sudo` for the changes it makes there.
+
+### Fixed
+
+- `ephemeral-update` said "no flake at /persist/etc/nixos" on machines from installer v3.0.0 to v3.7.3, which left the folder readable only by root. Rebuilding with this release makes it readable again. Until a machine has this release, run `sudo chmod 755 /persist/etc/nixos` first.
+- Umbriel showed its keybind cheatsheet at every login. It shows at the first login only now, and `Mod+/` opens it again.
+- `ephemeral-apps` and `ephemeral-setup` said to tick with space, but their lists tick with `x`, as the line under them says. They say `x` now, like the installer.
+
 ## 3.10.0
 
 ### Changed

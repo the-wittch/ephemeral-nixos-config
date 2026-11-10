@@ -96,6 +96,10 @@
               chown 0:0 "$d"
             fi
           done
+          # installers up to v3.7.3 left the flake root-only, so ephemeral-update couldn't read it
+          if [ -d /persist/etc/nixos ] && [ "$(stat -c %u%a /persist/etc/nixos)" = 0700 ]; then
+            chmod 0755 /persist/etc/nixos
+          fi
         '';
       };
       system.activationScripts.createPersistentStorageDirs.deps = [ "persistParentModes" ];

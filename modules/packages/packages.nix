@@ -37,8 +37,14 @@ in
           ];
         };
         ephemeral-update = {
-          description = "rebuild and switch to /persist/etc/nixos, then show what changed";
-          deps = [ nh ];
+          description = "rebuild and switch to /persist/etc/nixos, offering newer releases first";
+          deps = [
+            nh
+            curl
+            jq
+            gnused
+            coreutils
+          ];
         };
         controld-setup = {
           description = "set or turn off the Control D resolver id";

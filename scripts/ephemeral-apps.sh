@@ -71,7 +71,7 @@ pick_category() {
     )")
   fi
   out=$(printf '%s\n' "${rows[@]}" |
-    gum choose --no-limit --height 20 --header "$category: space to tick, enter when done" "${preselect[@]}") || return 0
+    gum choose --no-limit --height 20 --header "$category: x to tick, enter when done" "${preselect[@]}") || return 0
 
   for id in "${ids[@]}"; do
     unset "picked[$id]"

@@ -88,12 +88,16 @@ That's `nh os switch path:/persist/etc/nixos`: the same rebuild as `nixos-rebuil
 }
 ```
 
-To move to a newer release, change the tag, then:
+`ephemeral-update` checks for a newer release before it rebuilds. If there is one, it links the changelog and asks whether to move to it, then changes the tag and updates the lock for you. After an install, `/persist/etc/nixos` belongs to root; `ephemeral-update` and `ephemeral-setup` both offer to make it yours, so it can be edited and kept in git.
+
+To do it by hand instead, change the tag, then:
 
 ```bash
 nix flake update ephemeral --flake /persist/etc/nixos
 ephemeral-update
 ```
+
+While the folder still belongs to root, the first command needs `sudo` in front.
 
 Read [`CHANGELOG.md`](CHANGELOG.md) before a new major version; it lists what you have to change. Settings that were removed still load with a warning that says what to do.
 
@@ -112,7 +116,7 @@ and update it with `nix flake update nixpkgs --flake /persist/etc/nixos`. That c
 | command | what |
 |---------|------|
 | `ephemeral-setup` | switch profile and turn the main options on or off, then rebuild (also on minimal) |
-| `ephemeral-update` | rebuild and switch to `/persist/etc/nixos`, then show what changed |
+| `ephemeral-update` | rebuild and switch to `/persist/etc/nixos`, offering a newer release first, then show what changed |
 | `ephemeral-report` | system details to paste into a bug report |
 | `controld-setup` | set or turn off the Control D resolver id |
 | `smb-setup` | add or remove SMB shares |
