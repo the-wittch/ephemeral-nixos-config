@@ -8,6 +8,12 @@
       "intel_iommu=on"
       "iommu.passthrough=0"
       "iommu.strict=1"
+      # init_on_alloc and a random kernel stack offset are already the kernel's defaults
+      "init_on_free=1"
+      "slab_nomerge"
+      "page_alloc.shuffle=1"
+      "vsyscall=none"
+      "debugfs=off"
     ];
 
     boot.kernel.sysctl = {

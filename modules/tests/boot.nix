@@ -136,6 +136,8 @@ in
               machine.succeed("grep -qx 'blacklist sctp' /etc/modprobe.d/nixos.conf")
               machine.fail("grep -qw '^sctp' /proc/modules")
               machine.succeed("grep -qw iommu.strict=1 /proc/cmdline")
+              machine.succeed("grep -qw init_on_free=1 /proc/cmdline")
+              machine.fail("grep -qw debugfs /proc/filesystems")
               machine.succeed("resolvectl status | grep -q -- -LLMNR")
               machine.succeed("grep -qx wifi.cloned-mac-address=stable /etc/NetworkManager/NetworkManager.conf")
 

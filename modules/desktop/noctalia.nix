@@ -6,7 +6,7 @@ in
 {
   # the Noctalia shell and greeter, shared by niri and Umbriel
   flake.modules.nixos.noctalia-base =
-    { pkgs, ... }:
+    { lib, pkgs, ... }:
     {
       programs.noctalia = {
         enable = true;
@@ -19,10 +19,38 @@ in
       # the greeter logs in through greetd
       security.pam.services.greetd.enableGnomeKeyring = true;
 
+      # gvfs gives Nautilus the trash, network shares and phones
+      services.gvfs.enable = true;
+
+      # the apps GNOME comes with, so files in Nautilus open in something
       environment.systemPackages = with pkgs; [
         brightnessctl
         playerctl
+        nautilus
+        loupe
+        papers
+        gnome-text-editor
+        file-roller
+        gnome-calculator
+        gst-thumbnailers
       ];
+
+      # VS Code and browsers claim folders, text and images too, and with no default either could open them
+      xdg.mime.defaultApplications =
+        lib.genAttrs [ "image/png" "image/jpeg" "image/gif" "image/webp" "image/avif" "image/svg+xml" ] (
+          _: "org.gnome.Loupe.desktop"
+        )
+        // lib.genAttrs [
+          "application/zip"
+          "application/x-tar"
+          "application/x-compressed-tar"
+          "application/x-7z-compressed"
+        ] (_: "org.gnome.FileRoller.desktop")
+        // {
+          "inode/directory" = "org.gnome.Nautilus.desktop";
+          "application/pdf" = "org.gnome.Papers.desktop";
+          "text/plain" = "org.gnome.TextEditor.desktop";
+        };
     };
 
   flake.modules.nixos.noctalia =
