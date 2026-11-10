@@ -6,6 +6,9 @@
 
 The NixOS config for machines installed with [ephemeral-nixos](https://github.com/the-wittch/ephemeral-nixos). `/` is wiped on every boot; `/home` and a short list of system paths live on `/persist`.
 
+> [!NOTE]
+> Ephemeral Nix is a solo passion project. I read every issue and get to each one as quickly as I can, but there's one of me, so there's no set response time.
+
 The installer sets up the full system by default. Next to a plain desktop, it adds:
 
 - Home Manager dotfiles: zsh, git, starship, zoxide, neovim and ghostty.
@@ -94,7 +97,7 @@ ephemeral-update
 
 Read [`CHANGELOG.md`](CHANGELOG.md) before a new major version; it lists what you have to change. Settings that were removed still load with a warning that says what to do.
 
-A machine gets new packages, security fixes included, only with a new release here. A patch release with updated inputs comes out on the 1st of each month, once it passes the boot tests. This repo tracks `nixos-unstable` and moves to the stable 26.11 channel once that's released. For fixes sooner, give your machine its own nixpkgs, which replaces this repo's:
+A machine gets new packages, security fixes included, only with a new release here. A patch release comes out every Monday once it passes the boot tests: with the newest nixpkgs, and on the first Monday of the month with every other input updated too. This repo tracks `nixos-unstable` and moves to the stable 26.11 channel once that's released. For fixes sooner, give your machine its own nixpkgs, which replaces this repo's:
 
 ```nix
 inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";

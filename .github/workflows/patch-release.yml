@@ -2,7 +2,7 @@ name: patch release
 
 on:
   schedule:
-    - cron: "0 6 1 * *"
+    - cron: "0 6 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -45,7 +45,14 @@ jobs:
             exit 0
           fi
 
-          nix flake update
+          # every input on the first Monday of the month; the other weeks only nixpkgs, for its security fixes
+          if ((10#$(date -u +%d) <= 7)); then
+            nix flake update
+            updated="nixpkgs and the other inputs"
+          else
+            nix flake update nixpkgs
+            updated="nixpkgs"
+          fi
           # stylix pins gnome-shell to a GNOME release; keep the GitHub mirror on the same one
           stylix=$(nix flake metadata --json | jq -r '.locks.nodes.stylix.locked | "github:\(.owner)/\(.repo)/\(.rev)"')
           src=$(nix flake prefetch --json "$stylix" | jq -r .storePath)
@@ -61,12 +68,12 @@ jobs:
           sed -i -E "s#(ephemeral-nixos-config/)v[0-9]+\.[0-9]+\.[0-9]+\"#\1$next\"#" README.md
           jq -n --arg tag "$last" --arg rev "$(git rev-list -n 1 "$last")" '{tag: $tag, rev: $rev}' \
             >tests/upgrade/previous.json
-          .github/changelog-add.sh CHANGELOG.md "${next#v}" "- nixpkgs and the other inputs updated to $(date -u +%Y-%m-%d)."
+          .github/changelog-add.sh CHANGELOG.md "${next#v}" "- $updated updated to $(date -u +%Y-%m-%d)."
 
           git switch -c "release/$next"
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit -am "release $next"
           git push origin "release/$next"
           gh pr create --base main --head "release/$next" --title "release $next" --label boot-test \
-            --body "Monthly input update. Merges itself once CI and the boot tests pass; merging tags $next."
+            --body "Weekly input update. Merges itself once CI and the boot tests pass; merging tags $next."
           gh pr merge "release/$next" --squash --auto --delete-branch

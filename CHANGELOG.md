@@ -2,6 +2,19 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 3.10.0
+
+### Changed
+
+- A release comes out every Monday with the newest nixpkgs, so security fixes reach machines within a week instead of up to a month. The first Monday of the month updates every input, as the monthly release did.
+- Releases are immutable: once published, a release's tag can't be moved. `gh release verify v3.10.0 -R the-wittch/ephemeral-nixos-config` checks one.
+- More kernel hardening: freed memory is wiped (`init_on_free=1`), kernel caches aren't shared between object types (`slab_nomerge`), page allocation is randomised, the legacy vsyscall page is gone and debugfs is off. Expect a few percent slower on memory-heavy work. Very old binaries that need vsyscall won't run, and tools that read debugfs, such as `powertop`, lose those readings. [When something breaks](docs/troubleshooting.md) shows how to turn either back on.
+
+### Fixed
+
+- niri and Umbriel had no file manager, and on the full profile `~/Documents`, `~/Music` and the other home folders were never made. Both desktops now come with Nautilus, plus the apps GNOME has for opening what's in it: Loupe for images, Papers for PDFs, Text Editor, File Roller for archives and Calculator. Nautilus shows thumbnails for videos and PDFs and has the trash, network shares and phones. Folders, images, PDFs, text and archives open in these by default, rather than in VS Code or a browser.
+- The home folders are made on both profiles and every desktop. Before, the full profile relied on GNOME and Plasma making them.
+
 ## 3.9.0
 
 ### Added

@@ -43,6 +43,18 @@ sudo umount /mnt/btrfs && sudo reboot
 }
 ```
 
+**An old program or a debugging tool stopped working after v3.10.0.** That release turned off the legacy vsyscall page, which some very old binaries need, and debugfs, which tools such as `powertop` read. The last setting on the kernel command line wins, so to turn either back on, add this to a module of your own and rebuild:
+
+```nix
+{ lib, ... }:
+{
+  flake.modules.nixos.pc.boot.kernelParams = lib.mkAfter [
+    "vsyscall=xonly"
+    "debugfs=on"
+  ];
+}
+```
+
 **An app can't connect.** Check OpenSnitch's rules first (see the note in the [README](../README.md)).
 
 ## Reporting a problem
