@@ -63,7 +63,7 @@ if [[ $profile == full ]]; then
     )")
   fi
   out=$(printf '%s\n' "${rows[@]}" |
-    gum choose --no-limit --header "Options: space to tick, enter when done" "${preselect[@]}") || exit 0
+    gum choose --no-limit --header "Options: x to tick, enter when done" "${preselect[@]}") || exit 0
   for k in "${order[@]}"; do
     if grep -qxF "${opt[$k]}" <<<"$out"; then on[$k]=true; else on[$k]=false; fi
   done
