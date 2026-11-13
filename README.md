@@ -92,7 +92,7 @@ It rebuilds from `/persist/etc/nixos` and switches to the result, with readable 
 
 ```nix
 {
-  inputs.ephemeral.url = "github:the-wittch/ephemeral-nixos-config/v4.1.0";
+  inputs.ephemeral.url = "github:the-wittch/ephemeral-nixos-config/v4.2.0";
   outputs = inputs: inputs.ephemeral.lib.mkFlake { inherit inputs; root = ./.; };
 }
 ```
