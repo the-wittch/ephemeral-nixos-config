@@ -13,7 +13,13 @@ let
   # evaluating them catches option renames; this checks each feature is really switched on
   expect = {
     feat-all = c: c.hardware.nvidia.open && c.services.tailscale.enable && c.fileSystems ? "/mnt/files";
-    feat-laptop = c: c.services.fprintd.enable && c.services.upower.enable;
+    feat-laptop =
+      c:
+      c.services.fprintd.enable
+      && c.services.upower.enable
+      && lib.elem "/var/lib/upower" (
+        map (d: d.directory) c.environment.persistence."/persist".directories
+      );
     feat-network = c: c.services.tailscale.enable && !c.services.opensnitch.enable;
     feat-nvidia-legacy = c: !c.hardware.nvidia.open && c.services.xserver.videoDrivers == [ "nvidia" ];
     feat-nvidia-open = c: c.hardware.nvidia.open;

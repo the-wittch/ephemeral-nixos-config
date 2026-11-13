@@ -8,9 +8,9 @@
       "problemMatcher": []
     },
     {
-      "label": "nix flake check (no build)",
+      "label": "evaluate the checks (no build)",
       "type": "shell",
-      "command": "nix flake check path:. --no-build",
+      "command": ".github/eval-checks.sh --no-build",
       "problemMatcher": [],
       "group": "test"
     }

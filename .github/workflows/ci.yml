@@ -57,13 +57,7 @@ jobs:
           cp hardware-configuration.example.nix hardware-configuration.nix
       - name: flake check
         if: steps.changes.outputs.code == 'true'
-        run: |
-          # one process per check: all of them in one, as nix flake check does, runs out of memory
-          nix eval --raw path:.#checks.x86_64-linux --apply 'c: builtins.concatStringsSep "\n" (builtins.attrNames c) + "\n"' >"$RUNNER_TEMP/checks"
-          while read -r check; do
-            nix eval --raw "path:.#checks.x86_64-linux.$check.drvPath" >/dev/null
-          done <"$RUNNER_TEMP/checks"
-          nix build path:.#checks.x86_64-linux.config-eval path:.#checks.x86_64-linux.scripts path:.#checks.x86_64-linux.settings-example path:.#checks.x86_64-linux.extras-eval path:.#checks.x86_64-linux.apps-eval path:.#checks.x86_64-linux.pass-ssh-agent-eval path:.#checks.x86_64-linux.mkflake-eval path:.#checks.x86_64-linux.desktops-eval path:.#checks.x86_64-linux.desktop-parity path:.#checks.x86_64-linux.aspect-deps path:.#checks.x86_64-linux.features-eval path:.#checks.x86_64-linux.settings-reject path:.#checks.x86_64-linux.scripts-behaviour --no-link
+        run: .github/eval-checks.sh
       # the installer pins a release of this repo; a change that would break it shows here, not on Tuesday
       - name: installer still evaluates
         if: steps.changes.outputs.code == 'true'
@@ -224,3 +218,6 @@ jobs:
       - name: boot this code on the previous release's /persist
         if: steps.changes.outputs.code == 'true'
         run: nix build path:.#checks.x86_64-linux.upgrade-boot -L --no-link
+      - name: switch from the small install to the full system and back
+        if: steps.changes.outputs.code == 'true'
+        run: nix build path:.#checks.x86_64-linux.profile-switch -L --no-link

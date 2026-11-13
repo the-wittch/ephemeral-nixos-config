@@ -2,6 +2,17 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.2.0
+
+### Added
+
+- `sudo ephemeral-doctor audit` lists services whose data in `/var/lib` isn't kept, so they start over at every boot, and folders in `/persist/var/lib` nothing uses any more, like one left behind by an app you removed. It goes by what services tell systemd, so it can't catch everything.
+
+### Fixed
+
+- Battery history started over at every boot, so the desktops' battery charts only ever showed the current one. `/var/lib/upower` is kept now.
+- The security notes now say what the wiped `/` doesn't protect against: malware that hides in the home folder, anything with root, and anything before the next reboot.
+
 ## 4.1.0
 
 ### Added

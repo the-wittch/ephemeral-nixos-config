@@ -35,6 +35,7 @@
         mode = "0700";
       }
       ++ lib.optional config.services.power-profiles-daemon.enable "/var/lib/power-profiles-daemon"
+      ++ lib.optional config.services.upower.enable "/var/lib/upower"
       ++ lib.optional config.services.colord.enable {
         directory = "/var/lib/colord";
         user = "colord";

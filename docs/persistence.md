@@ -14,6 +14,14 @@ and what the next reboot will remove, written since this boot:
 sudo ephemeral-doctor lost
 ```
 
+and which services lose their data at every reboot:
+
+```bash
+sudo ephemeral-doctor audit
+```
+
+`audit` goes by the state folders services tell systemd about, so it misses a program that writes somewhere without saying so. `lost` shows those too, mixed in with everything else that's new since boot.
+
 | | reboot | rebuild or update | go back to an older system | reinstall |
 |---|---|---|---|---|
 | `/` outside what's kept | gone | kept until the next reboot | gone | gone |
@@ -37,11 +45,28 @@ To keep more, save this as `/persist/etc/nixos/modules/keep.nix`, with your own 
 
 They're kept from then on. Whatever was in them before isn't copied over, so copy it to `/persist` first if you need it; `/persist/var/lib/postgresql` for the example above.
 
-Taking a path off the list doesn't delete anything. Its files stay in `/persist`, no longer mounted. The same goes for an app you unpick in `ephemeral-apps` that kept data, such as Docker. To find and remove what's left:
+A service with `DynamicUser` keeps its data in `/var/lib/private/<name>`, and systemd refuses to start it unless that folder and `/var/lib/private` are mode `0700`:
+
+```nix
+{
+  flake.modules.nixos.pc = {
+    environment.persistence."/persist".directories = [
+      {
+        directory = "/var/lib/private/i2pd";
+        mode = "0700";
+      }
+    ];
+    systemd.tmpfiles.rules = [ "d /var/lib/private 0700 root root -" ];
+  };
+}
+```
+
+Taking a path off the list doesn't delete anything. Its files stay in `/persist`, no longer mounted. The same goes for an app you unpick in `ephemeral-apps` that kept data, such as Docker. `sudo ephemeral-doctor audit` lists those leftovers in `/persist/var/lib`, with their sizes, and how to remove each:
 
 ```bash
-sudo du -sh /persist/var/lib/*
 sudo rm -rf /persist/var/lib/docker
 ```
+
+It only looks in `/persist/var/lib`. Other folders on `/persist`, like `/persist/etc/ssh` and `/persist/passwords`, are used where they are, never mounted, so they'd all look like leftovers.
 
 Snapshots still hold a copy for up to four weeks, so the space comes back as they expire.
