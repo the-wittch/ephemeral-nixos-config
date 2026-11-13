@@ -18,29 +18,10 @@
           "display-manager.service"
         ];
         unitConfig.RequiresMountsFor = "/var/lib/AccountsService";
-        serviceConfig = {
+        serviceConfig = config.ephemeral.sandbox // {
           Type = "oneshot";
           UMask = "0077";
           ReadWritePaths = [ "/var/lib/AccountsService" ];
-          ProtectSystem = "strict";
-          ProtectHome = true;
-          PrivateTmp = true;
-          PrivateDevices = true;
-          PrivateNetwork = true;
-          NoNewPrivileges = true;
-          CapabilityBoundingSet = [ "" ];
-          ProtectKernelTunables = true;
-          ProtectKernelModules = true;
-          ProtectKernelLogs = true;
-          ProtectControlGroups = true;
-          ProtectClock = true;
-          ProtectHostname = true;
-          RestrictAddressFamilies = [ "AF_UNIX" ];
-          RestrictNamespaces = true;
-          RestrictSUIDSGID = true;
-          LockPersonality = true;
-          MemoryDenyWriteExecute = true;
-          SystemCallArchitectures = "native";
         };
         script = ''
           icon=/var/lib/AccountsService/icons/${user}

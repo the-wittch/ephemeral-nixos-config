@@ -2,6 +2,12 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 3.11.1
+
+### Changed
+
+- `root-reset-check` and `snapper-persist-setup` run in the same sandbox as the config's other root services: a read-only system, no network and no capabilities. `systemd-analyze security` rates them 2.8 instead of 9.6.
+
 ## 3.11.0
 
 ### Added

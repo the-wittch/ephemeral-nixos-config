@@ -25,29 +25,10 @@
         description = "Add Flathub Flatpak remote";
         wantedBy = [ "multi-user.target" ];
         path = [ pkgs.flatpak ];
-        serviceConfig = {
+        serviceConfig = config.ephemeral.sandbox // {
           Type = "oneshot";
           RemainAfterExit = true;
           StateDirectory = "flatpak";
-          ProtectSystem = "strict";
-          ProtectHome = true;
-          PrivateTmp = true;
-          PrivateDevices = true;
-          PrivateNetwork = true;
-          NoNewPrivileges = true;
-          CapabilityBoundingSet = [ "" ];
-          ProtectKernelTunables = true;
-          ProtectKernelModules = true;
-          ProtectKernelLogs = true;
-          ProtectControlGroups = true;
-          ProtectClock = true;
-          ProtectHostname = true;
-          RestrictAddressFamilies = [ "AF_UNIX" ];
-          RestrictNamespaces = true;
-          RestrictSUIDSGID = true;
-          LockPersonality = true;
-          MemoryDenyWriteExecute = true;
-          SystemCallArchitectures = "native";
         };
         script = ''
           flatpak remote-add --system --if-not-exists flathub ${config.ephemeral.flathubRepo}
