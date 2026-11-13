@@ -72,7 +72,7 @@ in
                   vm.succeed(f"systemctl is-active --quiet {unit}")
               print(f"ok: {stage} is clean")
 
-          old = create_machine("${previousVm}/bin/run-machine-vm", name="old")
+          old = create_machine("${previousVm}/bin/run-${settings.hostname}-vm", name="old")
           old.start()
           is_clean(old, "${pin.tag}")
           old.succeed(

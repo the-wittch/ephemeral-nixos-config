@@ -240,7 +240,10 @@ in
                 machine.fail("test -e /root-was-here")
                 machine.succeed("test -e /persist/persist-was-here")
                 for d in kept_dirs:
-                    machine.succeed(f"test -e {d}/.kept-across-reboot")
+                    machine.succeed(f"findmnt -n {d} >/dev/null")
+                    # NixOS rewrites it at every boot from users.users.*.linger, so a file in it doesn't last
+                    if d != "/var/lib/systemd/linger":
+                        machine.succeed(f"test -e {d}/.kept-across-reboot")
                 for f, before in ids.items():
                     # systemd refreshes the seed at every boot
                     if f.endswith("random-seed"):
