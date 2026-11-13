@@ -1,6 +1,6 @@
 {
   flake.modules.nixos.full =
-    { pkgs, ... }:
+    { config, pkgs, ... }:
     {
       services.snapper = {
         persistentTimer = true;
@@ -27,12 +27,14 @@
           "snapper-cleanup.service"
         ];
         path = [ pkgs.btrfs-progs ];
-        serviceConfig = {
+        serviceConfig = config.ephemeral.sandbox // {
           Type = "oneshot";
           RemainAfterExit = true;
+          ReadWritePaths = [ "/persist" ];
         };
+        # a subvolume's root is always inode 256, which stat can see without any capabilities
         script = ''
-          if ! btrfs subvolume show /persist/.snapshots >/dev/null 2>&1; then
+          if [[ $(stat -c %i /persist/.snapshots 2>/dev/null) != 256 ]]; then
             btrfs subvolume create /persist/.snapshots
           fi
           chmod 750 /persist/.snapshots

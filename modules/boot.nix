@@ -9,7 +9,7 @@
         wantedBy = [ "multi-user.target" ];
         # missing until the first boot with this initrd
         unitConfig.ConditionPathExists = "/.root-reset";
-        serviceConfig = {
+        serviceConfig = config.ephemeral.sandbox // {
           Type = "oneshot";
           RemainAfterExit = true;
         };
