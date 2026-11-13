@@ -6,6 +6,8 @@
 
 The NixOS config for machines installed with [ephemeral-nixos](https://github.com/the-wittch/ephemeral-nixos). `/` is wiped on every boot; `/home` and a short list of system paths live on `/persist`.
 
+More at [ephemeral-nix.sh](https://ephemeral-nix.sh/).
+
 > [!NOTE]
 > Ephemeral Nix is a solo passion project. I read every issue and get to each one as quickly as I can, but there's one of me, so there's no set response time.
 
