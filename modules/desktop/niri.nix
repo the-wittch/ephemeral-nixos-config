@@ -1,6 +1,6 @@
 { config, ... }:
 let
-  nixos = config.flake.modules.nixos;
+  nixos = config.ephemeral.aspects.nixos;
 
   niri =
     { pkgs, ... }:

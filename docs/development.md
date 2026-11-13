@@ -2,17 +2,20 @@
 
 | path | what |
 |------|------|
-| `modules/flake/` | flake outputs: checks, formatter, and `lib.mkFlake` for machine flakes |
-| `modules/host-builder.nix`, `modules/hosts/` | builds machines from `settings.json` |
+| `modules/` | what machines get: every file is one feature, loaded by import-tree |
+| `flake/` | this repo's own outputs, which machines never load: checks, formatter, `lib.mkFlake` and this repo's `nixos` host |
+| `modules/host-builder.nix` | builds machines from `settings.json` |
+| `modules/aspects.nix` | `ephemeral.aspects`: the shared modules with a key, for modules that import each other |
+| `modules/ephemeral-root.nix`, `modules/persist.nix` | how `/` is reset at every boot, and what survives it |
 | `modules/first-boot.nix` | what the small install (profile `minimal`) has instead of the full system |
 | `modules/vm.nix` | the VM used by `nix run .#vm` and the boot test |
-| `modules/settings/` | the settings options, their defaults (`_defaults.nix`) and the loader |
+| `modules/settings/` | the settings options with their defaults (`_schema.nix`), and the loader that checks `settings.json` against them |
 | `modules/desktop/` | Plasma, GNOME, niri, Umbriel, and the Noctalia shell niri and Umbriel share |
 | `modules/dotfiles/` | Home Manager dotfiles |
 | `modules/packages/` | the helper commands, the pinned pass-cli, and `app-catalog`, which the installer reads |
 | `modules/apps/` | the app catalog for `ephemeral-apps`, one file per category |
-| `modules/tests/` | the VM tests: boot (full and minimal), upgrade, and the disk layout |
-| `tests/` | machines CI evaluates, and `upgrade/previous.json`, the release the upgrade test starts from |
+| `flake/tests/` | the VM tests: boot (full and minimal), upgrade, and the disk layout |
+| `tests/` | machines CI evaluates (each desktop, full and minimal), and `upgrade/previous.json`, the release the upgrade test starts from |
 | `docs/` | the user docs; the README links each page |
 | `scripts/` | the helper commands' source and the secret scanner |
 
@@ -34,3 +37,15 @@ cp hardware-configuration.example.nix hardware-configuration.nix
 nix build path:.#checks.x86_64-linux.boot path:.#checks.x86_64-linux.boot-minimal path:.#checks.x86_64-linux.upgrade -L
 nix build path:.#checks.x86_64-linux.disk -L
 ```
+
+`desktop-parity` checks that each desktop's full and minimal variants agree on the login manager, keyring, wallet, first-login wizard and persisted folders. A difference has to be fixed or listed in `allowedDrift` in `flake/checks.nix` with its reason, and a listed difference that's gone fails the check too.
+
+Before a change that should only move code, record every host's system, then compare after it:
+
+```bash
+.github/drv-diff.sh save /tmp/before.json
+# make the change
+.github/drv-diff.sh compare /tmp/before.json
+```
+
+Every host should say `same`. For one that changed, `nix-diff` shows what.

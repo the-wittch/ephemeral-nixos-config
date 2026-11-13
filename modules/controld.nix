@@ -2,12 +2,7 @@
   flake.modules.nixos.controld = {
     services.resolved.enable = true;
 
-    system.activationScripts.controldSecret.text = ''
-      if [ -f /persist/etc/controld-resolver ]; then
-        chown 0:0 /persist/etc/controld-resolver
-        chmod 600 /persist/etc/controld-resolver
-      fi
-    '';
+    systemd.tmpfiles.rules = [ "z /persist/etc/controld-resolver 0600 root root -" ];
 
     systemd.services.controld-resolver = {
       description = "Write Control D config for systemd-resolved";

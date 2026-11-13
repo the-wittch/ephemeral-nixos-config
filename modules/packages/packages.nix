@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  withSystem,
+  ...
+}:
 let
   catalog = lib.mapAttrs (_: app: {
     inherit (app)
@@ -10,8 +15,30 @@ let
       ;
     unfree = app.unfree != [ ];
   }) config.ephemeral.apps;
+
+  toolsFor =
+    pkgs:
+    withSystem pkgs.stdenv.hostPlatform.system ({ config, ... }: config.legacyPackages.ephemeralTools);
 in
 {
+  flake.modules.nixos.full =
+    { lib, pkgs, ... }:
+    {
+      environment.systemPackages = lib.attrValues (toolsFor pkgs) ++ [ pkgs.gum ];
+    };
+
+  flake.modules.nixos.minimal =
+    { pkgs, ... }:
+    let
+      tools = toolsFor pkgs;
+    in
+    {
+      environment.systemPackages = [
+        tools.ephemeral-setup
+        tools.ephemeral-passwd
+      ];
+    };
+
   perSystem =
     { pkgs, ... }:
     let
@@ -34,6 +61,16 @@ in
             jq
             coreutils
             gnugrep
+            findutils
+            gnused
+          ];
+        };
+        ephemeral-passwd = {
+          description = "change your login password";
+          deps = [
+            mkpasswd
+            coreutils
+            shadow
           ];
         };
         ephemeral-update = {
@@ -43,6 +80,7 @@ in
             curl
             jq
             gnused
+            findutils
             coreutils
           ];
         };

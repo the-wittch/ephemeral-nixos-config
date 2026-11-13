@@ -2,6 +2,34 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.0.0
+
+### Breaking
+
+- `settings.nix`, `settings.from-pass.nix` and `smb-shares.nix` aren't read any more, only their `.json` forms. If a machine still has one without the `.json`, the rebuild stops and prints the command that converts it. To check before moving, `ls /persist/etc/nixos/*.nix` should list only `flake.nix` and `hardware-configuration.nix`.
+- The undocumented `flake.modules.nixos.dotfiles` is gone. Home Manager now turns on `flake.modules.homeManager.dotfiles` itself, so a machine flake that imported the NixOS one has to drop it.
+
+### Added
+
+- `ephemeral-passwd` changes your login password, on the small install too. It asks twice and only replaces `/persist/passwords/$USER` once it has a valid hash, so a typo or a cancelled prompt can't lock you out at the next boot as the old instructions could. The new password works straight away.
+
+### Changed
+
+- `ephemeral-update` and `ephemeral-setup` refuse to rebuild when `/persist/etc/nixos` has files that look like secrets, such as `*.key`, `*.pem`, `id_ed25519`, `.env` or a `passwords` folder. A rebuild copies the whole folder into the Nix store, where any user can read it, whatever `.gitignore` says. Move them to `/persist/etc/<name>`, owned by root with mode 600, or set `EPHEMERAL_ALLOW_SECRET_FILES=1` to rebuild anyway.
+- On niri and Umbriel, the screen locks after 10 idle minutes, as Plasma and GNOME already do, and the config now sets Noctalia's lock before sleep instead of relying on its default.
+- The Noctalia login screen no longer copies the shell's look by itself. The copy runs a helper as root, which the config allowed without your password. You can still copy it from Noctalia's settings, and it asks for the password now. The config sets the login screen's dark theme either way.
+- The weekly release only brings in a new nixpkgs. The other inputs, such as Home Manager and Stylix, come in a separate monthly pull request that's read before it's merged, because their code runs as root on every machine.
+- The release workflow keeps its GitHub token out of the repository checkout.
+- Files moved so each feature has its settings, persistence and permissions in one place. Machines get the same packages, settings and kept folders as before.
+- The permissions on the login password, the SSH host key, the Control D id and the SMB passwords are set by `systemd-tmpfiles` at every boot, in place of shell loops during activation. The boot test checks that files written with the wrong permissions are root-only after the next boot.
+- Shared modules that need another one import it themselves, through `config.ephemeral.aspects`, which applies each one only once. Your own modules can do the same; [Customizing](docs/customizing.md#your-own-modules) shows how.
+- A wrong value in `settings.json`, such as `"desktop": "kde"`, is reported with the allowed values and the file it's in, in place of "attribute 'kde' missing".
+
+### Fixed
+
+- The security notes now list every sandboxed service, the `docker` and `libvirtd` groups, and that the Control D resolver id is visible on the network.
+- On the small niri and Umbriel installs, the login screen's state is kept across reboots, as on the full ones.
+
 ## 3.11.1
 
 ### Changed

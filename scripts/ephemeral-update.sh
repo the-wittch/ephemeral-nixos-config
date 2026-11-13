@@ -9,6 +9,7 @@ if [[ ! -f $flake/flake.nix ]]; then
   [[ -d $flake && ! -r $flake ]] && die "can't read $flake; fix it with: sudo chmod 755 $flake"
   die "no flake at $flake"
 fi
+refuse_secret_files "$flake"
 
 ask() {
   local answer

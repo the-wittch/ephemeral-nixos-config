@@ -22,7 +22,8 @@ let
         nixos.full
         nixos.opensnitch
         nixos.gnome
-        nixos.dotfiles
+        # releases before this change switch the dotfiles on with their own module
+        (nixos.dotfiles or { })
       ];
       ephemeral.settings = settings;
       boot.consoleLogLevel = lib.mkForce 7;
@@ -39,7 +40,7 @@ in
         (pkgs.testers.runNixOSTest {
           name = "upgrade-next";
           node.pkgsReadOnly = false;
-          nodes.machine = machine config.flake.modules.nixos;
+          nodes.machine = machine config.ephemeral.aspects.nixos;
           testScript = "";
         }).nodes.machine.system.build.toplevel;
     in

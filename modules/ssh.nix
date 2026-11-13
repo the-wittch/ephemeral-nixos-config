@@ -19,5 +19,12 @@
           }
         ];
       };
+
+      # sshd makes the key here when it first starts, which is after tmpfiles has run
+      systemd.tmpfiles.rules = [
+        "d /persist/etc/ssh 0755 root root -"
+        "z /persist/etc/ssh/ssh_host_*_key 0600 - - -"
+        "z /persist/etc/ssh/ssh_host_*_key.pub 0644 - - -"
+      ];
     };
 }

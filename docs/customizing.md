@@ -45,6 +45,19 @@ A file in `modules/` can add to any of them:
 }
 ```
 
+If a module of yours needs another shared module, import it through `ephemeral.aspects` rather than `flake.modules`, so it's only applied once however many modules import it. Both are on the file's own `config`, the one outside the NixOS module:
+
+```nix
+{ config, ... }:
+{
+  flake.modules.nixos.pc = {
+    # sets home-manager options, so it brings Home Manager along
+    imports = [ config.ephemeral.aspects.nixos.home-manager ];
+    home-manager.sharedModules = [ { programs.htop.enable = true; } ];
+  };
+}
+```
+
 Settings are `config.ephemeral.settings` in NixOS modules and `osConfig.ephemeral.settings` in Home Manager. To turn off something this repo sets, use `lib.mkForce`.
 
 `lib.mkFlake` brings this repo's inputs along, so `flake.nix` only names `ephemeral`. Add your own inputs next to it and they're available to your modules as `inputs.<name>`; one named like this repo's (say `nixpkgs`) replaces it.

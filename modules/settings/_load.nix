@@ -3,8 +3,6 @@
 let
   readData = import ./_read-data.nix { inherit lib; };
 
-  defaults = import ./_defaults.nix;
-
   # a missing file must not become username nixuser
   fromSettings = readData (flakeRoot + "/settings") (throw ''
     settings.json is not in this flake.
@@ -14,7 +12,7 @@ let
   '');
 
   # the pass file can't turn itself on
-  usePass = (defaults // fromSettings).usePassSettings or false;
+  usePass = fromSettings.usePassSettings or false;
 
   # only what settings-from-pass writes, so the file can't turn off OpenSnitch or the like
   passKeys = lib.genAttrs [
@@ -37,7 +35,7 @@ let
     if !(fromSettings ? username) || fromSettings.username == "" then
       throw "settings must set username"
     else
-      defaults // fromSettings // fromPass;
+      fromSettings // fromPass;
   # old keys still load, so an upgrade doesn't fail on a settings.json nobody has touched yet
   removed = {
     allowUnfree = "unfree packages are listed in ephemeral.unfreePackages";
@@ -57,5 +55,14 @@ let
         acc: key:
         lib.warn "settings.${key} is no longer used (${removed.${key}}). Delete it from settings.json." acc
       ) merged stale;
+  evaluated = lib.evalModules {
+    modules = [
+      ./_schema.nix
+      {
+        _file = toString (flakeRoot + "/settings.json");
+        ephemeral.settings = removeAttrs merged' ([ "controldResolver" ] ++ lib.attrNames removed);
+      }
+    ];
+  };
 in
-removeAttrs merged' ([ "controldResolver" ] ++ lib.attrNames removed)
+evaluated.config.ephemeral.settings

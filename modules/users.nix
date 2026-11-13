@@ -20,6 +20,11 @@
       };
       users.users.root.hashedPassword = "!";
 
+      systemd.tmpfiles.rules = [
+        "d /persist/passwords 0700 root root -"
+        "z /persist/passwords/* 0600 - - -"
+      ];
+
       security.sudo = {
         execWheelOnly = true;
         extraConfig = ''

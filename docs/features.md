@@ -32,7 +32,7 @@ controld-setup
 ephemeral-update
 ```
 
-Stores your resolver id in `/persist/etc/controld-resolver` (root only, never in the Nix store) and sets `useControlD`. All DNS then goes over TLS to Control D, with no fallback servers.
+Stores your resolver id in `/persist/etc/controld-resolver` (root only, never in the Nix store) and sets `useControlD`. All DNS then goes over TLS to Control D, with no fallback servers. The id is part of the server name, `<id>.dns.controld.com`, which TLS sends unencrypted, so your network can see it. It tells Control D which settings to use; it doesn't log you in.
 
 ## SMB shares
 
