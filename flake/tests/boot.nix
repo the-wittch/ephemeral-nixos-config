@@ -1,7 +1,7 @@
 # nix build path:.#checks.x86_64-linux.boot -L
 { config, ... }:
 let
-  nixos = config.flake.modules.nixos;
+  nixos = config.ephemeral.aspects.nixos;
 in
 {
   perSystem =
@@ -22,7 +22,6 @@ in
               nixos.full
               nixos.opensnitch
               nixos.gnome
-              nixos.dotfiles
               nixos.controld
               nixos.laptop
               nixos.fingerprint
@@ -86,10 +85,15 @@ in
               machine.succeed("test ! -L /var/lib/systemd/credential.secret && findmnt -n /var/lib/systemd/credential.secret")
               machine.succeed("echo boot-one-secret | systemd-creds encrypt --with-key=host --name=t - /persist/t.cred")
               machine.succeed("install -d /persist/etc && chmod 700 /persist/etc && printf 'testid\\n' > /persist/etc/controld-resolver")
+              machine.succeed("install -d -m 755 /persist/passwords && install -m 644 /dev/null /persist/passwords/nobody")
               reboot()
 
           with subtest("second boot"):
               boot_is_clean(2)
+
+          with subtest("secrets on /persist are root-only after a boot, however they were written"):
+              assert machine.succeed("stat -c '%a %U' /persist/etc/controld-resolver /persist/passwords/nobody").split() == ["600", "root", "600", "root"]
+              assert machine.succeed("stat -c %a /persist/passwords /persist/etc/ssh").split() == ["700", "755"]
 
           with subtest("Control D config reaches resolved, readable only by resolved"):
               conf = "/run/systemd/resolved.conf.d/controld.conf"

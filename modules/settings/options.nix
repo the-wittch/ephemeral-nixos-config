@@ -3,102 +3,11 @@
     { lib, ... }:
     let
       inherit (lib) mkOption types;
-      defaults = import ./_defaults.nix;
-      flag = description: {
-        type = types.bool;
-        inherit description;
-      };
-      # these end up in shell scripts, such as the login environment
-      vaultName = types.strMatching "[^\"$`\\\\[:cntrl:]]+";
     in
     {
-      options.ephemeral = {
-        settings =
-          lib.mapAttrs
-            (
-              name: spec:
-              mkOption (spec // lib.optionalAttrs (name != "username") { default = defaults.${name}; })
-            )
-            {
-              hostname = {
-                type = types.nonEmptyStr;
-                description = "Hostname.";
-              };
-              username = {
-                type = types.strMatching "[a-z_][a-z0-9_-]{0,31}";
-                description = "The one login user.";
-              };
-              timeZone = {
-                type = types.strMatching "[A-Za-z0-9_/+-]+";
-                description = "Time zone, e.g. Europe/Berlin.";
-              };
-              locale = {
-                type = types.strMatching "[A-Za-z_]+\\.UTF-8";
-                description = "System language, e.g. de_DE.UTF-8.";
-              };
-              keyboardLayout = {
-                type = types.strMatching "[a-z]{2,3}(,[a-z]{2,3})*";
-                description = "XKB layout, also used for the console and the LUKS prompt, e.g. de or us,de.";
-              };
-              keyboardVariant = {
-                type = types.strMatching "[a-z0-9_-]*(,[a-z0-9_-]*)*";
-                description = "XKB variant, e.g. nodeadkeys. Empty for the default.";
-              };
-              diskDevice = {
-                type = types.addCheck (types.strMatching "/dev/[A-Za-z0-9/_.:+-]+") (d: !lib.hasInfix ".." d);
-                description = "Whole disk the system is installed on.";
-              };
-              swapSize = {
-                type = types.strMatching "[0-9]+[KMGT]?";
-                description = "Swap file size, e.g. 16G.";
-              };
-              desktop = {
-                type = types.enum [
-                  "plasma"
-                  "gnome"
-                  "niri"
-                  "umbriel"
-                ];
-                description = "Desktop environment.";
-              };
-              profile = {
-                type = types.enum [
-                  "minimal"
-                  "full"
-                ];
-                description = "minimal is the small first-boot system the installer sets up; full is everything here.";
-              };
-              nvidia = {
-                type = types.enum [
-                  "none"
-                  "open"
-                  "legacy"
-                ];
-                description = "NVIDIA driver: open for RTX 20 / GTX 16 and newer, legacy (580) for GTX 900 and 10 series.";
-              };
-              extras = flag "Extra apps and tools: Steam, VS Code, Brave, VLC, atuin, fzf, bat, comma and more.";
-              laptop = flag "Laptop extras: thermald on Intel, battery reporting, sensors.";
-              fingerprint = flag "Fingerprint login and sudo through fprintd.";
-              useControlD = flag "DNS over TLS to Control D; the id is in /persist/etc/controld-resolver.";
-              useTailscale = flag "Tailscale VPN.";
-              useOpenSnitch = flag "OpenSnitch: outgoing connections need your OK (full profile).";
-              useFlakePassCli = flag "Build modules/packages/_pass-cli.nix instead of nixpkgs proton-pass-cli.";
-              usePassSettings = flag "Merge settings.from-pass.json.";
-              passSettingsVault = {
-                type = vaultName;
-                description = "Proton Pass vault for settings-from-pass.";
-              };
-              passSettingsItem = {
-                type = vaultName;
-                description = "Proton Pass item for settings-from-pass.";
-              };
-              usePassSshAgent = flag "Proton Pass SSH agent at login, serving the keys in passSshVault.";
-              passSshVault = {
-                type = vaultName;
-                description = "Proton Pass vault the SSH agent and ssh-pubs-from-pass read keys from.";
-              };
-            };
+      imports = [ ./_schema.nix ];
 
+      options.ephemeral = {
         pickedApps = mkOption {
           type = types.listOf types.str;
           default = [ ];

@@ -1,4 +1,4 @@
 { config, ... }:
 {
-  flake.modules.nixos.pc.imports = [ config.flake.modules.nixos.base ];
+  flake.modules.nixos.pc.imports = [ config.ephemeral.aspects.nixos.base ];
 }

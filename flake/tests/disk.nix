@@ -4,7 +4,7 @@
 # docs/troubleshooting.md says.
 { config, inputs, ... }:
 let
-  nixos = config.flake.modules.nixos;
+  nixos = config.ephemeral.aspects.nixos;
 in
 {
   perSystem =
@@ -26,7 +26,7 @@ in
         ];
       };
       passphrase = "secretsecret";
-      layout = import ../_disko-layout.nix {
+      layout = import ../../modules/_disko-layout.nix {
         device = "/dev/vda";
         swapSize = "256M";
       };

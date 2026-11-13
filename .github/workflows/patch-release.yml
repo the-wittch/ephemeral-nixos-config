@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "0 6 * * 1"
   workflow_dispatch:
+    inputs:
+      other-inputs:
+        description: also open the PR that updates the inputs besides nixpkgs
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -13,7 +18,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  prepare:
+  # merges itself: only nixpkgs, which is where the security fixes come from
+  nixpkgs:
     runs-on: ubuntu-latest
     steps:
       - name: check FLAKE_UPDATE_TOKEN
@@ -27,13 +33,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-          # PRs pushed with the default token don't trigger CI
-          token: ${{ secrets.FLAKE_UPDATE_TOKEN }}
+          persist-credentials: false
       - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
         with:
           github_access_token: ${{ github.token }}
-      - name: update inputs and open the release PR
+      - name: update nixpkgs and open the release PR
         env:
+          # PRs pushed with the default token don't trigger CI
           GH_TOKEN: ${{ secrets.FLAKE_UPDATE_TOKEN }}
         run: |
           set -euo pipefail
@@ -45,14 +51,79 @@ jobs:
             exit 0
           fi
 
-          # every input on the first Monday of the month; the other weeks only nixpkgs, for its security fixes
-          if ((10#$(date -u +%d) <= 7)); then
-            nix flake update
-            updated="nixpkgs and the other inputs"
-          else
-            nix flake update nixpkgs
-            updated="nixpkgs"
+          nix flake update nixpkgs
+          # against the last release, so a merged update of the other inputs ships too
+          if git diff --quiet "$last" -- flake.lock; then
+            echo "no input changed since $last"
+            exit 0
           fi
+          changed() { [[ $(git show "$last:flake.lock" | jq -S "$1") != $(jq -S "$1" flake.lock) ]]; }
+          updated=()
+          changed '.nodes.nixpkgs' && updated+=(nixpkgs)
+          changed '.nodes | del(.root, .nixpkgs)' && updated+=("the other inputs")
+          ((${#updated[@]})) || updated=(inputs)
+          what=${updated[0]}${updated[1]:+ and ${updated[1]}}
+
+          sed -i -E "s#(ephemeral-nixos-config/)v[0-9]+\.[0-9]+\.[0-9]+\"#\1$next\"#" README.md
+          jq -n --arg tag "$last" --arg rev "$(git rev-list -n 1 "$last")" '{tag: $tag, rev: $rev}' \
+            >tests/upgrade/previous.json
+          .github/changelog-add.sh CHANGELOG.md "${next#v}" "- $what updated to $(date -u +%Y-%m-%d)."
+
+          git switch -c "release/$next"
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -am "release $next"
+          # the token stays in the environment instead of .git/config
+          # shellcheck disable=SC2016 # the helper expands it when git runs it
+          git -c credential.helper= -c credential.helper='!f() { echo username=x-access-token; printf "password=%s\n" "$GH_TOKEN"; }; f' \
+            push origin "release/$next"
+          gh pr create --base main --head "release/$next" --title "release $next" --label boot-test \
+            --body "Weekly nixpkgs update. Merges itself once CI and the boot tests pass; merging tags $next."
+          gh pr merge "release/$next" --squash --auto --delete-branch
+
+  # never merges itself: these are smaller projects, and their code runs as root on every machine
+  other-inputs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: first Monday of the month, or asked for
+        id: when
+        env:
+          ASKED: ${{ inputs.other-inputs }}
+        run: |
+          if [[ $ASKED == true ]] || { [[ $GITHUB_EVENT_NAME == schedule ]] && ((10#$(date -u +%d) <= 7)); }; then
+            echo "run=true" >>"$GITHUB_OUTPUT"
+          fi
+      - name: check FLAKE_UPDATE_TOKEN
+        if: steps.when.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.FLAKE_UPDATE_TOKEN }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY" --silent || {
+            echo "::error::FLAKE_UPDATE_TOKEN is missing or expired. Make a new one with contents and pull request write access to this repo."
+            exit 1
+          }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.when.outputs.run == 'true'
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
+        if: steps.when.outputs.run == 'true'
+        with:
+          github_access_token: ${{ github.token }}
+      - name: update the other inputs and open a PR to review
+        if: steps.when.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.FLAKE_UPDATE_TOKEN }}
+        run: |
+          set -euo pipefail
+          branch="inputs/$(date -u +%Y-%m-%d)"
+          if git ls-remote --exit-code origin "refs/heads/$branch" >/dev/null; then
+            echo "$branch is already open"
+            exit 0
+          fi
+
+          cp flake.lock "$RUNNER_TEMP/old.lock"
+          mapfile -t others < <(jq -r '.nodes.root.inputs | keys[] | select(. != "nixpkgs")' flake.lock)
+          nix flake update "${others[@]}"
           # stylix pins gnome-shell to a GNOME release; keep the GitHub mirror on the same one
           stylix=$(nix flake metadata --json | jq -r '.locks.nodes.stylix.locked | "github:\(.owner)/\(.repo)/\(.rev)"')
           src=$(nix flake prefetch --json "$stylix" | jq -r .storePath)
@@ -61,19 +132,26 @@ jobs:
           sed -i -E "s#(github:GNOME/gnome-shell/)[0-9][0-9.]*\"#\1$ref\"#" flake.nix
           nix flake lock
           if git diff --quiet flake.lock; then
-            echo "no input changed since $last"
+            echo "no input besides nixpkgs changed"
             exit 0
           fi
 
-          sed -i -E "s#(ephemeral-nixos-config/)v[0-9]+\.[0-9]+\.[0-9]+\"#\1$next\"#" README.md
-          jq -n --arg tag "$last" --arg rev "$(git rev-list -n 1 "$last")" '{tag: $tag, rev: $rev}' \
-            >tests/upgrade/previous.json
-          .github/changelog-add.sh CHANGELOG.md "${next#v}" "- $updated updated to $(date -u +%Y-%m-%d)."
+          # shellcheck disable=SC2016 # jq's variables
+          links=$(jq -rn --slurpfile old "$RUNNER_TEMP/old.lock" --slurpfile new flake.lock '
+            $new[0].nodes | to_entries[]
+            | select(.key != "root" and .key != "nixpkgs")
+            | .key as $k | .value.locked as $n | ($old[0].nodes[$k].locked // {}) as $o
+            | select($o.rev != $n.rev)
+            | if $n.type == "github" and $o.rev != null
+              then "- \($k): https://github.com/\($n.owner)/\($n.repo)/compare/\($o.rev)...\($n.rev)"
+              else "- \($k): new, now at \($n.rev // $n.narHash)"
+              end')
 
-          git switch -c "release/$next"
+          git switch -c "$branch"
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-            commit -am "release $next"
-          git push origin "release/$next"
-          gh pr create --base main --head "release/$next" --title "release $next" --label boot-test \
-            --body "Weekly input update. Merges itself once CI and the boot tests pass; merging tags $next."
-          gh pr merge "release/$next" --squash --auto --delete-branch
+            commit -am "update the inputs besides nixpkgs"
+          # shellcheck disable=SC2016 # the helper expands it when git runs it
+          git -c credential.helper= -c credential.helper='!f() { echo username=x-access-token; printf "password=%s\n" "$GH_TOKEN"; }; f' \
+            push origin "$branch"
+          gh pr create --base main --head "$branch" --title "update the inputs besides nixpkgs" --label boot-test \
+            --body "$(printf '%s\n\n%s\n' "Read what changed upstream before merging; this doesn't merge itself. The next Monday release ships it." "$links")"

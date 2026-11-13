@@ -1,0 +1,8 @@
+{
+  "hostname": "gnome-minimal",
+  "username": "alice",
+  "desktop": "gnome",
+  "profile": "minimal",
+  "extras": true,
+  "usePassSshAgent": true
+}

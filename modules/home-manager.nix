@@ -1,9 +1,10 @@
 { config, inputs, ... }:
 let
-  hm = config.flake.modules.homeManager;
+  inherit (config.ephemeral.aspects) nixos homeManager;
 in
 {
-  flake.modules.nixos.full =
+  # import this, not home-manager's module, from anything that sets home-manager options
+  flake.modules.nixos.home-manager =
     { config, ... }:
     {
       imports = [ inputs.home-manager.nixosModules.home-manager ];
@@ -12,10 +13,15 @@ in
         useGlobalPkgs = true;
         useUserPackages = true;
         backupFileExtension = "hm-backup";
-        sharedModules = [ hm.base ];
+        sharedModules = [
+          homeManager.base
+          homeManager.dotfiles
+        ];
         users.${config.ephemeral.settings.username} = { };
       };
     };
+
+  flake.modules.nixos.full.imports = [ nixos.home-manager ];
 
   flake.modules.homeManager.base =
     { osConfig, ... }:

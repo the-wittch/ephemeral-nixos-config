@@ -21,7 +21,7 @@ let
           (builtins.filter (id: config.ephemeral.apps ? ${id}) picked);
       hardware = host.root + "/hardware-configuration.nix";
       full = settings.profile == "full";
-      nixos = config.flake.modules.nixos;
+      nixos = config.ephemeral.aspects.nixos;
       fullOnly = {
         controld = "useControlD";
         extras = "extras";
@@ -40,7 +40,6 @@ let
             [
               nixos.full
               nixos.${settings.desktop}
-              nixos.dotfiles
             ]
           else
             [

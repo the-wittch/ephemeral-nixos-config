@@ -1,4 +1,17 @@
 {
+  flake.modules.nixos.base = {
+    hardware.enableRedistributableFirmware = true;
+
+    services.fwupd.enable = true;
+    environment.persistence."/persist".directories = [
+      {
+        directory = "/var/lib/fwupd";
+        user = "fwupd-refresh";
+        group = "fwupd-refresh";
+      }
+    ];
+  };
+
   flake.modules.nixos.pc =
     { config, lib, ... }:
     {
@@ -11,16 +24,21 @@
 
       services.power-profiles-daemon.enable = true;
 
-      environment.persistence."/persist".directories =
-        lib.optional config.services.hardware.bolt.enable {
-          directory = "/var/lib/boltd";
+      environment.persistence."/persist".directories = [
+        {
+          directory = "/var/lib/bluetooth";
           mode = "0700";
         }
-        ++ lib.optional config.services.power-profiles-daemon.enable "/var/lib/power-profiles-daemon"
-        ++ lib.optional config.services.colord.enable {
-          directory = "/var/lib/colord";
-          user = "colord";
-          group = "colord";
-        };
+      ]
+      ++ lib.optional config.services.hardware.bolt.enable {
+        directory = "/var/lib/boltd";
+        mode = "0700";
+      }
+      ++ lib.optional config.services.power-profiles-daemon.enable "/var/lib/power-profiles-daemon"
+      ++ lib.optional config.services.colord.enable {
+        directory = "/var/lib/colord";
+        user = "colord";
+        group = "colord";
+      };
     };
 }

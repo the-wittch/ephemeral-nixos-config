@@ -1,6 +1,7 @@
 { config, ... }:
 let
-  hm = config.flake.modules.homeManager;
+  inherit (config.ephemeral.aspects) nixos;
+  hm = config.ephemeral.aspects.homeManager;
 in
 {
   flake.modules.nixos.passSshAgent =
@@ -9,6 +10,10 @@ in
       passCli = "${config.ephemeral.passCli}/bin/pass-cli";
     in
     {
+      imports = [
+        nixos.home-manager
+        nixos.pass-cli
+      ];
       home-manager.sharedModules = [ hm.passSshAgent ];
 
       # gcr would take over SSH_AUTH_SOCK for the whole session

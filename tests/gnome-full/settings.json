@@ -1,0 +1,8 @@
+{
+  "hostname": "gnome-full",
+  "username": "alice",
+  "desktop": "gnome",
+  "profile": "full",
+  "extras": true,
+  "usePassSshAgent": true
+}

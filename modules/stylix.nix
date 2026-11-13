@@ -1,9 +1,18 @@
-{ inputs, ... }:
+{ config, inputs, ... }:
+let
+  inherit (config.ephemeral.aspects) nixos homeManager;
+in
 {
-  flake.modules.nixos.full =
+  flake.modules.nixos.full.imports = [ nixos.stylix ];
+
+  flake.modules.nixos.stylix =
     { config, pkgs, ... }:
     {
-      imports = [ inputs.stylix.nixosModules.stylix ];
+      imports = [
+        inputs.stylix.nixosModules.stylix
+        nixos.home-manager
+      ];
+      home-manager.sharedModules = [ homeManager.stylix ];
 
       stylix = {
         enable = true;
@@ -66,29 +75,28 @@
         # a browser policy: "managed by your organization"
         targets.chromium.enable = false;
       };
-
-      home-manager.sharedModules = [
-        {
-          stylix.targets = {
-            gnome.image.enable = false;
-            kde.useWallpaper = false;
-            # makes settings.json read-only
-            vscode.enable = false;
-            # unused, and warns about a renamed option
-            rofi.enable = false;
-          };
-        }
-      ];
     };
+
+  flake.modules.homeManager.stylix.stylix.targets = {
+    gnome.image.enable = false;
+    kde.useWallpaper = false;
+    # makes settings.json read-only
+    vscode.enable = false;
+    # unused, and warns about a renamed option
+    rofi.enable = false;
+  };
 
   flake.modules.nixos.gnome =
     { lib, pkgs, ... }:
     {
+      imports = [ nixos.stylix ];
       # the gnome platform theme (qgnomeplatform) breaks qt tray icons on wayland
       stylix.targets.qt.platform = lib.mkForce "qtct";
       # stylix removes them
       environment.systemPackages = [ pkgs.gnome-backgrounds ];
     };
 
-  flake.modules.nixos.plasma.home-manager.sharedModules = [ { stylix.targets.qt.enable = false; } ];
+  # plasma-home.nix reads Stylix's fonts too
+  flake.modules.nixos.plasma.imports = [ nixos.stylix ];
+  flake.modules.homeManager.plasma.stylix.targets.qt.enable = false;
 }

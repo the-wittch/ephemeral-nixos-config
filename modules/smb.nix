@@ -18,15 +18,10 @@
 
       environment.systemPackages = [ pkgs.cifs-utils ];
 
-      system.activationScripts.smbSecrets.text = ''
-        mkdir -p /persist/etc/smb
-        chmod 700 /persist/etc/smb
-        for f in /persist/etc/smb/*; do
-          if [ -e "$f" ]; then
-            chmod 600 "$f"
-          fi
-        done
-      '';
+      systemd.tmpfiles.rules = [
+        "d /persist/etc/smb 0700 root root -"
+        "z /persist/etc/smb/* 0600 - - -"
+      ];
 
       fileSystems = lib.mkMerge (
         map (s: {

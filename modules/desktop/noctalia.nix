@@ -1,10 +1,9 @@
 { config, ... }:
 let
-  hm = config.flake.modules.homeManager;
-  nixos = config.flake.modules.nixos;
+  hm = config.ephemeral.aspects.homeManager;
+  nixos = config.ephemeral.aspects.nixos;
 in
 {
-  # the Noctalia shell and greeter, shared by niri and Umbriel
   flake.modules.nixos.noctalia-base =
     { lib, pkgs, ... }:
     {
@@ -14,6 +13,7 @@ in
         recommendedServices.enable = true;
       };
       services.displayManager.noctalia-greeter.enable = true;
+      environment.persistence."/persist".directories = [ "/var/lib/noctalia-greeter" ];
 
       services.gnome.gnome-keyring.enable = true;
       # the greeter logs in through greetd
@@ -53,19 +53,17 @@ in
         };
     };
 
-  flake.modules.nixos.noctalia =
-    { config, ... }:
-    {
-      imports = [ nixos.noctalia-base ];
-      environment.persistence."/persist".directories = [ "/var/lib/noctalia-greeter" ];
+  flake.modules.nixos.noctalia = {
+    imports = [
+      nixos.noctalia-base
+      nixos.home-manager
+    ];
 
-      services.displayManager.noctalia-greeter = {
-        passwordlessSyncUsers = [ config.ephemeral.settings.username ];
-        settings.appearance.theme_mode = "dark";
-      };
+    # set here, since syncing it from the shell runs a root helper
+    services.displayManager.noctalia-greeter.settings.appearance.theme_mode = "dark";
 
-      home-manager.sharedModules = [ hm.noctalia ];
-    };
+    home-manager.sharedModules = [ hm.noctalia ];
+  };
 
   flake.modules.homeManager.noctalia = {
     programs.noctalia = {
@@ -75,7 +73,17 @@ in
           mode = "dark";
           shell_mode = "dark";
         };
-        shell.greeter_sync.auto_sync = true;
+        shell.greeter_sync.auto_sync = false;
+        # Noctalia's idle lock is off by default; Plasma and GNOME lock after a few idle minutes
+        lockscreen = {
+          enabled = true;
+          lock_before_suspend = true;
+        };
+        idle.behavior.lock = {
+          enabled = true;
+          action = "lock";
+          timeout = 600;
+        };
       };
     };
   };

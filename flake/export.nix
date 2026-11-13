@@ -2,13 +2,11 @@
 let
   template = inputs;
 
-  # files that only make sense in this repo: its own host, checks and flake plumbing
-  templateOnly = path: builtins.match ".*/(flake|hosts|local|tests)/.*" (toString path) != null;
-
+  # modules/ is what machines get; this repo's own checks, tests and host are in flake/
   default = {
     imports = [
       template.flake-parts.flakeModules.modules
-      (template.import-tree.filterNot templateOnly ../.)
+      (template.import-tree ../modules)
     ];
   };
 

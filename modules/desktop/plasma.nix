@@ -1,6 +1,7 @@
 { config, ... }:
 let
-  hm = config.flake.modules.homeManager;
+  hm = config.ephemeral.aspects.homeManager;
+  inherit (config.ephemeral.aspects) nixos;
 
   common =
     { pkgs, ... }:
@@ -30,7 +31,10 @@ in
       kdeDark = import ./_kde-dark.nix { inherit lib; };
     in
     {
-      imports = [ common ];
+      imports = [
+        common
+        nixos.home-manager
+      ];
 
       # stylix doesn't theme the login screen
       systemd.tmpfiles.rules = [
@@ -53,8 +57,6 @@ in
         theme = "breeze";
         themePackages = [ pkgs.kdePackages.breeze-plymouth ];
       };
-
-      security.pam.services.plasmalogin.kwallet.enable = true;
 
       environment.plasma6.excludePackages = [ pkgs.kdePackages.plasma-welcome ];
     };

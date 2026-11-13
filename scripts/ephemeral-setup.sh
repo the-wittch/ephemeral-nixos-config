@@ -19,6 +19,7 @@ esac
 
 FLAKE_DIR=${FLAKE_DIR:-/persist/etc/nixos}
 [[ -f $FLAKE_DIR/flake.nix ]] || die "no flake at $FLAKE_DIR (set FLAKE_DIR)"
+refuse_secret_files "$FLAKE_DIR"
 
 SETTINGS=$(settings_json "$FLAKE_DIR")
 if [[ ! -w $SETTINGS ]]; then

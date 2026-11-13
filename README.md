@@ -101,7 +101,7 @@ While the folder still belongs to root, the first command needs `sudo` in front.
 
 Read [`CHANGELOG.md`](CHANGELOG.md) before a new major version; it lists what you have to change. Settings that were removed still load with a warning that says what to do.
 
-A machine gets new packages, security fixes included, only with a new release here. A patch release comes out every Monday once it passes the boot tests: with the newest nixpkgs, and on the first Monday of the month with every other input updated too. This repo tracks `nixos-unstable` and moves to the stable 26.11 channel once that's released. For fixes sooner, give your machine its own nixpkgs, which replaces this repo's:
+A machine gets new packages, security fixes included, only with a new release here. A patch release comes out every Monday with the newest nixpkgs, once it passes the boot tests. The other inputs, such as Home Manager and Stylix, are updated once a month after I've read what changed upstream. This repo tracks `nixos-unstable` and moves to the stable 26.11 channel once that's released. For fixes sooner, give your machine its own nixpkgs, which replaces this repo's:
 
 ```nix
 inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -117,6 +117,7 @@ and update it with `nix flake update nixpkgs --flake /persist/etc/nixos`. That c
 |---------|------|
 | `ephemeral-setup` | switch profile and turn the main options on or off, then rebuild (also on minimal) |
 | `ephemeral-update` | rebuild and switch to `/persist/etc/nixos`, offering a newer release first, then show what changed |
+| `ephemeral-passwd` | change your login password (also on minimal) |
 | `ephemeral-report` | system details to paste into a bug report |
 | `controld-setup` | set or turn off the Control D resolver id |
 | `smb-setup` | add or remove SMB shares |

@@ -16,7 +16,7 @@
 
 - `/` is wiped on every boot. Your home folder is kept; for anything else, see [Keeping things across reboots](persistence.md).
 - Rebuild after any change with `ephemeral-update`.
-- `passwd` doesn't stick. Change your password as shown under [Security notes](security.md).
+- `passwd` doesn't stick. Change your password with `ephemeral-passwd`.
 - A broken rebuild? Pick the previous entry in the boot menu. See [When something breaks](troubleshooting.md).
 - Try a change first with `nix run path:/persist/etc/nixos#vm`.
 - `ephemeral-help` lists every command.
