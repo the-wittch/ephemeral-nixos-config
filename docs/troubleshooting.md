@@ -65,4 +65,4 @@ Run `ephemeral-report`, read it, and paste it into a [new issue](https://github.
 
 ## What's tested
 
-This is a personal project shared as-is. x86_64 machines with UEFI are supported. Every change is evaluated on GNOME, Plasma, niri and Umbriel with both profiles, with each optional feature, and with every app in the picker. Each release builds every desktop, boots each of them in a VM, and moves a machine from the previous release to the new one, both by switching and by booting. NVIDIA is only evaluated, not run, and there's no Secure Boot.
+This is a personal project shared as-is. x86_64 machines with UEFI are supported. Every change is evaluated on GNOME, Plasma, niri and Umbriel with both profiles, with each optional feature, and with every app in the picker. Each release builds every desktop, boots each of them in a VM, and moves a machine from the previous release to the new one, both by switching and by booting. A small install is also switched to the full system and back, as `ephemeral-setup` does it. NVIDIA is only evaluated, not run, and there's no Secure Boot.

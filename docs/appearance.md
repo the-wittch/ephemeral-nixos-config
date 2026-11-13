@@ -22,7 +22,7 @@ To use another [base16 scheme](https://github.com/tinted-theming/schemes):
 }
 ```
 
-Pointing at a scheme file means Nix has to build `base16-schemes` while evaluating, which `nix flake check --no-build` refuses. To keep that check working, copy the scheme's colours inline, the way `modules/stylix.nix` does.
+That works, but Nix has to build `base16-schemes` before it can evaluate the rest of the system. This repo avoids that by copying the scheme's colours inline, in `modules/stylix.nix`; you can do the same.
 
 Some Stylix features are switched off:
 

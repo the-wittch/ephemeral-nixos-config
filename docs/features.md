@@ -67,7 +67,7 @@ Set `"useTailscale": true`, rebuild, then sign in once with `sudo tailscale up`.
 
 ## Scanners
 
-SANE is set up with the driverless `sane-airscan` backend, and Document Scanner is installed on every desktop, so most USB scanners just work. Network scanners aren't found automatically, because mDNS discovery (Avahi) is off on purpose. Add yours by address in a private module:
+SANE is set up with the driverless `sane-airscan` backend, and Document Scanner is installed on every desktop, so most USB scanners work without a driver. Network scanners aren't found automatically, because mDNS discovery (Avahi) is off on purpose. Add yours by address in a private module:
 
 ```nix
 {
@@ -125,7 +125,7 @@ zram swap and systemd-oomd are always on. Three more are in `ephemeral-apps` und
 
 `ephemeral-apps` has a Virtualization category:
 
-- **virt-manager** runs VMs through libvirt. Windows 11 works out of the box: pick Windows 11 as the OS and virt-manager adds the TPM 2.0 it needs. For Secure Boot, tick "Customize configuration before install" and check that Firmware under Overview is the `secure` UEFI image. The Secure Boot keys aren't enrolled, which Windows 11 accepts. VM disks and settings are kept in `/var/lib/libvirt`.
+- **virt-manager** runs VMs through libvirt. For Windows 11, pick it as the OS and virt-manager adds the TPM 2.0 it needs. For Secure Boot, tick "Customize configuration before install" and check that Firmware under Overview is the `secure` UEFI image. The Secure Boot keys aren't enrolled, which Windows 11 accepts. VM disks and settings are kept in `/var/lib/libvirt`.
 - **VM Curator** is a terminal UI that runs QEMU directly, with ready-made profiles for over 130 systems. Its VMs live in a folder in your home, and it finds the UEFI firmware and TPM on its own.
 - **GPU passthrough** gives a virt-manager VM the only graphics card on a desktop. In the VM's settings, add the card and its HDMI audio as PCI host devices. Starting the VM logs you out, unloads the GPU driver and hands the card to the guest, so its monitor shows the guest. When the guest shuts down, the card comes back and the login screen returns. If the driver won't let go, the start fails and you're back at the login screen; `journalctl -u libvirtd` says what held it. NVIDIA cards often need their vBIOS as a ROM file on the host device. A VM that gets a second GPU instead isn't affected.
 

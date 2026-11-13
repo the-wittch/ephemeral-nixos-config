@@ -8,12 +8,13 @@ header_marker=/persist/etc/ephemeral/luks-header-backup
 
 usage() {
   cat <<'USAGE'
-ephemeral-doctor [kept | lost | --fix-root-reset]
+ephemeral-doctor [kept | lost | audit | --fix-root-reset]
 
 With nothing: check this machine, and say how to fix whatever isn't right.
 
   kept              the folders and files kept across reboots
   lost              files written on / since this boot, which the next reboot removes
+  audit             service state in /var/lib that isn't kept, and kept folders nothing uses
   --fix-root-reset  make / reset at every boot again, when the check says it doesn't
 USAGE
 }
@@ -52,9 +53,96 @@ fix_root_reset() {
   echo "Done. / is reset at the next boot; reboot when it suits you."
 }
 
+# EPHEMERAL_ROOT is for the tests
+audit() {
+  local root=${EPHEMERAL_ROOT:-} list d p unit dyn rest dir dirs entry found=0
+  list=$root/etc/ephemeral/kept
+  [[ -r $list ]] || die "$list is missing; it comes with v4.1.0 and later"
+  [[ $EUID -eq 0 ]] || echo "Run it with sudo to see into folders only root can read." >&2
+  local -a kept others=()
+  local -A seen=()
+  mapfile -t kept <"$list"
+
+  is_kept() {
+    local k
+    for k in "${kept[@]}"; do
+      [[ $1 == "${k%/}" || ($k == */ && $1 == "$k"*) ]] && return 0
+    done
+    return 1
+  }
+  holds_kept() {
+    local k
+    for k in "${kept[@]}"; do [[ $k == "$1"/* ]] && return 0; done
+    return 1
+  }
+  has_content() {
+    if [[ -d $1 ]]; then [[ -n $(find "$1" -mindepth 1 -not -type d -print -quit 2>/dev/null) ]]; else [[ -s $1 ]]; fi
+  }
+  size() {
+    local s
+    s=$(du -sh "$1" 2>/dev/null | cut -f1) || true
+    echo "${s:-?}"
+  }
+
+  echo "This only looks at /var/lib and the folders services tell systemd about."
+  echo "Everything else that the next reboot removes: ephemeral-doctor lost"
+  echo
+
+  # "<unit> <DynamicUser> <state dirs...>" per service
+  dirs=$(systemctl list-units --type=service --all --no-legend --plain 2>/dev/null | awk '{ print $1 }' |
+    xargs -r systemctl show -p Id,DynamicUser,StateDirectory -- 2>/dev/null |
+    awk -F= '/^Id=/ { id = $2 } /^DynamicUser=/ { dyn = $2 } /^StateDirectory=/ { sd = $2 }
+      /^$/ { if (sd != "") print id, dyn, sd; id = dyn = sd = "" }
+      END { if (sd != "") print id, dyn, sd }') || dirs=
+  while read -r unit dyn rest; do
+    [[ -n ${unit:-} ]] || continue
+    for dir in $rest; do
+      dir=${dir%%:*}
+      p=/var/lib/$dir
+      [[ $dyn == yes ]] && p=/var/lib/private/$dir
+      [[ -z ${seen[$p]:-} ]] || continue
+      seen[$p]=1
+      if ! is_kept "$p" && ! is_kept "/var/lib/$dir" && [[ -e $root$p ]] && has_content "$root$p"; then
+        entry="\"$p\""
+        [[ $dyn == yes ]] && entry="{ directory = \"$p\"; mode = \"0700\"; }"
+        warn "$unit keeps its state in $p ($(size "$root$p")), which isn't kept, so it starts over at every boot" \
+          "to keep it, add $entry to environment.persistence.\"/persist\".directories, as in docs/persistence.md"
+        found=1
+      fi
+    done
+  done <<<"$dirs"
+  ((found)) || ok "every service's declared state is kept"
+
+  for d in "$root"/var/lib/* "$root"/var/lib/private/*; do
+    p=${d#"$root"}
+    [[ -e $d && ! -L $d && $p != /var/lib/private ]] || continue
+    [[ -z ${seen[$p]:-} ]] || continue
+    is_kept "$p" || holds_kept "$p" || ! has_content "$d" || others+=("$p ($(size "$d"))")
+  done
+  if ((${#others[@]})); then
+    echo "· also in /var/lib and gone at the next boot, which is usually fine:"
+    printf '    %s\n' "${others[@]}"
+  fi
+
+  found=0
+  for d in "$root"/persist/var/lib/* "$root"/persist/var/lib/private/*; do
+    p=${d#"$root"/persist}
+    [[ -e $d && $p != /var/lib/private ]] || continue
+    is_kept "$p" || holds_kept "$p" && continue
+    warn "/persist$p ($(size "$d")) is still on disk, but this system doesn't keep $p any more, so nothing sees it" \
+      "if you won't turn it back on: sudo rm -rf /persist$p"
+    found=1
+  done
+  ((found)) || ok "everything in /persist/var/lib is in use"
+}
+
 case ${1:-} in
   -h | --help)
     usage
+    exit 0
+    ;;
+  audit)
+    audit
     exit 0
     ;;
   kept)

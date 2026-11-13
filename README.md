@@ -125,7 +125,7 @@ and update it with `nix flake update nixpkgs --flake /persist/etc/nixos`. That c
 | command | what |
 |---------|------|
 | `ephemeral-update` | rebuild after a change and get new releases; `--check`, `--previous`, `--list` and `--as-installed` as above |
-| `ephemeral-doctor` | check the machine and say how to fix what isn't right; `kept` and `lost` show what survives a reboot |
+| `ephemeral-doctor` | check the machine and say how to fix what isn't right; `kept` and `lost` show what survives a reboot, and `audit` finds service data a reboot throws away |
 | `ephemeral-setup` | switch between the full system and the small install, and turn the main options on or off |
 | `ephemeral-passwd` | change your login password |
 | `ephemeral-backup <folder>` | save the settings and secrets a reinstall needs, encrypted |

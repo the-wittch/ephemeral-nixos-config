@@ -173,6 +173,38 @@ if [[ $hash == "\$y\$"* ]] && [[ $(stat -c %a "$ROOT/persist/passwords/$user") =
   pass "passwd: a matching password is written as a yescrypt hash, 600, and applied"
 else fail "passwd: writing a good password"; fi
 
+doctor=$(tool ephemeral-doctor)
+fs=$work/fs
+mkdir -p "$fs/etc/ephemeral" "$fs/var/lib/private/i2pd" "$fs/var/lib/private/foo" "$fs/var/lib/upower" \
+  "$fs/var/lib/bluetooth" "$fs/var/lib/geoclue" "$fs/var/lib/systemd/timers" \
+  "$fs/persist/var/lib/bluetooth" "$fs/persist/var/lib/docker" "$fs/persist/var/lib/systemd/timers"
+printf '/var/lib/bluetooth/\n/var/lib/systemd/timers/\n/var/lib/private/i2pd/\n/etc/machine-id\n' >"$fs/etc/ephemeral/kept"
+for f in private/i2pd/router private/foo/db upower/history bluetooth/keys systemd/timers/stamp lastlog; do
+  echo x >"$fs/var/lib/$f"
+done
+ln -s private/i2pd "$fs/var/lib/i2pd"
+echo x >"$fs/persist/var/lib/docker/image"
+fake systemctl '
+case $1 in
+  list-units) printf "%s\n" bluetooth.service upower.service geoclue.service i2pd.service foo.service ;;
+  show) printf "Id=bluetooth.service\nStateDirectory=bluetooth\nDynamicUser=no\n\nStateDirectory=upower\nId=upower.service\nDynamicUser=no\n\nId=geoclue.service\nDynamicUser=no\nStateDirectory=geoclue\n\nId=i2pd.service\nDynamicUser=yes\nStateDirectory=i2pd\n\nId=foo.service\nDynamicUser=yes\nStateDirectory=foo\n" ;;
+esac'
+EPHEMERAL_ROOT=$fs bash "$doctor" audit >"$work/out" 2>&1 || true
+rm "$fakes/systemctl"
+audit_says() { grep -qF -- "$1" "$work/out"; }
+if audit_says "upower.service keeps its state in /var/lib/upower" && audit_says "foo.service keeps its state in /var/lib/private/foo"; then
+  pass "audit: a service's state that isn't kept is reported, at its DynamicUser path too"
+else fail "audit: unkept service state"; fi
+if ! audit_says "bluetooth.service" && ! audit_says "i2pd.service" && ! audit_says "geoclue"; then
+  pass "audit: kept state, kept DynamicUser state and empty folders aren't reported"
+else fail "audit: reported state that's kept or empty"; fi
+if audit_says "/var/lib/lastlog" && ! audit_says "/var/lib/systemd " && ! audit_says "/var/lib/i2pd "; then
+  pass "audit: other unkept state is listed, folders holding kept ones and symlinks aren't"
+else fail "audit: the other state in /var/lib"; fi
+if audit_says "/persist/var/lib/docker" && ! audit_says "/persist/var/lib/bluetooth" && ! audit_says "/persist/var/lib/systemd"; then
+  pass "audit: a folder on /persist nothing keeps any more is reported, ones in use aren't"
+else fail "audit: leftovers on /persist"; fi
+
 if ((failures)); then
   echo "$failures failed" >&2
   exit 1
