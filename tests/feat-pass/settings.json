@@ -1,0 +1,1 @@
+{ "hostname": "feat-pass", "username": "alice", "desktop": "plasma", "usePassSshAgent": true, "passSshVault": "Work keys", "useFlakePassCli": true, "usePassSettings": true }

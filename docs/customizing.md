@@ -19,10 +19,10 @@ Every `.nix` file in `/persist/etc/nixos/modules/` is loaded the same way. These
 |--------|------------|
 | `flake.modules.nixos.base`, `flake.modules.nixos.pc` | every machine, both profiles |
 | `flake.modules.nixos.full` | the full profile |
-| `flake.modules.nixos.minimal` | the minimal profile |
+| `flake.modules.nixos.minimal` | the small install (`"profile": "minimal"`) |
 | `flake.modules.nixos.gnome`, `.plasma`, `.niri`, `.umbriel` | the desktop chosen in `settings.json`, full profile |
-| `flake.modules.nixos.minimal-gnome`, `.minimal-plasma`, `.minimal-niri`, `.minimal-umbriel` | the same, minimal profile |
-| `flake.modules.homeManager.base`, `flake.modules.homeManager.dotfiles` | your user (full profile; minimal has no Home Manager) |
+| `flake.modules.nixos.minimal-gnome`, `.minimal-plasma`, `.minimal-niri`, `.minimal-umbriel` | the same, small install |
+| `flake.modules.homeManager.base`, `flake.modules.homeManager.dotfiles` | your user (full system only; the small install has no Home Manager) |
 | `flake.modules.nixos.extras`, `flake.modules.homeManager.extras` | full profile with `"extras": true` |
 
 A file in `modules/` can add to any of them:
@@ -61,5 +61,7 @@ If a module of yours needs another shared module, import it through `ephemeral.a
 Settings are `config.ephemeral.settings` in NixOS modules and `osConfig.ephemeral.settings` in Home Manager. To turn off something this repo sets, use `lib.mkForce`.
 
 `lib.mkFlake` brings this repo's inputs along, so `flake.nix` only names `ephemeral`. Add your own inputs next to it and they're available to your modules as `inputs.<name>`; one named like this repo's (say `nixpkgs`) replaces it.
+
+Rebuild with `ephemeral-update`, and check a change first with `ephemeral-update --check`. If you run `nix` or `nixos-rebuild` yourself, use `path:/persist/etc/nixos#nixos` rather than `/persist/etc/nixos#nixos`: without `path:`, Nix only sees files tracked by git, so it misses `settings.json` and `hardware-configuration.nix`.
 
 If you'd rather work in a clone of this repo, put your files in `modules/local/` instead. That folder is gitignored; `modules/local/_example.nix` shows the shape.

@@ -8,6 +8,7 @@ Bug reports and pull requests are welcome. This is a personal project, so replie
 
 ## Pull requests
 
+- Read [ARCHITECTURE.md](ARCHITECTURE.md) first. A change that breaks one of its rules needs a reason in the pull request.
 - One feature per file under `modules/`, added to the shared modules as described in [Customizing](docs/customizing.md#how-its-organized). No imports between files.
 - Add a line to `CHANGELOG.md` under the next version. Anything that breaks existing machines goes first, under Breaking, with what to do about it.
 - Update the docs page that describes what you changed.

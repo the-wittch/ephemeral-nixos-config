@@ -2,6 +2,30 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.1.0
+
+### Added
+
+- `ephemeral-doctor` checks the machine and prints the command that fixes each problem it finds: whether `/` was wiped at this boot, failed services, free space on `/persist` and `/nix`, the last snapshot, a newer release, secret files in the config folder, and a missing LUKS header backup. `ephemeral-doctor kept` lists what's kept across reboots, `ephemeral-doctor lost` what the next reboot removes, and `sudo ephemeral-doctor --fix-root-reset` makes `/` reset again when it doesn't.
+- `ephemeral-update --check` builds a change without switching to it, `--previous` goes back to the system before the last rebuild, `--list` shows the systems you can go back to with their config releases, and `--as-installed` rebuilds the system as it was installed.
+- Before moving to a new release, `ephemeral-update` shows what changed since yours, from the changelog. For a new major version it names that in the question.
+- `ephemeral-backup <folder>` saves what a reinstall needs and git doesn't keep, the settings files and the root-only secrets, in one file encrypted with a passphrase you pick.
+- A notification at the first login says where to start, on every desktop.
+
+### Changed
+
+- The small install has `ephemeral-update`, `ephemeral-doctor`, `ephemeral-backup`, `ephemeral-report` and `luks-header-backup` too, and `ephemeral-help` lists only the commands a machine has.
+- `ephemeral-report` includes what `ephemeral-doctor` found, the last lines of each failed service, and the systems you can go back to, and keeps user and host names out of every line.
+- Every command that used to say `sudo nixos-rebuild switch --flake path:...` now says `ephemeral-update`, and so do the docs. The troubleshooting page uses the new commands, and says where to save a fix.
+
+- More tests, so mistakes are caught before a release goes out:
+  - every pull request evaluates each optional feature on its own and all together, checks that bad settings stay refused, runs `ephemeral-update` and `ephemeral-passwd` against fake commands, and checks the installer still evaluates against the change;
+  - release pull requests also build every desktop, boot Plasma, niri and Umbriel to their login screen, and boot the new code on a `/persist` the previous release wrote;
+  - the disk test checks the LUKS and btrfs setup itself (LUKS2, argon2id, the subvolumes, the mount options, `/boot` readable by root only), and that a subvolume made inside `/` is wiped too;
+  - the boot test checks that every folder the config keeps survives a reboot, and the upgrade test switches back to the previous release afterwards;
+  - the workflows are linted with actionlint and zizmor.
+- `ephemeral-update` honours `FLAKE_DIR`, like the other commands.
+
 ## 4.0.0
 
 ### Breaking

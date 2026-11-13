@@ -69,7 +69,7 @@ git add -A
 git commit -m "my machine"
 ```
 
-Push it to a private repo. `settings.json` and `hardware-configuration.nix` are gitignored, so they stay on the machine. Always build with `path:`; a plain `.#nixos` only sees files tracked by git and won't find them.
+Push it to a private repo. `settings.json` and `hardware-configuration.nix` are gitignored, so they stay on the machine; `ephemeral-update` still sees them, and [`ephemeral-backup`](docs/backup.md) saves them.
 
 ## Rebuild and update
 
@@ -77,7 +77,16 @@ Push it to a private repo. `settings.json` and `hardware-configuration.nix` are 
 ephemeral-update
 ```
 
-That's `nh os switch path:/persist/etc/nixos`: the same rebuild as `nixos-rebuild`, with readable progress and a list of what changed at the end.
+It rebuilds from `/persist/etc/nixos` and switches to the result, with readable progress and a list of what changed at the end. The same command takes you back when something goes wrong:
+
+| | |
+|---|---|
+| `ephemeral-update --check` | build a change without switching to it, to see whether it works |
+| `ephemeral-update --previous` | go back to the system before the last rebuild |
+| `ephemeral-update --list` | the systems you can go back to, with their dates and config releases |
+| `ephemeral-update --as-installed` | the system exactly as it was installed; your files stay |
+
+`ephemeral-doctor` checks the machine: that `/` was wiped, what failed, free space, snapshots, whether a newer release is out, and each problem with the command that fixes it.
 
 `flake.nix` pins a release of this repo:
 
@@ -115,9 +124,11 @@ and update it with `nix flake update nixpkgs --flake /persist/etc/nixos`. That c
 
 | command | what |
 |---------|------|
-| `ephemeral-setup` | switch profile and turn the main options on or off, then rebuild (also on minimal) |
-| `ephemeral-update` | rebuild and switch to `/persist/etc/nixos`, offering a newer release first, then show what changed |
-| `ephemeral-passwd` | change your login password (also on minimal) |
+| `ephemeral-update` | rebuild after a change and get new releases; `--check`, `--previous`, `--list` and `--as-installed` as above |
+| `ephemeral-doctor` | check the machine and say how to fix what isn't right; `kept` and `lost` show what survives a reboot |
+| `ephemeral-setup` | switch between the full system and the small install, and turn the main options on or off |
+| `ephemeral-passwd` | change your login password |
+| `ephemeral-backup <folder>` | save the settings and secrets a reinstall needs, encrypted |
 | `ephemeral-report` | system details to paste into a bug report |
 | `controld-setup` | set or turn off the Control D resolver id |
 | `smb-setup` | add or remove SMB shares |
@@ -127,7 +138,7 @@ and update it with `nix flake update nixpkgs --flake /persist/etc/nixos`. That c
 | `ssh-pubs-from-pass` | write SSH public keys from Proton Pass to `~/.ssh` |
 | `update-pass-cli` | bump or check the pinned pass-cli (run in a checkout of this repo) |
 
-Most of them ask what to do; `--help` on one shows its options. The ones that change `settings.json` or the shares tell you to rebuild afterwards.
+Most of them ask what to do; `--help` on one shows its options. The small install has `ephemeral-update`, `ephemeral-doctor`, `ephemeral-setup`, `ephemeral-passwd`, `ephemeral-backup`, `ephemeral-report` and `luks-header-backup`; `ephemeral-help` lists the ones a machine has.
 
 ## Documentation
 
@@ -142,3 +153,4 @@ Most of them ask what to do; `--help` on one shows its options. The ones that ch
 - [When something breaks](docs/troubleshooting.md): recovery, bug reports, what's tested
 - [Security notes](docs/security.md)
 - [Working on this repo](docs/development.md)
+- [Architecture](ARCHITECTURE.md): how it's built, and the rules every change is checked against

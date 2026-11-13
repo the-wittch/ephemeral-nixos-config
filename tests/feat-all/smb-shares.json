@@ -1,0 +1,1 @@
+[ { "server": "nas.local", "share": "files", "mountPoint": "/mnt/files", "credentials": "/persist/etc/smb/files.creds" } ]

@@ -46,6 +46,9 @@ sudo cryptsetup isLuks "$tmp/header.img" || die "the backup doesn't look like a 
 sudo install -m 600 -o "$(id -u)" -g "$(id -g)" "$tmp/header.img" "$dest"
 sync -f "$dest"
 
+# for ephemeral-doctor, which can't see the stick
+printf '%s %s\n' "$(date +%F)" "$dest" | sudo install -D -m 644 /dev/stdin /persist/etc/ephemeral/luks-header-backup
+
 echo "Wrote $dest ($(stat -c %s "$dest") bytes) from $luks"
 echo "sha256: $(sha256sum "$dest" | cut -d' ' -f1)"
 echo "Keep it off this machine. Restore with:"

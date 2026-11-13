@@ -100,10 +100,10 @@ echo "Saved $SETTINGS"
 echo
 
 gum confirm "Rebuild now? This downloads a lot the first time." || {
-  echo "Rebuild later with: sudo nixos-rebuild switch --flake path:$FLAKE_DIR#nixos"
+  echo "Rebuild later with: ephemeral-update"
   exit 0
 }
-sudo nixos-rebuild switch --flake "path:$FLAKE_DIR#nixos"
+ephemeral-update
 
 echo
 gum style --bold "Next"

@@ -29,12 +29,20 @@ git config core.hooksPath .githooks
 
 They refuse machine files (`settings.json`, `smb-shares.json`, `hardware-configuration.nix`), `modules/local/`, credentials, private keys and API tokens. pre-push checks every commit you're pushing, so a secret that was added and later deleted is still caught, and CI scans the whole history. `SKIP_SECRET_CHECK=1` skips them on purpose.
 
-CI runs the secret scan, shellcheck, nixfmt and `nix flake check` on every pull request. When only docs changed (Markdown, `docs/`, the license, issue templates), the secret scan is all that runs; `.github/changed.sh` decides. The boot tests run on `v*` tags and manual runs, and on a pull request once you add the `boot-test` label: `boot` boots the full profile three times with a wiped root and checks services, persistence, snapshots, theming and the LUKS header backup; `boot-minimal` boots the first-boot system twice and checks the wipe, the login screen and that nothing failed; `upgrade` boots a machine on the previous release (`tests/upgrade/previous.json`) and switches it to the current code; `disk` formats a VM disk with the real layout (LUKS, btrfs, the rollback the other tests switch off), checks the wipe and what survives it, then deletes `root-blank` and brings it back with the steps in [Troubleshooting](troubleshooting.md). To run them locally:
+On every pull request, CI runs the secret scan, actionlint and zizmor on the workflows, shellcheck, nixfmt and `nix flake check`, then these checks, which take a few minutes and no VM:
+
+- `features-eval` evaluates a machine with each optional feature on by itself, and one with all of them, and checks each really is on.
+- `settings-reject` checks that bad `settings.json` values stay refused: an unknown desktop, a disk path with `..`, a vault name with `$`, an old `settings.nix`.
+- `scripts-behaviour` runs `ephemeral-update` and `ephemeral-passwd` against fake `curl`, `nh` and `sudo`: what gets offered, what gets refused, and that a bad password never replaces the old one.
+- the installer still evaluates against this code, so a change that would break it shows before the installer moves to the release.
+
+When only docs changed (Markdown, `docs/`, the license, issue templates), the secret scan is all that runs; `.github/changed.sh` decides. The boot tests run on `v*` tags and manual runs, and on a pull request once you add the `boot-test` label: `boot` boots the full profile three times with a wiped root and checks services, persistence, snapshots, theming and the LUKS header backup; `boot-minimal` boots the first-boot system twice and checks the wipe, the login screen and that nothing failed; `upgrade` boots a machine on the previous release (`tests/upgrade/previous.json`) and switches it to the current code; `disk` formats a VM disk with the real layout (LUKS, btrfs, the rollback the other tests switch off), checks the wipe and what survives it, then deletes `root-blank` and brings it back with the steps `ephemeral-doctor --fix-root-reset` runs. Beside them, `desktop-build` builds every desktop and most feature hosts, `desktop-boot-plasma`, `-niri` and `-umbriel` boot those desktops to their login screen, and `upgrade-boot` boots the current code on the `/persist` a VM of the previous release wrote. To run them locally:
 
 ```bash
 cp settings.example.json settings.json
 cp hardware-configuration.example.nix hardware-configuration.nix
 nix build path:.#checks.x86_64-linux.boot path:.#checks.x86_64-linux.boot-minimal path:.#checks.x86_64-linux.upgrade -L
+nix build path:.#checks.x86_64-linux.desktop-boot-umbriel path:.#checks.x86_64-linux.upgrade-boot -L
 nix build path:.#checks.x86_64-linux.disk -L
 ```
 

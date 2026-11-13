@@ -39,9 +39,14 @@ jobs:
         if: steps.changes.outputs.code == 'true'
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: workflow lint
+        if: steps.changes.outputs.code == 'true'
+        run: |
+          nix run --inputs-from path:. nixpkgs#actionlint
+          nix run --inputs-from path:. nixpkgs#zizmor -- --offline .github/workflows/
       - name: shellcheck
         if: steps.changes.outputs.code == 'true'
-        run: nix run --inputs-from path:. nixpkgs#shellcheck -- -x -P SCRIPTDIR scripts/*.sh .github/*.sh .githooks/*
+        run: nix run --inputs-from path:. nixpkgs#shellcheck -- -x -P SCRIPTDIR scripts/*.sh .github/*.sh .githooks/* flake/tests/_scripts.sh
       - name: nixfmt
         if: steps.changes.outputs.code == 'true'
         run: git ls-files -z '*.nix' | xargs -0 nix run --inputs-from path:. nixpkgs#nixfmt -- --check
@@ -53,8 +58,23 @@ jobs:
       - name: flake check
         if: steps.changes.outputs.code == 'true'
         run: |
-          nix flake check path:. --no-build
-          nix build path:.#checks.x86_64-linux.config-eval path:.#checks.x86_64-linux.scripts path:.#checks.x86_64-linux.settings-example path:.#checks.x86_64-linux.extras-eval path:.#checks.x86_64-linux.apps-eval path:.#checks.x86_64-linux.pass-ssh-agent-eval path:.#checks.x86_64-linux.mkflake-eval path:.#checks.x86_64-linux.desktops-eval path:.#checks.x86_64-linux.desktop-parity path:.#checks.x86_64-linux.aspect-deps --no-link
+          # one process per check: all of them in one, as nix flake check does, runs out of memory
+          nix eval --raw path:.#checks.x86_64-linux --apply 'c: builtins.concatStringsSep "\n" (builtins.attrNames c) + "\n"' >"$RUNNER_TEMP/checks"
+          while read -r check; do
+            nix eval --raw "path:.#checks.x86_64-linux.$check.drvPath" >/dev/null
+          done <"$RUNNER_TEMP/checks"
+          nix build path:.#checks.x86_64-linux.config-eval path:.#checks.x86_64-linux.scripts path:.#checks.x86_64-linux.settings-example path:.#checks.x86_64-linux.extras-eval path:.#checks.x86_64-linux.apps-eval path:.#checks.x86_64-linux.pass-ssh-agent-eval path:.#checks.x86_64-linux.mkflake-eval path:.#checks.x86_64-linux.desktops-eval path:.#checks.x86_64-linux.desktop-parity path:.#checks.x86_64-linux.aspect-deps path:.#checks.x86_64-linux.features-eval path:.#checks.x86_64-linux.settings-reject path:.#checks.x86_64-linux.scripts-behaviour --no-link
+      # the installer pins a release of this repo; a change that would break it shows here, not on Tuesday
+      - name: installer still evaluates
+        if: steps.changes.outputs.code == 'true'
+        run: |
+          git clone -q --depth 1 https://github.com/the-wittch/ephemeral-nixos.git "$RUNNER_TEMP/installer"
+          cd "$RUNNER_TEMP/installer"
+          printf '{"username": "alice"}\n' >settings.json
+          cp hardware-configuration.example.nix hardware-configuration.nix
+          for attr in checks.x86_64-linux.install checks.x86_64-linux.iso-eval packages.x86_64-linux.installer; do
+            nix eval --raw "path:$PWD#$attr.drvPath" --override-input ephemeral "path:$GITHUB_WORKSPACE" >/dev/null
+          done
 
   # skipped counts as passed. not on opened: a label given at creation also fires labeled
   boot-test:
@@ -96,8 +116,111 @@ jobs:
           cp hardware-configuration.example.nix hardware-configuration.nix
       - name: boot
         if: steps.changes.outputs.code == 'true'
-        run: nix build path:.#checks.x86_64-linux.boot path:.#checks.x86_64-linux.boot-minimal path:.#checks.x86_64-linux.upgrade -L --no-link
+        # one at a time, so only one test's evaluation is in memory
+        run: |
+          for check in boot boot-minimal upgrade; do
+            nix build "path:.#checks.x86_64-linux.$check" -L --no-link
+          done
       # on its own: a fourth VM at the same time slows the others past their timeouts
       - name: disk
         if: steps.changes.outputs.code == 'true'
         run: nix build path:.#checks.x86_64-linux.disk -L --no-link
+
+  # The boot tests only build GNOME. This builds every desktop and most feature hosts, so a config
+  # that fails to build (Umbriel's and Noctalia's are checked when built) or a package nixpkgs broke
+  # is caught before the weekly release merges itself. One desktop at a time, so the runner's disk
+  # only has to hold one desktop's packages.
+  desktop-build:
+    if: >-
+      startsWith(github.ref, 'refs/tags/')
+      || github.event_name == 'workflow_dispatch'
+      || (github.event.action != 'opened' && contains(github.event.pull_request.labels.*.name, 'boot-test'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: what changed
+        id: changes
+        run: ./.github/changed.sh
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+      - name: free disk space
+        if: steps.changes.outputs.code == 'true'
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache /usr/local/share/boost
+      - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
+        if: steps.changes.outputs.code == 'true'
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: example settings
+        if: steps.changes.outputs.code == 'true'
+        run: |
+          cp settings.example.json settings.json
+          cp hardware-configuration.example.nix hardware-configuration.nix
+      - name: build each desktop
+        if: steps.changes.outputs.code == 'true'
+        run: |
+          set -euo pipefail
+          for group in "gnome-full gnome-minimal feat-network" "plasma-full plasma-minimal feat-pass" \
+            "niri-full niri-minimal feat-laptop" "umbriel-full umbriel-minimal"; do
+            attrs=()
+            for host in $group; do
+              attrs+=("path:.#nixosConfigurations.$host.config.system.build.toplevel")
+            done
+            echo "::group::$group"
+            nix build --no-link -L "${attrs[@]}"
+            echo "::endgroup::"
+            nix-collect-garbage >/dev/null
+          done
+
+  # beside boot-test, so the PR doesn't wait longer: the desktops GNOME's test doesn't cover, and
+  # this code booted on a /persist the previous release wrote
+  more-boot-tests:
+    if: >-
+      startsWith(github.ref, 'refs/tags/')
+      || github.event_name == 'workflow_dispatch'
+      || (github.event.action != 'opened' && contains(github.event.pull_request.labels.*.name, 'boot-test'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: what changed
+        id: changes
+        run: ./.github/changed.sh
+        env:
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+      - name: free disk space
+        if: steps.changes.outputs.code == 'true'
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache /usr/local/share/boost
+      - name: enable kvm
+        if: steps.changes.outputs.code == 'true'
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
+        if: steps.changes.outputs.code == 'true'
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+          extra_nix_config: system-features = nixos-test benchmark big-parallel kvm
+      - name: example settings
+        if: steps.changes.outputs.code == 'true'
+        run: |
+          cp settings.example.json settings.json
+          cp hardware-configuration.example.nix hardware-configuration.nix
+      - name: desktops
+        if: steps.changes.outputs.code == 'true'
+        run: |
+          for desktop in plasma niri umbriel; do
+            nix build "path:.#checks.x86_64-linux.desktop-boot-$desktop" -L --no-link
+          done
+      - name: boot this code on the previous release's /persist
+        if: steps.changes.outputs.code == 'true'
+        run: nix build path:.#checks.x86_64-linux.upgrade-boot -L --no-link
