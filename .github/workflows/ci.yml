@@ -58,7 +58,11 @@ jobs:
       - name: flake check
         if: steps.changes.outputs.code == 'true'
         run: |
-          nix flake check path:. --no-build
+          # one process per check: all of them in one, as nix flake check does, runs out of memory
+          nix eval --raw path:.#checks.x86_64-linux --apply 'c: builtins.concatStringsSep "\n" (builtins.attrNames c) + "\n"' >"$RUNNER_TEMP/checks"
+          while read -r check; do
+            nix eval --raw "path:.#checks.x86_64-linux.$check.drvPath" >/dev/null
+          done <"$RUNNER_TEMP/checks"
           nix build path:.#checks.x86_64-linux.config-eval path:.#checks.x86_64-linux.scripts path:.#checks.x86_64-linux.settings-example path:.#checks.x86_64-linux.extras-eval path:.#checks.x86_64-linux.apps-eval path:.#checks.x86_64-linux.pass-ssh-agent-eval path:.#checks.x86_64-linux.mkflake-eval path:.#checks.x86_64-linux.desktops-eval path:.#checks.x86_64-linux.desktop-parity path:.#checks.x86_64-linux.aspect-deps path:.#checks.x86_64-linux.features-eval path:.#checks.x86_64-linux.settings-reject path:.#checks.x86_64-linux.scripts-behaviour --no-link
       # the installer pins a release of this repo; a change that would break it shows here, not on Tuesday
       - name: installer still evaluates
@@ -112,7 +116,11 @@ jobs:
           cp hardware-configuration.example.nix hardware-configuration.nix
       - name: boot
         if: steps.changes.outputs.code == 'true'
-        run: nix build path:.#checks.x86_64-linux.boot path:.#checks.x86_64-linux.boot-minimal path:.#checks.x86_64-linux.upgrade -L --no-link
+        # one at a time, so only one test's evaluation is in memory
+        run: |
+          for check in boot boot-minimal upgrade; do
+            nix build "path:.#checks.x86_64-linux.$check" -L --no-link
+          done
       # on its own: a fourth VM at the same time slows the others past their timeouts
       - name: disk
         if: steps.changes.outputs.code == 'true'
@@ -147,6 +155,11 @@ jobs:
         if: steps.changes.outputs.code == 'true'
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: example settings
+        if: steps.changes.outputs.code == 'true'
+        run: |
+          cp settings.example.json settings.json
+          cp hardware-configuration.example.nix hardware-configuration.nix
       - name: build each desktop
         if: steps.changes.outputs.code == 'true'
         run: |
@@ -204,7 +217,10 @@ jobs:
           cp hardware-configuration.example.nix hardware-configuration.nix
       - name: desktops
         if: steps.changes.outputs.code == 'true'
-        run: nix build path:.#checks.x86_64-linux.desktop-boot-plasma path:.#checks.x86_64-linux.desktop-boot-niri path:.#checks.x86_64-linux.desktop-boot-umbriel -L --no-link
+        run: |
+          for desktop in plasma niri umbriel; do
+            nix build "path:.#checks.x86_64-linux.desktop-boot-$desktop" -L --no-link
+          done
       - name: boot this code on the previous release's /persist
         if: steps.changes.outputs.code == 'true'
         run: nix build path:.#checks.x86_64-linux.upgrade-boot -L --no-link
