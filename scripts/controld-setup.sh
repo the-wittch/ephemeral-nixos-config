@@ -107,5 +107,4 @@ esac
 
 echo
 gum style --bold "Next:"
-gum style "  cd $FLAKE_DIR"
-gum style "  sudo nixos-rebuild switch --flake path:.#nixos"
+gum style "  ephemeral-update"

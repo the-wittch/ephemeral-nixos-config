@@ -1,0 +1,1 @@
+{ "hostname": "feat-all", "username": "alice", "desktop": "umbriel", "extras": true, "laptop": true, "fingerprint": true, "nvidia": "open", "useTailscale": true, "useControlD": true, "useOpenSnitch": true, "usePassSshAgent": true, "useFlakePassCli": true }

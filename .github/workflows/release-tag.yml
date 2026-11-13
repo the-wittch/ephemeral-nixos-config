@@ -4,13 +4,14 @@ on:
   push:
     branches: [main]
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
   tag:
     if: startsWith(github.event.head_commit.message, 'release v')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: tag and publish
         env:

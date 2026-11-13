@@ -71,4 +71,4 @@ fi
 # shellcheck disable=SC2016 # $v and $h are jq's
 jq_edit "$PIN" --arg v "$target_ver" --arg h "$sri" '.version = $v | .hash = $h'
 echo "Updated $PIN → $target_ver"
-echo "Rebuild when ready: sudo nixos-rebuild switch --flake path:.#nixos"
+echo "Rebuild when ready: ephemeral-update"

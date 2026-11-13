@@ -17,6 +17,14 @@
       fileSystems."/persist".neededForBoot = true;
       fileSystems."/var/log".neededForBoot = true;
 
+      # ephemeral-doctor kept lists them; here they come from every feature that adds one
+      environment.etc."ephemeral/kept".text =
+        let
+          kept = config.environment.persistence."/persist";
+        in
+        lib.concatMapStrings (d: d.directory + "/\n") kept.directories
+        + lib.concatMapStrings (f: f.file + "\n") kept.files;
+
       environment.persistence."/persist" = {
         hideMounts = true;
         directories = [

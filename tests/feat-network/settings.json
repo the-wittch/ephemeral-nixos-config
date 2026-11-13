@@ -1,0 +1,1 @@
+{ "hostname": "feat-network", "username": "alice", "desktop": "gnome", "useTailscale": true, "useControlD": true, "useOpenSnitch": false }

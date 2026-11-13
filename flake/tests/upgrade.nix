@@ -43,8 +43,58 @@ in
           nodes.machine = machine config.ephemeral.aspects.nixos;
           testScript = "";
         }).nodes.machine.system.build.toplevel;
+      # the previous release as a test VM, to start from this test's script
+      previousVm =
+        (previous.inputs.nixpkgs.legacyPackages.${system}.testers.runNixOSTest {
+          name = "upgrade-previous";
+          node.pkgsReadOnly = false;
+          nodes.machine = machine previous.modules.nixos;
+          testScript = "";
+        }).nodes.machine.system.build.vm;
     in
     {
+      # switching skips what only happens at boot, so this boots this code on the /persist the
+      # previous release left
+      checks.upgrade-boot = pkgs.testers.runNixOSTest {
+        name = "upgrade-boot";
+        node.pkgsReadOnly = false;
+        nodes.machine = machine config.ephemeral.aspects.nixos;
+
+        testScript = ''
+          from datetime import timedelta
+
+          def is_clean(vm, stage):
+              vm.wait_for_unit("multi-user.target")
+              vm.wait_until_succeeds("systemctl is-system-running --wait | grep -qxE 'running|degraded'", timeout=timedelta(seconds=180))
+              failed = vm.succeed("systemctl --failed --no-legend --plain").strip()
+              assert failed == "", f"{stage}: failed units\n{failed}"
+              for unit in ["display-manager.service", "home-manager-alice.service"]:
+                  vm.succeed(f"systemctl is-active --quiet {unit}")
+              print(f"ok: {stage} is clean")
+
+          old = create_machine("${previousVm}/bin/run-machine-vm", name="old")
+          old.start()
+          is_clean(old, "${pin.tag}")
+          old.succeed(
+              "echo kept > /persist/upgrade-marker"
+              " && runuser -u alice -- sh -c 'echo kept > ~/upgrade-marker'"
+              " && echo old-secret | systemd-creds encrypt --with-key=host --name=t - /persist/t.cred"
+          )
+          machine_id = old.succeed("cat /etc/machine-id").strip()
+          old.shutdown()
+
+          with subtest("this code boots on the /persist ${pin.tag} wrote"):
+              machine.state_dir = old.state_dir
+              machine.start()
+              is_clean(machine, "this code")
+              machine.succeed("grep -qx kept /persist/upgrade-marker")
+              machine.succeed("grep -qx kept /home/alice/upgrade-marker")
+              assert machine.succeed("cat /etc/machine-id").strip() == machine_id, "the machine id changed"
+              got = machine.succeed("systemd-creds decrypt --name=t /persist/t.cred -").strip()
+              assert got == "old-secret", f"a credential from ${pin.tag} no longer decrypts: {got!r}"
+        '';
+      };
+
       checks.upgrade = previous.inputs.nixpkgs.legacyPackages.${system}.testers.runNixOSTest {
         name = "upgrade";
         node.pkgsReadOnly = false;
@@ -74,6 +124,13 @@ in
               machine.succeed("${next}/bin/switch-to-configuration test >&2")
               assert machine.succeed("readlink -f /run/current-system").strip() == "${next}"
               is_clean("after the switch")
+              machine.succeed("grep -qx kept /persist/upgrade-marker")
+              machine.succeed("grep -qx kept /home/alice/upgrade-marker")
+
+          with subtest("switch back to ${pin.tag}, as the boot menu's previous entry would"):
+              machine.succeed("/run/booted-system/bin/switch-to-configuration test >&2")
+              assert machine.succeed("readlink -f /run/current-system").strip() == machine.succeed("readlink -f /run/booted-system").strip()
+              is_clean("after switching back")
               machine.succeed("grep -qx kept /persist/upgrade-marker")
               machine.succeed("grep -qx kept /home/alice/upgrade-marker")
         '';

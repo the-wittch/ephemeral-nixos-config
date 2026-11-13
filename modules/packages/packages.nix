@@ -28,15 +28,13 @@ in
     };
 
   flake.modules.nixos.minimal =
-    { pkgs, ... }:
-    let
-      tools = toolsFor pkgs;
-    in
+    { lib, pkgs, ... }:
     {
-      environment.systemPackages = [
-        tools.ephemeral-setup
-        tools.ephemeral-passwd
-      ];
+      environment.systemPackages = lib.attrValues (
+        withSystem pkgs.stdenv.hostPlatform.system (
+          { config, ... }: config.legacyPackages.ephemeralToolsSmall
+        )
+      );
     };
 
   perSystem =
@@ -46,16 +44,47 @@ in
       tools = with pkgs; {
         ephemeral-report = {
           description = "system details to paste into a bug report";
+          minimal = true;
           deps = [
             coreutils
+            curl
+            gawk
             gnugrep
             gnused
             jq
+            nh
             pciutils
+            util-linux
+          ];
+        };
+        ephemeral-doctor = {
+          description = "check this machine is healthy, and say how to fix what isn't";
+          minimal = true;
+          deps = [
+            btrfs-progs
+            coreutils
+            curl
+            findutils
+            gawk
+            gnugrep
+            gnused
+            jq
+            util-linux
+          ];
+        };
+        ephemeral-backup = {
+          description = "save the machine's settings and secrets to an encrypted file";
+          minimal = true;
+          deps = [
+            age
+            coreutils
+            gnutar
+            util-linux
           ];
         };
         ephemeral-setup = {
           description = "switch profile and turn the main options on or off, then rebuild";
+          minimal = true;
           deps = [
             gum
             jq
@@ -67,6 +96,7 @@ in
         };
         ephemeral-passwd = {
           description = "change your login password";
+          minimal = true;
           deps = [
             mkpasswd
             coreutils
@@ -74,10 +104,12 @@ in
           ];
         };
         ephemeral-update = {
-          description = "rebuild and switch to /persist/etc/nixos, offering newer releases first";
+          description = "rebuild after a change and get new releases; also --check, --previous and --list";
+          minimal = true;
           deps = [
             nh
             curl
+            gawk
             jq
             gnused
             findutils
@@ -113,6 +145,7 @@ in
         };
         luks-header-backup = {
           description = "copy the LUKS header to a USB stick";
+          minimal = true;
           deps = [
             coreutils
             cryptsetup
@@ -162,30 +195,39 @@ in
           meta.description = tool.description;
         };
 
-      width = lib.foldl' lib.max 0 (map lib.stringLength (lib.attrNames tools));
-      help = pkgs.writeShellApplication {
-        name = "ephemeral-help";
-        meta.description = "list these commands";
-        text = ''
-          cat <<'EOF'
-          ${lib.concatStringsSep "\n" (
-            lib.mapAttrsToList (
-              name: tool:
-              "${name}${lib.strings.replicate (width - lib.stringLength name) " "}  ${tool.description}"
-            ) tools
-          )}
+      # each profile lists only the commands it has
+      helpFor =
+        set:
+        let
+          width = lib.foldl' lib.max 0 (map lib.stringLength (lib.attrNames set));
+        in
+        pkgs.writeShellApplication {
+          name = "ephemeral-help";
+          meta.description = "list these commands";
+          text = ''
+            cat <<'EOF'
+            ${lib.concatStringsSep "\n" (
+              lib.mapAttrsToList (
+                name: tool:
+                "${name}${lib.strings.replicate (width - lib.stringLength name) " "}  ${tool.description}"
+              ) set
+            )}
 
-          Most of them ask what to do. --help on one shows its options.
-          EOF
-        '';
-      };
+            Most of them ask what to do. --help on one shows its options.
+            EOF
+          '';
+        };
       commands = lib.mapAttrs script tools // {
-        ephemeral-help = help;
+        ephemeral-help = helpFor tools;
       };
+      smallTools = lib.filterAttrs (_: tool: tool.minimal or false) tools;
     in
     {
       # what machines install; packages a machine flake defines itself stay out
       legacyPackages.ephemeralTools = commands;
+      legacyPackages.ephemeralToolsSmall = lib.mapAttrs script smallTools // {
+        ephemeral-help = helpFor smallTools;
+      };
 
       packages = commands // {
         # the installer reads it to offer the same apps
