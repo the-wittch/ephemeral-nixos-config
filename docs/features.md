@@ -25,7 +25,36 @@ It refuses to write onto the encrypted disk itself or into memory. The copy unlo
 
 smartd watches the disks and sends a desktop notification when one starts to fail.
 
+## Encrypted DNS
+
+By default, DNS goes unencrypted to whatever server the network hands out, so the network can see and change every name you look up. `ephemeral-setup` or the installer can send it over TLS to a public resolver instead, with no account:
+
+| `encryptedDns` | provider |
+|---|---|
+| `cloudflare` | Cloudflare, no filtering |
+| `quad9` | Quad9, blocks known malware domains |
+| `adguard` | AdGuard, blocks ads and trackers |
+
+For any other server that speaks DNS over TLS, such as Mullvad, NextDNS or one at home, pick "Other" and give the servers as `address#name`. The name is the one on the server's TLS certificate, and it's required, since without it anyone on the network could pretend to be the server. In `settings.json`:
+
+```json
+"encryptedDns": "custom",
+"customDns": [ "194.242.2.2#dns.mullvad.net", "2a07:e340::2#dns.mullvad.net" ]
+```
+
+DNS over HTTPS isn't supported; systemd-resolved, which does the lookups, only speaks DNS over TLS. For a server without any encryption, like a Pi-hole on your own network, leave `encryptedDns` at `none` and set it in a module of your own:
+
+```nix
+{
+  flake.modules.nixos.pc.networking.nameservers = [ "192.168.1.2" ];
+}
+```
+
+It's strict: when the provider can't be reached over TLS, names don't resolve, rather than falling back to plain DNS. That also means a hotel or airport Wi-Fi login page that relies on hijacking DNS won't open; see [When something breaks](troubleshooting.md). On the full profile, OpenSnitch lets the resolver through on port 853 without asking. This works on the small install too.
+
 ## Control D
+
+For your own filtering rules, Control D gives you a resolver id. It's only on the full profile, and can't be on together with `encryptedDns`.
 
 ```bash
 controld-setup

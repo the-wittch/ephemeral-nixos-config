@@ -41,9 +41,8 @@ declare -A opt=(
   [extras]="Extra apps and shell tools (Steam, VS Code, Brave, VLC, atuin, fzf)"
   [useOpenSnitch]="OpenSnitch: ask before programs connect out"
   [usePassSshAgent]="Proton Pass SSH agent at login"
-  [useControlD]="Control D: DNS over TLS"
 )
-order=(extras useOpenSnitch usePassSshAgent useControlD)
+order=(extras useOpenSnitch usePassSshAgent)
 declare -A on=()
 
 if [[ $profile == full ]]; then
@@ -80,9 +79,51 @@ if [[ ${on[usePassSshAgent]:-false} == true ]]; then
   esac
 fi
 
-args=(--arg profile "$profile")
+declare -A dns_label=(
+  [none]="The network's DNS (not encrypted)"
+  [cloudflare]="Cloudflare (no filtering)"
+  [quad9]="Quad9 (blocks malware)"
+  [adguard]="AdGuard (blocks ads and trackers)"
+  [controld]="Control D (your own resolver id)"
+  [custom]="Other: your own DNS over TLS servers"
+)
+dns_order=(none cloudflare quad9 adguard)
+dns=$(get encryptedDns)
+if [[ $profile == full ]]; then
+  dns_order+=(controld)
+  [[ $(get useControlD) == true ]] && dns=controld
+fi
+dns_order+=(custom)
+labels=()
+for k in "${dns_order[@]}"; do labels+=("${dns_label[$k]}"); done
+picked=$(printf '%s\n' "${labels[@]}" |
+  gum choose --header "DNS" --selected "${dns_label[${dns:-none}]}") || exit 0
+dns=none
+for k in "${dns_order[@]}"; do [[ $picked == "${dns_label[$k]}" ]] && dns=$k; done
+
+servers=
+if [[ $dns == custom ]]; then
+  servers=$(gum input --width 0 --header "Servers as address#name, separated by spaces, e.g. 194.242.2.2#dns.mullvad.net" \
+    --value "$(jq -r '.customDns // [] | join(" ")' "$SETTINGS")") || exit 0
+  [[ -n ${servers// /} ]] || die "no servers given"
+  read -ra list <<<"$servers"
+  for s in "${list[@]}"; do
+    # the name is what the certificate is checked against, so it can't be left out
+    [[ $s =~ ^[0-9A-Fa-f.:]+#[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$ ]] ||
+      die "$s isn't address#name, such as 194.242.2.2#dns.mullvad.net"
+  done
+fi
+
+args=(--arg profile "$profile" --arg dns "$dns" --arg servers "$servers")
 # shellcheck disable=SC2016 # jq variables
-filter='.profile = $profile'
+filter='.profile = $profile | .encryptedDns = (if $dns == "controld" then "none" else $dns end) | if $dns == "custom" then .customDns = ($servers | split(" ") | map(select(. != ""))) else . end'
+# only one of them can have the DNS; on the small install Control D is ignored, so it's left alone there
+if [[ $profile == full ]]; then
+  # shellcheck disable=SC2016
+  filter+=' | .useControlD = ($dns == "controld")'
+elif [[ $dns != none ]]; then
+  filter+=' | .useControlD = false'
+fi
 if [[ $profile == full ]]; then
   for k in "${order[@]}"; do
     args+=(--argjson "$k" "${on[$k]}")
@@ -113,7 +154,7 @@ if [[ $profile == full ]]; then
   if [[ ${on[usePassSshAgent]} == true ]]; then
     echo "- Run pass-cli login if you haven't, then log out and back in once more."
   fi
-  if [[ ${on[useControlD]} == true ]]; then
+  if [[ $dns == controld ]]; then
     echo "- Run controld-setup if you haven't entered your Control D resolver id yet."
   fi
 fi

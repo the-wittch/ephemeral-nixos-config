@@ -19,14 +19,17 @@ let
       && c.services.upower.enable
       && lib.elem "/var/lib/upower" (
         map (d: d.directory) c.environment.persistence."/persist".directories
-      );
+      )
+      && c.services.resolved.settings.Resolve.DNSOverTLS == "yes"
+      && lib.elem "9.9.9.9#dns.quad9.net" c.services.resolved.settings.Resolve.DNS;
     feat-network = c: c.services.tailscale.enable && !c.services.opensnitch.enable;
     feat-nvidia-legacy = c: !c.hardware.nvidia.open && c.services.xserver.videoDrivers == [ "nvidia" ];
     feat-nvidia-open = c: c.hardware.nvidia.open;
     feat-pass =
       c:
       c.environment.sessionVariables.PASS_SSH_VAULT == "Work keys"
-      && c.ephemeral.passCli.pname == "pass-cli";
+      && c.ephemeral.passCli.pname == "pass-cli"
+      && c.services.resolved.settings.Resolve.DNS == [ "194.242.2.2#dns.mullvad.net" ];
   };
   missing = lib.filter (name: !(expect.${name} (host name))) hosts;
 in

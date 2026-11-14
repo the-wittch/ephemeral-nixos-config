@@ -14,7 +14,9 @@
 | `extras` | the extra apps and shell tools listed in the [README](../README.md) |
 | `laptop` | thermald on Intel, battery reporting, screen rotation and light sensors |
 | `fingerprint` | fingerprint login and sudo |
-| `useControlD` | DNS over TLS through Control D |
+| `encryptedDns` | `none` (the network's DNS, not encrypted), `cloudflare`, `quad9` or `adguard`: DNS over TLS to that provider. `custom` uses the servers in `customDns` |
+| `customDns` | DNS over TLS servers for `custom`, each as `address#name`, e.g. `194.242.2.2#dns.mullvad.net` |
+| `useControlD` | DNS over TLS through Control D, with your own resolver id; can't be on with `encryptedDns` |
 | `useTailscale` | the Tailscale VPN |
 | `useOpenSnitch` | OpenSnitch asks before programs connect out (on by default) |
 | `usePassSettings`, `passSettingsVault`, `passSettingsItem` | merge settings from Proton Pass |

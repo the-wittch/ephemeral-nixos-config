@@ -57,6 +57,14 @@ Reboot afterwards. If it says the snapshot is there, `journalctl -b -u rollback`
 }
 ```
 
+**A Wi-Fi login page won't open, or nothing loads on hotel or airport Wi-Fi.** With encrypted DNS or Control D on, the network can't redirect you to its login page. Turn it off for a moment, log in, and turn it back on:
+
+```bash
+sudo resolvectl dnsovertls "$(ip -o route get 1.1.1.1 | awk '{ print $5 }')" no
+```
+
+That only lasts until the network reconnects. If it still doesn't load, run `ephemeral-setup`, pick the network's DNS, and switch back once you're through.
+
 **An app can't connect.** Check OpenSnitch's rules first (see the note in the [README](../README.md)).
 
 ## Reporting a problem

@@ -19,7 +19,7 @@ The installer sets up the full system by default. Next to a plain desktop, it ad
 - OpenSnitch, Syncthing, Podman, Flatpak with Flathub, Firefox and scanning.
 - Rebuilds through [nh](https://github.com/nix-community/nh), with a summary of what changed.
 - Laptop extras (thermald, battery reporting, fingerprint login) when the hardware is there.
-- Optional NVIDIA drivers, Tailscale, DNS over TLS through Control D, SMB mounts, and machine settings pulled from Proton Pass.
+- Optional NVIDIA drivers, Tailscale, encrypted DNS (Cloudflare, Quad9, AdGuard, Control D or your own servers), SMB mounts, and machine settings pulled from Proton Pass.
 
 A fresh install stays lean. `"extras": true` adds the bigger things:
 
@@ -56,7 +56,7 @@ The installer asks what you want and installs it: the full system with the optio
 ephemeral-setup
 ```
 
-It switches between the full system and the small install (`"profile": "full"` or `"minimal"`), asks which options you want (extras, OpenSnitch, the Proton Pass SSH agent, Control D), and rebuilds. After a small install, this is how you get the rest. Log out and back in when it's done.
+It switches between the full system and the small install (`"profile": "full"` or `"minimal"`), asks which options you want (extras, OpenSnitch, the Proton Pass SSH agent) and where DNS goes, and rebuilds. After a small install, this is how you get the rest. Log out and back in when it's done.
 
 `extras`, `useControlD`, `usePassSshAgent`, `useFlakePassCli` and the apps in `apps.json` only apply to the full system; on the small install the rebuild warns that they're ignored.
 
@@ -145,7 +145,7 @@ Most of them ask what to do; `--help` on one shows its options. The small instal
 ## Documentation
 
 - [The first hour](docs/first-hour.md): what to do right after installing
-- [Features](docs/features.md): snapshots, Control D, SMB, NVIDIA, Proton Pass and the rest
+- [Features](docs/features.md): snapshots, encrypted DNS, SMB, NVIDIA, Proton Pass and the rest
 - [settings.json](docs/settings.md): every setting
 - [Customizing](docs/customizing.md): your own modules, and how this repo is organized
 - [Keeping things across reboots](docs/persistence.md)

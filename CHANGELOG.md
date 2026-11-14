@@ -2,6 +2,13 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.3.0
+
+### Added
+
+- Encrypted DNS without an account: `"encryptedDns"` can be `cloudflare`, `quad9` or `adguard`, and sends all DNS over TLS to that provider, on both profiles. `"custom"` uses your own servers from `"customDns"`, each as `address#name`, such as Mullvad's or one at home. `ephemeral-setup` asks which DNS to use, with the network's own as the first choice and "Other" for your own servers last, and Control D moved into that question. The default stays the network's DNS, so nothing changes on machines that don't set it.
+- `encryptedDns` and `useControlD` can't both be on; the rebuild says which to turn off. `controld-setup` turns `encryptedDns` off when it turns Control D on.
+
 ## 4.2.0
 
 ### Added
