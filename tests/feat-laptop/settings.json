@@ -1,1 +1,1 @@
-{ "hostname": "feat-laptop", "username": "alice", "desktop": "niri", "laptop": true, "fingerprint": true }
+{ "hostname": "feat-laptop", "username": "alice", "desktop": "niri", "laptop": true, "fingerprint": true, "encryptedDns": "quad9" }

@@ -83,6 +83,23 @@ in
     laptop = flag false "Laptop extras: thermald on Intel, battery reporting, sensors.";
     fingerprint = flag false "Fingerprint login and sudo through fprintd.";
     useControlD = flag false "DNS over TLS to Control D; the id is in /persist/etc/controld-resolver.";
+    encryptedDns = mkOption {
+      type = types.enum [
+        "none"
+        "cloudflare"
+        "quad9"
+        "adguard"
+        "custom"
+      ];
+      default = "none";
+      description = "DNS over TLS to a public resolver, without an account, or to the servers in customDns. Use useControlD for Control D.";
+    };
+    customDns = mkOption {
+      # address#name: resolved checks the server's certificate against the name
+      type = types.listOf (types.strMatching "[0-9A-Fa-f.:]+#[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?");
+      default = [ ];
+      description = "DNS over TLS servers for encryptedDns = \"custom\", each as address#name, e.g. 194.242.2.2#dns.mullvad.net.";
+    };
     useTailscale = flag false "Tailscale VPN.";
     useOpenSnitch = flag true "OpenSnitch: outgoing connections need your OK (full profile).";
     useFlakePassCli = flag false "Build modules/packages/_pass-cli.nix instead of nixpkgs proton-pass-cli.";

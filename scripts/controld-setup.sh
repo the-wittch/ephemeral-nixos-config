@@ -21,8 +21,9 @@ flag_in() {
 set_flag() {
   local file=$1 value=$2
   [[ $value == true || $value == false ]] || die "bad flag value"
+  # Control D and encryptedDns can't both be on
   # shellcheck disable=SC2016 # $v is jq's
-  jq_edit "$file" --argjson v "$value" '.useControlD = $v'
+  jq_edit "$file" --argjson v "$value" '.useControlD = $v | if $v then .encryptedDns = "none" else . end'
 }
 current_id() {
   local id

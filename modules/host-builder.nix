@@ -77,6 +77,7 @@ let
                 nvidia = settings.nvidia != "none";
                 inherit (settings) laptop fingerprint;
                 tailscale = settings.useTailscale;
+                encrypted-dns = settings.encryptedDns != "none";
                 opensnitch = full && settings.useOpenSnitch;
               }
               // lib.mapAttrs (_: key: full && settings.${key}) fullOnly

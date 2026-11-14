@@ -54,6 +54,18 @@ let
     "a keyboard layout with spaces" = ok // {
       keyboardLayout = "us de";
     };
+    "an unknown DNS provider" = ok // {
+      encryptedDns = "google";
+    };
+    "a DNS server without a name to check its certificate against" = ok // {
+      customDns = [ "194.242.2.2" ];
+    };
+    "a DNS server address with shell characters" = ok // {
+      customDns = [ "1.2.3.4;reboot#dns.example.com" ];
+    };
+    "a DNS server name with a space" = ok // {
+      customDns = [ "1.2.3.4#dns example.com" ];
+    };
     "a setting that doesn't exist" = ok // {
       desktpo = "gnome";
     };
@@ -65,6 +77,11 @@ let
       // {
         keyboardLayout = "us,de";
         diskDevice = "/dev/disk/by-id/nvme-x";
+        encryptedDns = "custom";
+        customDns = [
+          "194.242.2.2#dns.mullvad.net"
+          "2a07:e340::2#dns.mullvad.net"
+        ];
       }
     );
   wronglyAccepted = lib.attrNames (lib.filterAttrs (_: check) refused);
