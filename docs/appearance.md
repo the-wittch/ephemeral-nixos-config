@@ -8,7 +8,7 @@ Each file in `modules/dotfiles/` sets up one program in Home Manager: zsh with a
 
 ## Theme
 
-Stylix applies the [Catppuccin Mocha](https://catppuccin.com) palette to GTK and Qt apps, GNOME Shell, Noctalia on niri and Umbriel, the boot splash, the console and the dotfiles above. Plasma takes its colors from the wallpaper instead (see [Plasma](#plasma)). Fonts are Noto Sans and Noto Serif, with JetBrains Mono for code. The cursor is Catppuccin Mocha Dark.
+Stylix applies the [Catppuccin Mocha](https://catppuccin.com) palette to GTK and Qt apps, GNOME Shell, Noctalia on niri and Umbriel, the console and the dotfiles above. Plasma takes its colors from the wallpaper instead (see [Plasma](#plasma)). Fonts are Noto Sans and Noto Serif, with JetBrains Mono for code. The cursor is Catppuccin Mocha Dark.
 
 To use another [base16 scheme](https://github.com/tinted-theming/schemes):
 
@@ -39,6 +39,31 @@ On the full profile, Plasma is set up with [plasma-manager](https://github.com/n
 - The colors come from the desktop wallpaper. [matugen](https://github.com/InioX/matugen) makes a dark color scheme from it at login and again whenever you pick a new wallpaper. Fonts and the cursor are the same as everywhere else.
 
 Settings plasma-manager doesn't set stay yours to change in System Settings.
+
+## Boot splash
+
+The screen that asks for the disk passphrase is drawn from the wallpaper: its snowflake gathers out of drifting pixels at boot, sheds a few and glitches now and then while it waits, and breaks up into pixels again once you've typed the passphrase, and at shutdown. The colours are the website's. It's the same on every desktop and both profiles, and it's built from `assets/wallpaper.svg`, so it follows a change to the wallpaper.
+
+If it ever fails to load, the boot falls back to a plain text prompt, and the passphrase works the same. To use another theme instead, see [Changing the boot splash](#changing-the-boot-splash) below.
+
+### Changing the boot splash
+
+nixpkgs has a pack of about 80 themes, `adi1090x-plymouth-themes`:
+
+```nix
+{
+  flake.modules.nixos.pc =
+    { lib, pkgs, ... }:
+    {
+      boot.plymouth = {
+        theme = lib.mkForce "rings";
+        themePackages = [ (pkgs.adi1090x-plymouth-themes.override { selected_themes = [ "rings" ]; }) ];
+      };
+    };
+}
+```
+
+Try one with `nix run path:/persist/etc/nixos#vm` first; some don't show the passphrase dots clearly.
 
 ## User picture
 

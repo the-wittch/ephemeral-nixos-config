@@ -181,9 +181,9 @@ in
                 ).strip()
                 assert gdm == uri, f"GDM wallpaper is {gdm!r}"
 
-            with subtest("stylix: catppuccin mocha for gtk, the cursor and the boot splash"):
+            with subtest("stylix: catppuccin mocha for gtk and the cursor; the boot splash is our own"):
                 machine.succeed("grep -qi '#1e1e2e' /home/alice/.config/gtk-4.0/gtk.css")
-                machine.succeed("grep -qx 'Theme=stylix' /etc/plymouth/plymouthd.conf")
+                machine.succeed("grep -qx 'Theme=ephemeral' /etc/plymouth/plymouthd.conf")
                 machine.succeed("test -d /run/current-system/sw/share/icons/catppuccin-mocha-dark-cursors")
 
             with subtest("GNOME extensions: tray and caffeine on, extension manager in place of the extensions app"):
