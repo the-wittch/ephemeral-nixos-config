@@ -2,7 +2,7 @@
 
 ## Dotfiles
 
-Each file in `modules/dotfiles/` sets up one program in Home Manager: zsh with autosuggestions and syntax highlighting, git, starship, zoxide, neovim and ghostty, plus yazi (`y`), btop, fastfetch, atuin, fzf, bat and tealdeer with `extras`. Change them from your own modules, as shown in [Customizing](customizing.md#your-own-modules). When Home Manager has to replace a file that's already there, it renames the old one to `<name>.hm-backup` first. `$EDITOR` is neovim, or VS Code (`code --wait`) with `extras`.
+Each file in `modules/dotfiles/` sets up one program in Home Manager: zsh with autosuggestions and syntax highlighting, git, starship, zoxide, neovim and ghostty, plus yazi (`y`), btop, fastfetch, atuin, fzf, bat and tealdeer with `extras`. Change them from your own modules, as shown in [Customizing](customizing.md#your-own-modules). When Home Manager has to replace a file that's already there, it renames the old one to `<name>.hm-backup` first. `$EDITOR` is neovim, or VS Code (`code --wait`) when it's picked in `ephemeral-apps`.
 
 ![A new Ghostty window with extras: fastfetch, with btop and areofyl's fetch spinning below it](images/terminal.gif)
 
@@ -63,7 +63,7 @@ nixpkgs has a pack of about 80 themes, `adi1090x-plymouth-themes`:
 }
 ```
 
-Try one with `nix run path:/persist/etc/nixos#vm` first; some don't show the passphrase dots clearly.
+Some themes don't show the passphrase dots clearly. `nix run path:/persist/etc/nixos#vm` shows a theme's animation, but not its passphrase prompt, since the VM's disk isn't encrypted.
 
 ## User picture
 

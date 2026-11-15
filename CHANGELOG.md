@@ -2,6 +2,28 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.5.0
+
+### Breaking
+
+- On the full system, apps now come from `ephemeral-apps`. Steam, VS Code, Brave, distrobox, unrar, git-crypt and age no longer come with `"extras": true`. **If you had `extras` on and want them back, tick them in `ephemeral-apps` after updating**, or add their names to `apps.json`: `steam`, `vscode`, `brave`, `distrobox`, `unrar`, `git-crypt`, `age`. Until then the rebuild removes them. Your home folder keeps their settings and game libraries.
+- `extras` is now just the shell tools: atuin, fzf, bat, tealdeer, yazi, btop, fastfetch, comma and command-not-found.
+
+### Added
+
+- Apps ticked by default: Firefox, VLC, 7-Zip, Syncthing Tray, htop, ripgrep, dig and the WireGuard tools, plus GNOME Tweaks and Extension Manager on GNOME, or Discover and Partition Manager on Plasma. They're installed unless you untick them, which `ephemeral-apps` saves as `-name` in `apps.json`. Firefox and the tools were built in before, so they stay through the update; VLC, 7-Zip and Syncthing Tray are new on machines that didn't have `extras`.
+- Apps for one desktop are only offered and installed on that desktop.
+- A Fonts category with common Nerd Fonts: JetBrains Mono, Fira Code, Hack, Meslo, CaskaydiaCove, SauceCodePro, Iosevka, Ubuntu Mono, Victor Mono, Commit Mono, Geist Mono, and the symbols on their own.
+- [Leaving things out](docs/customizing.md#leaving-things-out): how to drop the desktop's own apps, services and shell tools from your own modules, with more examples in `modules/local/_example.nix`.
+
+### Changed
+
+- The small install keeps its fixed set of apps, as before.
+
+### Fixed
+
+- The restore command `ephemeral-backup` prints used `age`, which a fresh install doesn't have. It runs it with `nix run nixpkgs#age` now.
+
 ## 4.4.0
 
 ### Changed

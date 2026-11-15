@@ -58,10 +58,47 @@ If a module of yours needs another shared module, import it through `ephemeral.a
 }
 ```
 
-Settings are `config.ephemeral.settings` in NixOS modules and `osConfig.ephemeral.settings` in Home Manager. To turn off something this repo sets, use `lib.mkForce`.
+Settings are `config.ephemeral.settings` in NixOS modules and `osConfig.ephemeral.settings` in Home Manager. To turn off something this repo turns on, see [Leaving things out](#leaving-things-out).
 
 `lib.mkFlake` brings this repo's inputs along, so `flake.nix` only names `ephemeral`. Add your own inputs next to it and they're available to your modules as `inputs.<name>`; one named like this repo's (say `nixpkgs`) replaces it.
 
 Rebuild with `ephemeral-update`, and check a change first with `ephemeral-update --check`. If you run `nix` or `nixos-rebuild` yourself, use `path:/persist/etc/nixos#nixos` rather than `/persist/etc/nixos#nixos`: without `path:`, Nix only sees files tracked by git, so it misses `settings.json` and `hardware-configuration.nix`.
 
 If you'd rather work in a clone of this repo, put your files in `modules/local/` instead. That folder is gitignored; `modules/local/_example.nix` shows the shape.
+
+## Leaving things out
+
+- **Apps**: untick them in `ephemeral-apps` and rebuild. That covers Firefox and the other apps ticked by default, too.
+- **The shell tools**: `"extras": false` in `settings.json` leaves out all of them. To keep the rest and drop one, turn it off in Home Manager, as below.
+- **Apps the desktop installs on its own**, such as GNOME's Maps, Weather and Web, or Plasma's Elisa and Konsole: list them in `environment.gnome.excludePackages` or `environment.plasma6.excludePackages`.
+- **Anything this repo turns on with an option**, such as printing, Syncthing, starship or atuin: set that option to `false` with `lib.mkForce`.
+
+```nix
+{
+  flake.modules.nixos.gnome =
+    { pkgs, ... }:
+    {
+      environment.gnome.excludePackages = with pkgs; [
+        gnome-maps
+        gnome-weather
+        epiphany
+      ];
+    };
+
+  flake.modules.nixos.pc =
+    { lib, ... }:
+    {
+      services.printing.enable = lib.mkForce false;
+    };
+
+  flake.modules.homeManager.base =
+    { lib, ... }:
+    {
+      programs.atuin.enable = lib.mkForce false;
+    };
+}
+```
+
+`modules/local/_example.nix` has more of these, commented out.
+
+What's left can't be taken out one at a time: Ghostty, git and the other tools in `modules/cli-tools.nix`, and the apps each desktop needs to open files, such as Nautilus and Text Editor on GNOME or Kate, Okular and Gwenview on Plasma. Each of those is one entry in a package list, and NixOS can't remove one entry from a list. `lib.mkForce` on `environment.systemPackages` replaces the whole list, everything else in it included, so don't use it for this.

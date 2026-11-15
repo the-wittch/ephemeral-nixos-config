@@ -1,5 +1,12 @@
 {
   ephemeral.apps = {
+    vlc = {
+      label = "VLC";
+      category = "Media";
+      description = "plays almost any video or audio file";
+      package = "vlc";
+      default = true;
+    };
     mpv = {
       label = "mpv";
       category = "Media";

@@ -29,5 +29,5 @@ Test a restore now and then.
 
 1. Install with the same username.
 2. Restore your home folder from the backup.
-3. Put your config back: clone your private repo into `/persist/etc/nixos`, then restore the `ephemeral-backup` file as it says (`age -d <file> | sudo tar -C / -xf -`). If the hardware changed, keep the `hardware-configuration.nix` the installer just wrote: copy it aside first and back after.
+3. Put your config back: clone your private repo into `/persist/etc/nixos`, then restore the `ephemeral-backup` file as it says (`nix run nixpkgs#age -- -d <file> | sudo tar -C / -xf -`). If the hardware changed, keep the `hardware-configuration.nix` the installer just wrote: copy it aside first and back after.
 4. Rebuild with `ephemeral-update`.

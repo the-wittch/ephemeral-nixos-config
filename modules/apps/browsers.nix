@@ -1,5 +1,18 @@
 {
   ephemeral.apps = {
+    firefox = {
+      label = "Firefox";
+      category = "Browsers";
+      description = "Mozilla's browser";
+      package = "firefox";
+      default = true;
+    };
+    brave = {
+      label = "Brave";
+      category = "Browsers";
+      description = "Chromium with ad blocking built in (the Origin build)";
+      package = "brave-origin";
+    };
     chromium = {
       label = "Chromium";
       category = "Browsers";

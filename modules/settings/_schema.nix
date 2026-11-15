@@ -79,7 +79,7 @@ in
       default = "none";
       description = "NVIDIA driver: open for RTX 20 / GTX 16 and newer, legacy (580) for GTX 900 and 10 series.";
     };
-    extras = flag false "Extra apps and tools: Steam, VS Code, Brave, VLC, atuin, fzf, bat, comma and more.";
+    extras = flag false "Extra shell tools: atuin, fzf, bat, yazi, btop, fastfetch, comma and more.";
     laptop = flag false "Laptop extras: thermald on Intel, battery reporting, sensors.";
     fingerprint = flag false "Fingerprint login and sudo through fprintd.";
     useControlD = flag false "DNS over TLS to Control D; the id is in /persist/etc/controld-resolver.";

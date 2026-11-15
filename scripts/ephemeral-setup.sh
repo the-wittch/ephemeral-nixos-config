@@ -38,7 +38,7 @@ profile=$(gum choose --header "Profile" --selected "$(get profile || true)" \
 profile=${profile:-full}
 
 declare -A opt=(
-  [extras]="Extra apps and shell tools (Steam, VS Code, Brave, VLC, atuin, fzf)"
+  [extras]="Extra shell tools (atuin, fzf, bat, fastfetch, comma)"
   [useOpenSnitch]="OpenSnitch: ask before programs connect out"
   [usePassSshAgent]="Proton Pass SSH agent at login"
 )

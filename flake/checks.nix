@@ -162,6 +162,17 @@ in
           assert lib.assertMsg (
             machine.config.environment.etc ? ephemeral-fixture
           ) "lib.mkFlake didn't load the machine's own modules/";
+          # apps.json: -firefox unticks a default, discover is Plasma only, steam is listed
+          assert lib.assertMsg (
+            let
+              picked = machine.config.ephemeral.pickedApps;
+            in
+            lib.elem "steam" picked
+            && lib.elem "vlc" picked
+            && lib.elem "gnome-tweaks" picked
+            && !lib.elem "firefox" picked
+            && !lib.elem "discover" picked
+          ) "apps.json picks came out wrong: ${toString machine.config.ephemeral.pickedApps}";
           pkgs.writeText "mkflake-eval" (
             builtins.unsafeDiscardStringContext (
               machine.config.system.build.toplevel.drvPath + "\n" + machine.config.system.build.vm.drvPath

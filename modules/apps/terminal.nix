@@ -21,6 +21,19 @@ in
     broot = app "broot" "find your way around big folders" "broot";
     ncdu = app "ncdu" "what's using the disk" "ncdu";
 
+    htop = app "htop" "processes and what they use" "htop" // {
+      default = true;
+    };
+    ripgrep = app "ripgrep" "search inside files (rg)" "ripgrep" // {
+      default = true;
+    };
+    dig = app "dig" "look up DNS records" "dig" // {
+      default = true;
+    };
+    wireguard-tools = app "WireGuard tools" "wg and wg-quick for VPN tunnels" "wireguard-tools" // {
+      default = true;
+    };
+
     bottom = app "bottom" "system monitor with graphs" "bottom";
     glances = app "Glances" "everything about the system on one screen" "glances";
     nvtop = app "nvtop" "GPU usage on any vendor" "nvtopPackages.full";

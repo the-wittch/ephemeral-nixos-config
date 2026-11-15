@@ -1,5 +1,58 @@
 {
   ephemeral.apps = {
+    gnome-tweaks = {
+      label = "GNOME Tweaks";
+      category = "Utilities";
+      description = "fonts and window buttons GNOME's settings don't show";
+      package = "gnome-tweaks";
+      desktops = [ "gnome" ];
+      default = true;
+    };
+    gnome-extension-manager = {
+      label = "Extension Manager";
+      category = "Utilities";
+      description = "find and install GNOME Shell extensions";
+      package = "gnome-extension-manager";
+      desktops = [ "gnome" ];
+      default = true;
+    };
+    discover = {
+      label = "Discover";
+      category = "Utilities";
+      description = "KDE's app store for Flathub apps";
+      package = "kdePackages.discover";
+      desktops = [ "plasma" ];
+      default = true;
+    };
+    partitionmanager = {
+      label = "Partition Manager";
+      category = "Utilities";
+      description = "KDE's disk and partition editor";
+      package = "kdePackages.partitionmanager";
+      desktops = [ "plasma" ];
+      default = true;
+    };
+    syncthingtray = {
+      label = "Syncthing Tray";
+      category = "Utilities";
+      description = "Syncthing's status and folders in the tray";
+      package = "syncthingtray-minimal";
+      default = true;
+    };
+    p7zip = {
+      label = "7-Zip";
+      category = "Utilities";
+      description = "7z and other archives in the terminal";
+      package = "p7zip";
+      default = true;
+    };
+    unrar = {
+      label = "unrar";
+      category = "Utilities";
+      description = "extract RAR archives";
+      package = "unrar";
+      unfree = [ "unrar" ];
+    };
     flatseal = {
       label = "Flatseal";
       category = "Utilities";

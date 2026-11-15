@@ -16,22 +16,21 @@ The installer sets up the full system by default. Next to a plain desktop, it ad
 - Home Manager dotfiles: zsh, git, starship, zoxide, neovim and ghostty.
 - A dark Catppuccin Mocha theme everywhere, through [Stylix](https://github.com/nix-community/stylix), with the snowflake as the default user picture.
 - Hourly snapper snapshots of `/persist`, and desktop warnings when a disk starts failing.
-- OpenSnitch, Syncthing, Podman, Flatpak with Flathub, Firefox and scanning.
+- OpenSnitch, Syncthing, Podman, Flatpak with Flathub, and scanning.
 - Rebuilds through [nh](https://github.com/nix-community/nh), with a summary of what changed.
 - Laptop extras (thermald, battery reporting, fingerprint login) when the hardware is there.
 - Optional NVIDIA drivers, Tailscale, encrypted DNS (Cloudflare, Quad9, AdGuard, Control D or your own servers), SMB mounts, and machine settings pulled from Proton Pass.
 
-A fresh install stays lean. `"extras": true` adds the bigger things:
+Apps come from `ephemeral-apps`. It starts with an everyday set ticked (Firefox, VLC, 7-Zip, htop and a few more), and Steam, VS Code, Brave, Nerd Fonts and over 100 others are there to pick. `"extras": true` adds shell tools:
 
-- Steam, VS Code, Brave, VLC, distrobox, Syncthing Tray, 7-Zip, unrar, git-crypt and age.
-- atuin, fzf, bat, tealdeer, yazi, btop and fastfetch in the shell; it greets each new Ghostty window with the wallpaper's snowflake.
+- atuin, fzf, bat, tealdeer, yazi, btop and fastfetch; fastfetch greets each new Ghostty window with the wallpaper's snowflake.
 - `,` to run any program once without installing it, and command-not-found suggestions.
 
 ![A new Ghostty window with extras: fastfetch, with btop and areofyl's fetch below it](docs/images/terminal.gif)
 
 fastfetch on a new Ghostty window, with btop (bottom left) and [fetch](https://github.com/areofyl/fetch) (bottom right, not included).
 
-The installer asks about extras. Anything else you don't want can be switched off in your own modules ([Customizing](docs/customizing.md)).
+The installer asks about extras and offers the same apps. Anything else you don't want, including the desktop's own apps, can be left out in your own modules ([Customizing](docs/customizing.md#leaving-things-out)).
 
 > **On the full profile, outgoing connections are blocked until you allow them.** OpenSnitch asks the first time each program connects somewhere. If an app can't connect, a missed or denied prompt is the likely cause: open OpenSnitch and check its Rules. `"useOpenSnitch": false` turns it off.
 
@@ -134,7 +133,7 @@ and update it with `nix flake update nixpkgs --flake /persist/etc/nixos`. That c
 | `ephemeral-report` | system details to paste into a bug report |
 | `controld-setup` | set or turn off the Control D resolver id |
 | `smb-setup` | add or remove SMB shares |
-| `ephemeral-apps` | pick extra apps by category, then rebuild |
+| `ephemeral-apps` | pick apps by category, then rebuild |
 | `luks-header-backup <file>` | copy the LUKS header to a USB stick |
 | `settings-from-pass` | pull settings from Proton Pass |
 | `ssh-pubs-from-pass` | write SSH public keys from Proton Pass to `~/.ssh` |

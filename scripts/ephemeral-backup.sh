@@ -51,5 +51,5 @@ sync -f "$out"
 echo
 echo "Wrote $out ($(du -h "$out" | cut -f1))."
 echo "To restore after a reinstall:"
-echo "  age -d $(basename "$out") | sudo tar -C / -xf -"
+echo "  nix run nixpkgs#age -- -d $(basename "$out") | sudo tar -C / -xf -"
 echo "  ephemeral-update"

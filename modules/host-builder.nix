@@ -14,11 +14,25 @@ let
     let
       settings = loadSettings host.root;
       appsFile = host.root + "/apps.json";
-      picked = if builtins.pathExists appsFile then lib.importJSON appsFile else [ ];
-      known =
-        lib.throwIfNot (builtins.isList picked && lib.all builtins.isString picked)
-          "apps.json has to be a list of app names"
-          (builtins.filter (id: config.ephemeral.apps ? ${id}) picked);
+      catalog = config.ephemeral.apps;
+      entries =
+        let
+          json = if builtins.pathExists appsFile then lib.importJSON appsFile else [ ];
+        in
+        lib.throwIfNot (
+          builtins.isList json && lib.all builtins.isString json
+        ) "apps.json has to be a list of app names" json;
+      # "-firefox" unpicks an app that's picked by default
+      unpicked = map (lib.removePrefix "-") (builtins.filter (lib.hasPrefix "-") entries);
+      listed = builtins.filter (id: !lib.hasPrefix "-" id) entries;
+      defaults = lib.attrNames (lib.filterAttrs (id: app: app.default && !lib.elem id unpicked) catalog);
+      onThisDesktop =
+        id:
+        !(catalog ? ${id})
+        || catalog.${id}.desktops == [ ]
+        || lib.elem settings.desktop catalog.${id}.desktops;
+      picked = builtins.filter onThisDesktop (lib.unique (listed ++ defaults));
+      known = builtins.filter (id: catalog ? ${id}) picked;
       hardware = host.root + "/hardware-configuration.nix";
       full = settings.profile == "full";
       nixos = config.ephemeral.aspects.nixos;
@@ -29,7 +43,7 @@ let
       };
       ignored = lib.optionals (!full) (
         lib.filter (key: settings.${key}) (lib.attrValues fullOnly ++ [ "useFlakePassCli" ])
-        ++ lib.optional (known != [ ]) "the apps in apps.json"
+        ++ lib.optional (lib.any (id: catalog ? ${id}) listed) "the apps in apps.json"
       );
       system = inputs.nixpkgs.lib.nixosSystem {
         modules = [
@@ -84,7 +98,7 @@ let
             )
           )
         )
-        ++ lib.optionals full (map (id: config.ephemeral.apps.${id}.nixos) known)
+        ++ lib.optionals full (map (id: catalog.${id}.nixos) known)
         ++ host.modules;
       };
     in

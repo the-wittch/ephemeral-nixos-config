@@ -24,7 +24,7 @@ sudo ephemeral-doctor audit
 
 | | reboot | rebuild or update | go back to an older system | reinstall |
 |---|---|---|---|---|
-| `/` outside what's kept | gone | kept until the next reboot | gone | gone |
+| `/` outside what's kept | gone | kept until the next reboot | kept until the next reboot | gone |
 | `/home` | kept | kept | kept | gone |
 | the other kept paths | kept | kept | kept, but not mounted if that system doesn't keep them | gone |
 | `/var/log`, snapshots of `/persist` | kept | kept | kept | gone |

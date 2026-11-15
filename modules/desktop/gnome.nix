@@ -12,7 +12,6 @@ let
       services.gnome.gnome-keyring.enable = true;
 
       environment.systemPackages = with pkgs; [
-        gnome-tweaks
         nautilus
         gnome-text-editor
         loupe
@@ -36,7 +35,6 @@ in
       '';
 
       environment.systemPackages = with pkgs; [
-        gnome-extension-manager
         gnomeExtensions.appindicator
         gnomeExtensions.caffeine
         # it ships inside gnome-shell, so hide it instead
@@ -51,8 +49,12 @@ in
       ];
     };
 
-  flake.modules.nixos."minimal-gnome" = {
-    imports = [ common ];
-    services.gnome.gnome-initial-setup.enable = false;
-  };
+  flake.modules.nixos."minimal-gnome" =
+    { pkgs, ... }:
+    {
+      imports = [ common ];
+      services.gnome.gnome-initial-setup.enable = false;
+      # the full profile gets it from ephemeral-apps
+      environment.systemPackages = [ pkgs.gnome-tweaks ];
+    };
 }
