@@ -2,6 +2,12 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.5.1
+
+### Fixed
+
+- The boot test now gets the apps ticked by default, as a real install does. On 4.5.0 it stopped at the Extension Manager check, so its last checks, the small-install boot, the upgrade test and the disk test didn't run; this release has all of them. Nothing changes on machines.
+
 ## 4.5.0
 
 ### Breaking

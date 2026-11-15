@@ -1,7 +1,13 @@
 # nix build path:.#checks.x86_64-linux.boot -L
-{ config, ... }:
+{ config, lib, ... }:
 let
   nixos = config.ephemeral.aspects.nixos;
+  # what host-builder.nix picks for a GNOME machine with no apps.json
+  defaultApps = lib.attrNames (
+    lib.filterAttrs (
+      _: app: app.default && (app.desktops == [ ] || lib.elem "gnome" app.desktops)
+    ) config.ephemeral.apps
+  );
 in
 {
   perSystem =
@@ -26,7 +32,10 @@ in
               nixos.laptop
               nixos.fingerprint
               nixos.tailscale
-            ];
+            ]
+            ++ map (id: config.ephemeral.apps.${id}.nixos) defaultApps;
+
+            ephemeral.pickedApps = defaultApps;
 
             ephemeral.settings = {
               hostname = "boottest";
