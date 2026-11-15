@@ -1,0 +1,205 @@
+# The Ephemeral Nix boot splash. The build puts the shed_* arrays from _render.py above
+# this. Images are drawn at 1.5x for a 1200 pixel tall screen; u is one pixel of the
+# design at that size, scaled to this screen.
+
+Window.SetBackgroundTopColor(0.055, 0.051, 0.086);
+Window.SetBackgroundBottomColor(0.055, 0.051, 0.086);
+
+sw = Window.GetWidth();
+sh = Window.GetHeight();
+scale = sh / 1200;
+u = 1.5 * scale;
+
+fun scaled(name) {
+  local.img = Image(name);
+  return local.img.Scale(Math.Int(local.img.GetWidth() * global.scale + 0.5), Math.Int(local.img.GetHeight() * global.scale + 0.5));
+}
+
+bg_img = Image("background.png");
+bg_f = Math.Max(sw / bg_img.GetWidth(), sh / bg_img.GetHeight());
+bg_img = bg_img.Scale(Math.Int(bg_img.GetWidth() * bg_f + 1), Math.Int(bg_img.GetHeight() * bg_f + 1));
+bg = Sprite(bg_img);
+bg.SetPosition((sw - bg_img.GetWidth()) / 2, (sh - bg_img.GetHeight()) / 2, -100);
+
+frame_count = 30;
+i = 0;
+while (i < frame_count) {
+  frames[i] = scaled(frame_names[i]);
+  i = i + 1;
+}
+i = 0;
+while (i < 4) {
+  glitches[i] = scaled(glitch_names[i]);
+  i = i + 1;
+}
+
+cx = sw / 2;
+cy = sh * 0.40;
+fx = cx - flake_w * scale / 2;
+fy = cy - flake_h * scale / 2;
+flake = Sprite(frames[frame_count - 1]);
+flake.SetPosition(fx, fy, 0);
+
+i = 0;
+while (i < shed_count) {
+  pixels[i] = Sprite(scaled(pixel_names[i]));
+  pixels[i].SetOpacity(0);
+  i = i + 1;
+}
+
+word_img = scaled("wordmark.png");
+word = Sprite(word_img);
+word.SetPosition(cx - word_img.GetWidth() / 2, cy + 175 * u, 2);
+word.SetOpacity(0);
+
+label_img = scaled("label.png");
+label = Sprite(label_img);
+label.SetPosition(cx - label_img.GetWidth() / 2, cy + 253 * u, 3);
+box_img = scaled("box.png");
+box = Sprite(box_img);
+box_x = cx - box_img.GetWidth() / 2;
+box_y = cy + 279 * u;
+box.SetPosition(box_x, box_y, 3);
+wrong_img = scaled("wrong.png");
+wrong = Sprite(wrong_img);
+wrong.SetPosition(cx - wrong_img.GetWidth() / 2, cy + 341 * u, 3);
+dot_img = scaled("dot.png");
+caret_img = scaled("caret.png");
+caret = Sprite(caret_img);
+max_dots = 16;
+i = 0;
+while (i < max_dots) {
+  dots[i] = Sprite(dot_img);
+  dots[i].SetPosition(box_x + (22 + i * 20) * u - dot_img.GetWidth() / 2, box_y + 25 * u - dot_img.GetHeight() / 2, 4);
+  i = i + 1;
+}
+
+fun show_panel(on, n) {
+  global.label.SetOpacity(on);
+  global.box.SetOpacity(on);
+  global.wrong.SetOpacity(on * global.wrong_shown);
+  global.caret.SetOpacity(on);
+  global.caret.SetPosition(global.box_x + (22 + n * 20 - 5) * global.u, global.box_y + 16 * global.u, 4);
+  local.i = 0;
+  while (local.i < global.max_dots) {
+    if (on && local.i < n)
+      global.dots[local.i].SetOpacity(1);
+    else
+      global.dots[local.i].SetOpacity(0);
+    local.i = local.i + 1;
+  }
+}
+
+wrong_shown = 0;
+asking = 0;
+typed = 0;
+submitted = 0;
+show_panel(0, 0);
+
+# gather (boot), idle (whole, shedding, a glitch now and then), dissolve, gone
+fun set_state(s) {
+  global.state = s;
+  global.t = 0;
+  if (s != "idle") {
+    local.i = 0;
+    while (local.i < global.shed_count) {
+      global.pixels[local.i].SetOpacity(0);
+      local.i = local.i + 1;
+    }
+  }
+}
+
+mode = Plymouth.GetMode();
+if (mode == "boot") {
+  set_state("gather");
+} else if (mode == "shutdown" || mode == "reboot") {
+  flake.SetImage(frames[0]);
+  word.SetOpacity(1);
+  set_state("dissolve");
+} else {
+  flake.SetImage(frames[0]);
+  word.SetOpacity(1);
+  set_state("idle");
+}
+
+fun refresh() {
+  global.t = global.t + 1;
+  # the frames are for 30 a second; plymouth refreshes 50 times a second
+  local.f = Math.Int(global.t * 0.6);
+
+  if (global.state == "gather") {
+    if (local.f >= global.frame_count) {
+      set_state("idle");
+    } else {
+      global.flake.SetImage(global.frames[global.frame_count - 1 - local.f]);
+      global.word.SetOpacity(Math.Clamp((local.f - 15) / 15, 0, 1));
+    }
+  }
+
+  if (global.state == "idle") {
+    local.g = local.f % 150;
+    if (local.g == 40)
+      global.flake.SetImage(global.glitches[0]);
+    else if (local.g == 41)
+      global.flake.SetImage(global.glitches[1]);
+    else if (local.g == 42)
+      global.flake.SetImage(global.glitches[2]);
+    else if (local.g == 101)
+      global.flake.SetImage(global.glitches[3]);
+    else
+      global.flake.SetImage(global.frames[0]);
+    local.i = 0;
+    while (local.i < global.shed_count) {
+      local.p = local.f / 45 + global.shed_phase[local.i];
+      local.l = local.p - Math.Int(local.p);
+      local.e = local.l * Math.Sqrt(local.l);
+      global.pixels[local.i].SetPosition(global.fx + (global.shed_x[local.i] + global.shed_dx[local.i] * local.e) * global.scale, global.fy + (global.shed_y[local.i] + global.shed_dy[local.i] * local.e) * global.scale, 1);
+      global.pixels[local.i].SetOpacity(1 - local.l);
+      local.i = local.i + 1;
+    }
+  }
+
+  if (global.state == "dissolve") {
+    if (local.f >= global.frame_count) {
+      set_state("gone");
+      global.flake.SetOpacity(0);
+    } else {
+      global.flake.SetOpacity(1);
+      global.flake.SetImage(global.frames[local.f]);
+    }
+  }
+
+  if (global.asking) {
+    if (Math.Int(global.t / 25) % 2 == 0)
+      global.caret.SetOpacity(1);
+    else
+      global.caret.SetOpacity(0);
+  }
+}
+Plymouth.SetRefreshFunction(refresh);
+
+fun display_password(prompt, bullets) {
+  # asked again after an answer: that passphrase didn't unlock the disk
+  if (global.submitted) {
+    global.submitted = 0;
+    global.wrong_shown = 1;
+    global.flake.SetOpacity(1);
+    set_state("gather");
+  }
+  global.asking = 1;
+  global.typed = bullets;
+  show_panel(1, Math.Min(bullets, global.max_dots));
+}
+Plymouth.SetDisplayPasswordFunction(display_password);
+
+fun display_normal() {
+  if (global.asking) {
+    global.asking = 0;
+    show_panel(0, 0);
+    if (global.typed > 0) {
+      global.submitted = 1;
+      set_state("dissolve");
+    }
+  }
+}
+Plymouth.SetDisplayNormalFunction(display_normal);

@@ -9,6 +9,7 @@ in
     {
       checks.boot-minimal = pkgs.testers.runNixOSTest {
         name = "boot-minimal";
+        enableOCR = true;
 
         node.pkgsReadOnly = false;
 
@@ -32,6 +33,12 @@ in
             };
 
             boot.consoleLogLevel = lib.mkForce 7;
+            # with a serial console Plymouth only ever draws text, so the theme would never load;
+            # its own log goes to the test output rather than over the splash
+            boot.kernelParams = [
+              "plymouth.ignore-serial-consoles"
+              "plymouth.debug=stream:/dev/ttyS0"
+            ];
           };
 
         testScript = ''
@@ -61,6 +68,20 @@ in
               boot_is_clean(2)
               machine.fail("test -e /root-was-here")
               machine.succeed("test -e /persist/persist-was-here")
+
+          with subtest("the boot splash runs its script and draws the passphrase prompt"):
+              # Plymouth only finds a broken script when it runs it, and falls back to text,
+              # so the wordmark on screen shows the script loaded and ran
+              machine.succeed("systemctl stop display-manager.service")
+              machine.succeed("chvt 1")
+              # it daemonizes but keeps stdout open, which the driver would wait on forever;
+              # no --debug, which prints over the splash
+              machine.succeed("plymouthd --mode=boot --tty=/dev/tty1 </dev/null >/dev/null 2>&1")
+              machine.succeed("plymouth show-splash")
+              machine.succeed("(plymouth ask-for-password --prompt=test >/dev/null 2>&1 &)")
+              machine.wait_for_text(r"E\s*P\s*H\s*E\s*M\s*E\s*R\s*A\s*L", timeout=timedelta(seconds=120))
+              machine.screenshot("splash")
+              machine.succeed("plymouth quit")
         '';
       };
     };

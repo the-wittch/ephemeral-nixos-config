@@ -88,7 +88,6 @@ let
     "boot.plymouth.theme"
   ];
   allowedDrift = {
-    "boot.plymouth.theme" = "Stylix, which only the full profile has, themes the boot splash";
     "persist:/var/lib/opensnitch" = "OpenSnitch is a full-profile option";
     "gnome:services.gnome.gnome-initial-setup.enable" =
       "no difference in practice: for an existing user it only marks itself done and exits (GNOME 40 and later)";

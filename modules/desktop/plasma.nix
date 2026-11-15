@@ -53,11 +53,6 @@ in
     {
       imports = [ common ];
 
-      boot.plymouth = {
-        theme = "breeze";
-        themePackages = [ pkgs.kdePackages.breeze-plymouth ];
-      };
-
       environment.plasma6.excludePackages = [ pkgs.kdePackages.plasma-welcome ];
     };
 }

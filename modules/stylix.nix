@@ -17,6 +17,8 @@ in
       stylix = {
         enable = true;
         polarity = "dark";
+        # the boot splash is our own, in modules/splash
+        targets.plymouth.enable = false;
         # inline, so evaluating doesn't need base16-schemes built
         base16Scheme = {
           system = "base16";

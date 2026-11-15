@@ -2,6 +2,12 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.4.0
+
+### Changed
+
+- A boot splash of our own, drawn from the wallpaper and in the website's colours. The snowflake gathers out of drifting pixels at boot, sheds a few while it waits for the disk passphrase, and breaks up into pixels once it's typed, and at shutdown. A wrong passphrase brings it back with a note. It replaces Stylix's splash on the full profile and the plain or Breeze one on the small install, so every desktop and profile looks the same. [Dotfiles and appearance](docs/appearance.md#boot-splash) shows how to use another theme.
+
 ## 4.3.0
 
 ### Added
