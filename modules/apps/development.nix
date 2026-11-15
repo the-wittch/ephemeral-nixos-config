@@ -1,5 +1,32 @@
 {
   ephemeral.apps = {
+    vscode = {
+      label = "VS Code";
+      category = "Development";
+      description = "Microsoft's code editor (also set as $EDITOR)";
+      package = "vscode";
+      unfree = [ "vscode" ];
+      homeManager =
+        { lib, ... }:
+        {
+          home.sessionVariables = {
+            EDITOR = lib.mkDefault "code --wait";
+            VISUAL = lib.mkDefault "code --wait";
+          };
+        };
+    };
+    distrobox = {
+      label = "Distrobox";
+      category = "Development";
+      description = "other Linux distros in Podman containers";
+      package = "distrobox";
+    };
+    git-crypt = {
+      label = "git-crypt";
+      category = "Development";
+      description = "encrypt chosen files in a git repo";
+      package = "git-crypt";
+    };
     just = {
       label = "just";
       category = "Development";

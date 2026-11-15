@@ -1,7 +1,7 @@
 # shellcheck shell=bash
 # shellcheck disable=SC2016 # the fakes are written out as they are, expanded when they run
-# Runs the helper scripts against fake curl, nh, nix, sudo and chpasswd, and checks what they
-# did. Called by flake/tests/scripts.nix with SCRIPTS pointing at scripts/.
+# Runs the helper scripts against fake curl, nh, nix, sudo, systemctl, mkpasswd and chpasswd, and
+# checks what they did. Called by flake/tests/scripts.nix with SCRIPTS pointing at scripts/
 set -euo pipefail
 
 work=$(mktemp -d)

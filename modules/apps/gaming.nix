@@ -1,6 +1,20 @@
 { inputs, ... }:
 {
   ephemeral.apps = {
+    steam = {
+      label = "Steam";
+      category = "Gaming";
+      description = "the Steam store with Proton for Windows games";
+      unfree = [
+        "steam"
+        "steam-unwrapped"
+      ];
+      nixos.programs.steam = {
+        enable = true;
+        remotePlay.openFirewall = false;
+        dedicatedServer.openFirewall = false;
+      };
+    };
     lutris = {
       label = "Lutris";
       category = "Gaming";

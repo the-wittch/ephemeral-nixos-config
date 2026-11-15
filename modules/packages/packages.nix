@@ -12,6 +12,8 @@ let
       description
       flatpak
       warn
+      default
+      desktops
       ;
     unfree = app.unfree != [ ];
   }) config.ephemeral.apps;
@@ -135,7 +137,7 @@ in
           ];
         };
         ephemeral-apps = {
-          description = "pick extra apps, then rebuild";
+          description = "pick apps by category, then rebuild";
           deps = [
             gum
             jq

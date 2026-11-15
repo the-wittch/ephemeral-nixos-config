@@ -19,8 +19,6 @@ let
         okular
         gwenview
         spectacle
-        discover
-        partitionmanager
       ];
     };
 in
@@ -54,5 +52,10 @@ in
       imports = [ common ];
 
       environment.plasma6.excludePackages = [ pkgs.kdePackages.plasma-welcome ];
+      # the full profile gets these from ephemeral-apps
+      environment.systemPackages = with pkgs.kdePackages; [
+        discover
+        partitionmanager
+      ];
     };
 }

@@ -90,7 +90,7 @@ These hold on every machine, in every profile:
 ## Tests
 
 1. **Every bug that's fixed gets a test that fails without the fix**, at the cheapest level that catches it: a Nix evaluation check, then a script test with fake commands, then a VM test.
-2. **Cheap checks run on every pull request; VM tests run on release pull requests and tags.** A new VM test says in its file what it catches that a cheaper check can't.
+2. **Cheap checks run on every pull request; VM tests run on release pull requests and manual runs.** A new VM test says in its file what it catches that a cheaper check can't.
 3. **A refactor that only moves code leaves every machine's system unchanged.** `.github/drv-diff.sh` shows it. Where a derivation changes only in the order of a list, show that the sorted contents are the same.
 4. **A check has to be able to fail.** When adding one, break the thing it checks on purpose and see it fail.
 

@@ -80,7 +80,7 @@ Laptops with both an NVIDIA and an Intel or AMD GPU also need [PRIME](https://wi
 
 ## GNOME extensions
 
-Extension Manager is installed in place of GNOME's own Extensions app. The tray (AppIndicator) and Caffeine extensions come from Nix and are on by default. A copy of an extension in `~/.local/share/gnome-shell/extensions` takes precedence over the Nix one, so remove it there to use the version from this repo.
+GNOME's own Extensions app is hidden; Extension Manager, ticked by default in `ephemeral-apps`, takes its place. The tray (AppIndicator) and Caffeine extensions come from Nix and are on by default. A copy of an extension in `~/.local/share/gnome-shell/extensions` takes precedence over the Nix one, so remove it there to use the version from this repo.
 
 ## Laptops and fingerprint login
 
@@ -115,19 +115,25 @@ With `extras` on: type a command that isn't installed and the shell names the pa
 
 With `extras` on, each new Ghostty window opens with fastfetch: the wallpaper's snowflake breaking up into pixels, in colored characters with EPHEMERAL under it, next to the system info in boxed sections (System, Hardware, Desktop, Terminal). Ghostty opens at 151×43 so both fit. The logo is drawn from `assets/wallpaper.svg` when the system is built (`modules/dotfiles/fastfetch/`), so it follows the wallpaper if you change that file. fzf adds Ctrl-T (pick a file) and Alt-C (jump to a directory). atuin owns Ctrl-R: a searchable history that stays on this machine, with no account or sync. Import your existing history once with `atuin import auto`. `bat` is `cat` with syntax highlighting, and `tldr <command>` shows short examples.
 
-## Extra apps
+## Apps
 
-`ephemeral-apps` offers over 100 common apps by category: browsers, chat, office, media, graphics, games, development, security and penetration testing (Metasploit, Nmap, Burp Suite, Ghidra and more), terminal apps, utilities, system tuning and virtual machines. Labels show which ones are unfree, which come from Flathub, and which carry a warning (Docker and Wireshark add you to a powerful group, LocalSend opens a port, Nmap notes that OpenSnitch asks about each host a scan reaches). Every warning is shown again before anything is saved.
+On the full system, `ephemeral-apps` is where apps come from. What isn't in it is part of the desktop or the system: the terminal, the file manager, the image and PDF viewers, the text editor and the services.
 
-The installer offers the same list. Your picks are saved to `apps.json` next to `settings.json`, a plain list such as `["discord", "obsidian", "docker"]`. Commit it with the rest of your private flake; it isn't a secret, and it brings the same apps to your next machine. On a rebuild:
+It offers over 100 common apps by category: browsers, chat, office, media, graphics, games, development, security and penetration testing (Metasploit, Nmap, Burp Suite, Ghidra and more), terminal apps, utilities, Nerd Fonts, system tuning and virtual machines. Labels show which ones are unfree, which come from Flathub, and which carry a warning (Docker and Wireshark add you to a powerful group, LocalSend opens a port, Nmap notes that OpenSnitch asks about each host a scan reaches). Every warning is shown again before anything is saved.
+
+The installer offers the same list. Your picks are saved to `apps.json` next to `settings.json`, a plain list such as `["discord", "obsidian", "-vlc"]`, where `-vlc` leaves out an app that's ticked by default. Commit it with the rest of your private flake; it isn't a secret, and it brings the same apps to your next machine. On a rebuild:
 
 - Nix packages are installed system-wide, and unfree ones are added to the allowlist for you.
 - Apps that need more (Docker, Wireshark, GameMode, LocalSend) get their settings, groups and `/persist` folders.
 - Flathub apps are installed for your user at login, from the same pinned Flathub file as the system remote. Unpicking one removes it, but only if it was installed this way; Flatpaks you installed yourself are left alone.
 
+Some apps are ticked from the start: Firefox, VLC, 7-Zip, Syncthing Tray, htop, ripgrep, dig and the WireGuard tools, plus GNOME Tweaks and Extension Manager on GNOME, or Discover and Partition Manager on Plasma. They're installed unless you untick them. Apps for one desktop are only offered, and only installed, on that desktop.
+
 A name in `apps.json` that's no longer in the catalog gives a warning, not a failed build.
 
-Your private flake can add its own apps to the picker:
+The small install ignores `apps.json` and has a fixed set instead: Firefox, VLC, 7-Zip, vim, distrobox, htop, ripgrep, dig and the WireGuard tools, with GNOME Tweaks on GNOME or Discover and Partition Manager on Plasma.
+
+Your private flake can add its own apps to the picker. `label` and `description` can't contain commas:
 
 ```nix
 {
@@ -185,7 +191,7 @@ settings-from-pass
 ephemeral-update
 ```
 
-`ssh-pubs-from-pass` writes the public half of each SSH key item in `passSshVault` to `~/.ssh/<title>.pub` (lowercased, with anything but letters, digits, `.`, `_` and `-` turned into `_`), for `IdentityFile` lines. It only opens SSH key items. `--list` shows what it would write. `PASS_SETTINGS_VAULT`, `PASS_SETTINGS_ITEM` and `PASS_SSH_VAULT` change where they look.
+`ssh-pubs-from-pass` writes the public half of each SSH key item in the `Personal` vault, or the one given with `--vault`, to `~/.ssh/<title>.pub` (lowercased, with anything but letters, digits, `.`, `_` and `-` turned into `_`), for `IdentityFile` lines. It only opens SSH key items. `--list` shows what it would write. `PASS_SETTINGS_VAULT`, `PASS_SETTINGS_ITEM` and `PASS_SSH_VAULT` change where they look; `ssh-pubs-from-pass` doesn't read `passSshVault` from `settings.json`.
 
 ### SSH agent
 

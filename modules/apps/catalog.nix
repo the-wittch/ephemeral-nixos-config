@@ -28,6 +28,7 @@ in
                 "Security"
                 "Terminal"
                 "Utilities"
+                "Fonts"
                 "System"
                 "Virtualization"
               ];
@@ -47,6 +48,23 @@ in
               type = types.listOf types.str;
               default = [ ];
               description = "Names for ephemeral.unfreePackages.";
+            };
+            default = mkOption {
+              type = types.bool;
+              default = false;
+              description = "Picked unless apps.json has -<name>, so an older apps.json keeps it.";
+            };
+            desktops = mkOption {
+              type = types.listOf (
+                types.enum [
+                  "gnome"
+                  "plasma"
+                  "niri"
+                  "umbriel"
+                ]
+              );
+              default = [ ];
+              description = "Only offered and installed on these desktops; empty for all of them.";
             };
             warn = mkOption {
               type = types.nullOr text;

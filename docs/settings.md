@@ -11,7 +11,7 @@
 | `desktop` | `plasma`, `gnome`, `niri` or `umbriel` |
 | `profile` | `full` (everything in these docs) or `minimal` (the installer's small install) |
 | `nvidia` | `none`, `open` (RTX 20 / GTX 16 series and newer) or `legacy` (GTX 900 / 10 series) |
-| `extras` | the extra apps and shell tools listed in the [README](../README.md) |
+| `extras` | the extra shell tools listed in the [README](../README.md): atuin, fzf, bat, fastfetch, comma and more |
 | `laptop` | thermald on Intel, battery reporting, screen rotation and light sensors |
 | `fingerprint` | fingerprint login and sudo |
 | `encryptedDns` | `none` (the network's DNS, not encrypted), `cloudflare`, `quad9` or `adguard`: DNS over TLS to that provider. `custom` uses the servers in `customDns` |

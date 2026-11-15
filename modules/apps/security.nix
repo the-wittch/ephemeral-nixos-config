@@ -1,5 +1,11 @@
 {
   ephemeral.apps = {
+    age = {
+      label = "age";
+      category = "Security";
+      description = "encrypt files with a key or passphrase";
+      package = "age";
+    };
     keepassxc = {
       label = "KeePassXC";
       category = "Security";
