@@ -1,6 +1,11 @@
 {
   flake.modules.nixos.base =
-    { config, pkgs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     let
       esp = config.boot.loader.efi.efiSysMountPoint;
     in
@@ -14,7 +19,8 @@
           # moved to another machine, only finds the fallback path, so the same binary goes there
           # too. That also replaces systemd-boot's copy from before the switch. Copied and renamed
           # the way Limine copies its own files: FAT refuses the mode change install -m would make.
-          extraInstallCommands = ''
+          # A machine that can't write firmware variables gets Limine at the fallback path alone.
+          extraInstallCommands = lib.optionalString (!config.boot.loader.limine.efiInstallAsRemovable) ''
             ${pkgs.coreutils}/bin/mkdir -p ${esp}/efi/boot
             ${pkgs.coreutils}/bin/cp ${esp}/efi/limine/BOOTX64.EFI ${esp}/efi/boot/BOOTX64.EFI.tmp
             ${pkgs.coreutils}/bin/mv ${esp}/efi/boot/BOOTX64.EFI.tmp ${esp}/efi/boot/BOOTX64.EFI

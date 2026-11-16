@@ -23,8 +23,10 @@ in
             };
             boot.consoleLogLevel = lib.mkForce 7;
             # disko installs from a VM with no firmware variables to write, and boots the disk
-            # with fresh ones, so this also shows the fallback copy starts Limine
+            # with fresh ones. Limine still goes to its own folder, as on a real machine, so the
+            # boot shows the fallback copy starts it.
             boot.loader.efi.canTouchEfiVariables = lib.mkForce false;
+            boot.loader.limine.efiInstallAsRemovable = false;
           }
         ];
       };
