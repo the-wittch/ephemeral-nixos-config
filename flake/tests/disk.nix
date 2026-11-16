@@ -44,9 +44,8 @@ in
           machine.wait_for_console_text("assphrase")
           machine.send_console("${passphrase}\n")
         '';
+        # makeDiskoTest's own script already imports shlex
         extraTestScript = ''
-          import shlex
-
           def reboot():
               machine.shutdown()
               machine.start()
