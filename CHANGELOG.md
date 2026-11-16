@@ -2,6 +2,12 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.8.1
+
+### Fixed
+
+- The systemd-boot cleanup left the "Fallback Linux Boot Manager" firmware entry, which newer systemd-boot adds beside its own and which pointed at a file the cleanup had removed. The next rebuild removes it. Only entries on this machine's boot partition are touched; one on another disk stays.
+
 ## 4.8.0
 
 ### Added

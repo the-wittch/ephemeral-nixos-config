@@ -97,6 +97,9 @@ in
               machine.succeed(f"for p in {systemd_boot}; do test ! -e $p; done")
               entries, order, _ = boot_entries()
               assert "Linux Boot Manager" not in entries.values(), f"systemd-boot's entry is still there: {entries}"
+              # bootctl's fallback entry has a name of its own, so this goes by where entries point
+              out = machine.succeed("efibootmgr")
+              assert "\\efi\\systemd\\" not in out.lower(), f"an entry still starts systemd-boot:\n{out}"
               assert entries.get(order[0]) == "Limine", f"first in the boot order: {entries.get(order[0])} ({order})"
               machine.succeed("test -s /boot/limine/limine.conf")
 
