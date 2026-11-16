@@ -227,6 +227,25 @@ if audit_says "/persist/var/lib/docker" && ! audit_says "/persist/var/lib/blueto
   pass "audit: a folder on /persist nothing keeps any more is reported, ones in use aren't"
 else fail "audit: leftovers on /persist"; fi
 
+sb=$work/sb
+vars=$sb/sys/firmware/efi/efivars
+mkdir -p "$sb/etc/ephemeral" "$vars"
+: >"$sb/etc/ephemeral/secure-boot"
+printf '\x06\x00\x00\x00\x01' >"$vars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c"
+flake_at v1.0.0
+fake systemctl '[[ $1 == is-active ]] && exit 1; exit 0'
+doctor_sb() { USER=alice EPHEMERAL_ROOT=$sb FLAKE_DIR=$work/flake FAKE_OFFLINE=1 bash "$doctor" >"$work/out" 2>&1 || true; }
+doctor_sb
+if grep -qF "Secure Boot is on" "$work/out" && grep -qF "no list of revoked bootloaders" "$work/out"; then
+  pass "doctor: Secure Boot on with no dbx is a warning"
+else fail "doctor: missed an empty dbx"; fi
+head -c 4000 /dev/zero >"$vars/dbx-d719b2cb-3d3a-4596-a3bc-dad00e67656f"
+doctor_sb
+if grep -qF "Secure Boot is on" "$work/out" && ! grep -qF "no list of revoked bootloaders" "$work/out"; then
+  pass "doctor: a dbx with entries isn't reported"
+else fail "doctor: warned about a dbx that has entries"; fi
+rm "$fakes/systemctl"
+
 pubs=$(tool ssh-pubs-from-pass)
 fake pass-cli 'echo "pass-cli $*" >>"$CALLS"; echo "[]"'
 mkdir -p "$work/pubs"

@@ -134,9 +134,6 @@ jobs:
       - name: disk
         if: steps.changes.outputs.code == 'true'
         run: nix build path:.#checks.x86_64-linux.disk -L --no-link
-      - name: update from the previous release's systemd-boot to Limine
-        if: steps.changes.outputs.code == 'true'
-        run: nix build path:.#checks.x86_64-linux.bootloader-switch -L --no-link
       - name: turn Secure Boot on after updating from the previous release
         if: steps.changes.outputs.code == 'true'
         run: nix build path:.#checks.x86_64-linux.secure-boot -L --no-link
