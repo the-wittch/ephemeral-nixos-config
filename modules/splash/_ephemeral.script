@@ -183,7 +183,7 @@ fun refresh() {
 }
 Plymouth.SetRefreshFunction(refresh);
 
-# systemd asks "Please enter TPM2 PIN:" for the TPM, and for the passphrase otherwise
+# systemd asks "Please enter LUKS2 token PIN:" for the TPM, and for the passphrase otherwise
 fun asks_for_pin(text) {
   local.i = 0;
   while (local.i + 3 <= text.Length()) {

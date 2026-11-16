@@ -80,9 +80,9 @@ in
 
             def asked():
                 # whichever prompt came last on the console
-                machine.wait_for_console_text(r"TPM2 PIN|assphrase", timeout=timedelta(minutes=3))
+                machine.wait_for_console_text(r"PIN:|assphrase", timeout=timedelta(minutes=3))
                 log = machine.get_console_log()
-                return "pin" if log.rfind("TPM2 PIN") > log.rfind("assphrase") else "passphrase"
+                return "pin" if log.rfind("PIN:") > log.rfind("assphrase") else "passphrase"
 
             def boot():
                 machine.shutdown()
@@ -116,7 +116,7 @@ in
                 machine.send_console("${pin}\n")
                 machine.wait_for_unit("multi-user.target")
                 assert machine.succeed("findmnt -no SOURCE /").strip() == "/dev/mapper/cryptroot"
-                assert "assphrase" not in machine.get_console_log().split("TPM2 PIN")[-1], "the passphrase was asked for too"
+                assert "assphrase" not in machine.get_console_log().split("PIN:")[-1], "the passphrase was asked for too"
 
             with subtest("after a wrong PIN, the passphrase still unlocks it"):
                 boot()
