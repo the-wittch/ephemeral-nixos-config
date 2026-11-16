@@ -15,7 +15,7 @@
 | `modules/packages/` | the helper commands, the pinned pass-cli, and `app-catalog`, which the installer reads |
 | `modules/apps/` | the app catalog for `ephemeral-apps`, one file per category |
 | `flake/tests/` | the VM tests (boot, upgrade, disk layout, desktops, switching profiles) and the helper command tests |
-| `tests/` | machines CI evaluates (each desktop, full and minimal), and `upgrade/previous.json`, the release the upgrade test starts from |
+| `tests/` | machines CI evaluates (each desktop with both profiles, each optional feature, and settings that have to be refused), and `upgrade/previous.json`, the release the upgrade test starts from |
 | `docs/` | the user docs; the README links each page |
 | `scripts/` | the helper commands' source and the secret scanner; `scripts/lib/` has what they share |
 
@@ -50,7 +50,16 @@ On every pull request, CI runs the secret scan, actionlint and zizmor on the wor
 - `scripts-behaviour` runs `ephemeral-update`, `ephemeral-passwd`, `ephemeral-doctor audit` and `ssh-pubs-from-pass` against fake `curl`, `nh`, `sudo` and `systemctl`: what gets offered, what gets refused, which secrets stop a rebuild, that a bad password never replaces the old one, and what the audit reports. It also tests the `scripts/lib/` functions on their own, and every command's `--help`, its refusal of an unknown option (exit 2, nothing run), and that the ones with questions stop without a terminal.
 - the installer still evaluates against this code, so a change that would break it shows before the installer moves to the release.
 
-When only docs changed (Markdown, `docs/`, the license, issue templates), the secret scan is all that runs; `.github/changed.sh` decides. The boot tests run on manual runs, and on a pull request once you add the `boot-test` label. Release pull requests always get the label, so every release is boot-tested before it's merged: `boot` boots the full profile three times with a wiped root and checks services, persistence, snapshots, theming and the LUKS header backup; `boot-minimal` boots the first-boot system twice and checks the wipe, the login screen, that nothing failed, and that the boot splash draws its passphrase prompt; `upgrade` boots a machine on the previous release (`tests/upgrade/previous.json`) and switches it to the current code; `disk` formats a VM disk with the real layout (LUKS, btrfs, the rollback the other tests switch off), checks the wipe and what survives it, then deletes `root-blank` and brings it back with the steps `ephemeral-doctor --fix-root-reset` runs. Beside them, `desktop-build` builds every desktop and most feature hosts, `desktop-boot-plasma`, `-niri` and `-umbriel` boot those desktops to their login screen, `upgrade-boot` boots the current code on the `/persist` a VM of the previous release wrote, `profile-switch` switches a running small install to the full system, as `ephemeral-setup` does, then back, and `network-filter` checks OpenSnitch against a second machine and prints what gets through while it's stopped or has crashed.
+When only docs changed (Markdown, `docs/`, the license, issue templates), the secret scan is all that runs; `.github/changed.sh` decides. The boot tests run on manual runs, and on a pull request once you add the `boot-test` label. Release pull requests always get the label, so every release is boot-tested before it's merged:
+
+- `boot` boots the full profile three times with a wiped root and checks services, persistence, snapshots, theming and the LUKS header backup.
+- `boot-minimal` boots the first-boot system twice and checks the wipe, the login screen, that nothing failed, and that the boot splash draws its passphrase prompt.
+- `upgrade` boots a machine on the previous release (`tests/upgrade/previous.json`) and switches it to the current code.
+- `disk` formats a VM disk with the real layout (LUKS, btrfs, the rollback the other tests switch off), checks the wipe and what survives it, then deletes `root-blank` and brings it back with the steps `ephemeral-doctor --fix-root-reset` runs.
+- `bootloader-switch` updates a v4.6.0 machine from systemd-boot to Limine, and checks systemd-boot is removed only once Limine has started the machine.
+- `secure-boot` turns `secureBoot` on after an update from the previous release, boots with Secure Boot enforced, also from the fallback path alone, and checks Limine refuses a changed kernel.
+
+Beside them, `desktop-build` builds every desktop and most feature hosts, `desktop-boot-plasma`, `-niri` and `-umbriel` boot those desktops to their login screen, `upgrade-boot` boots the current code on the `/persist` a VM of the previous release wrote, `profile-switch` switches a running small install to the full system, as `ephemeral-setup` does, then back, and `network-filter` checks OpenSnitch against a second machine and prints what gets through while it's stopped or has crashed.
 
 To run the checks locally, use the same script as CI:
 
@@ -65,7 +74,7 @@ cp hardware-configuration.example.nix hardware-configuration.nix
 Build the VM tests one at a time:
 
 ```bash
-for t in boot boot-minimal upgrade disk bootloader-switch desktop-boot-umbriel upgrade-boot profile-switch network-filter; do
+for t in boot boot-minimal upgrade disk bootloader-switch secure-boot desktop-boot-umbriel upgrade-boot profile-switch network-filter; do
   nix build "path:.#checks.x86_64-linux.$t" -L --no-link
 done
 ```

@@ -34,6 +34,11 @@ percent_used() { df --output=pcent "$1" | tail -n 1 | tr -dc 0-9; }
 
 boot_time() { awk '/^btime/ { print $2 }' /proc/stat; }
 
+# 1 or 0 from the firmware, or nothing when it doesn't have the variable
+efi_flag() {
+  od -An -tu1 -j4 -N1 "/sys/firmware/efi/efivars/$1-8be4df61-93ca-11d2-aa0d-00e098032b8c" 2>/dev/null | tr -d ' ' || true
+}
+
 fix_root_reset() {
   require_tty
   [[ $EUID -eq 0 ]] || exec sudo "$0" --fix-root-reset
@@ -243,6 +248,19 @@ if [[ -s $header_marker ]]; then
 else
   warn "no LUKS header backup made on this machine; without one, a damaged header loses the whole disk" \
     "luks-header-backup /run/media/$USER/<stick>/luks-header.img"
+fi
+
+if [[ -e /etc/ephemeral/secure-boot ]]; then
+  if [[ $(efi_flag SecureBoot) == 1 ]]; then
+    # only this machine's key signs Limine, so a boot with it on means that key is trusted
+    ok "Secure Boot is on, with this machine's keys"
+  elif [[ $(efi_flag SetupMode) == 1 ]]; then
+    warn "the firmware is in Setup Mode, waiting for this machine's keys" \
+      "ephemeral-update puts them in; then turn Secure Boot on in the firmware (docs/security.md)"
+  else
+    warn "secureBoot is on in settings.json, but Secure Boot is off in the firmware" \
+      "if the keys are enrolled, turn it on in the firmware; if not, see docs/security.md"
+  fi
 fi
 
 if systemctl is-active --quiet opensnitchd.service 2>/dev/null; then

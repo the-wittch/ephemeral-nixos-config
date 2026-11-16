@@ -2,6 +2,20 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.8.0
+
+### Added
+
+- Secure Boot, with `"secureBoot": true` in `settings.json`. It's off unless you turn it on, and it needs two visits to the firmware setup, before and after the rebuild: the steps are in [Secure Boot](docs/security.md#secure-boot). The keys are made on the machine, kept in `/persist/var/lib/sbctl` and saved by `ephemeral-backup`. Microsoft's keys and the firmware's own stay trusted. `ephemeral-doctor` says which step a machine is on.
+- With `secureBoot` on, a rebuild stops if Limine isn't signed with this machine's key, so it never leaves one behind that the firmware would refuse.
+- A test that turns `secureBoot` on after an update from the previous release, boots with Secure Boot enforced, also from the fallback path alone, and checks that Limine refuses a changed kernel.
+
+### Changed
+
+- systemd-boot's files (`/boot/loader`, `/boot/EFI/systemd`, `/boot/EFI/nixos`) and its "Linux Boot Manager" firmware entry are removed by the first rebuild after the machine has started from Limine. A machine that hasn't started from Limine yet keeps them as a way back.
+- `/var/lib/sbctl` is kept on every machine, so that turning `secureBoot` on later has its keys on `/persist` from the start.
+- The bootloader switch test now always starts from v4.6.0, the last release on systemd-boot, and checks that systemd-boot is only removed once Limine has started the machine.
+
 ## 4.7.0
 
 ### Breaking

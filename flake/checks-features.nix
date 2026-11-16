@@ -12,7 +12,12 @@ let
   host = name: config.flake.nixosConfigurations.${name}.config;
   # evaluating them catches option renames; this checks each feature is really switched on
   expect = {
-    feat-all = c: c.hardware.nvidia.open && c.services.tailscale.enable && c.fileSystems ? "/mnt/files";
+    feat-all =
+      c:
+      c.hardware.nvidia.open
+      && c.services.tailscale.enable
+      && c.fileSystems ? "/mnt/files"
+      && c.boot.loader.limine.secureBoot.enable;
     feat-laptop =
       c:
       c.services.fprintd.enable

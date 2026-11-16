@@ -82,6 +82,7 @@ in
     extras = flag false "Extra shell tools: atuin, fzf, bat, yazi, btop, fastfetch, comma and more.";
     laptop = flag false "Laptop extras: thermald on Intel, battery reporting, sensors.";
     fingerprint = flag false "Fingerprint login and sudo through fprintd.";
+    secureBoot = flag false "Secure Boot with keys made on this machine. The firmware steps are in docs/security.md.";
     useControlD = flag false "DNS over TLS to Control D; the id is in /persist/etc/controld-resolver.";
     encryptedDns = mkOption {
       type = types.enum [

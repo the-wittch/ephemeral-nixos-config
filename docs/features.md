@@ -96,7 +96,7 @@ Set `"useTailscale": true`, rebuild, then sign in once with `sudo tailscale up`.
 
 ## Scanners
 
-SANE is set up with the driverless `sane-airscan` backend, and Document Scanner is installed on every desktop, so most USB scanners work without a driver. Network scanners aren't found automatically, because mDNS discovery (Avahi) is off on purpose. Add yours by address in a module of your own:
+On the full system, SANE and Document Scanner are installed on every desktop. SANE's own drivers cover most USB scanners. Network scanners go through the driverless `sane-airscan` backend, but they aren't found automatically, because mDNS discovery (Avahi) is off on purpose. Add yours by address in a module of your own:
 
 ```nix
 {
@@ -113,7 +113,7 @@ With `extras` on: type a command that isn't installed and the shell names the pa
 
 ## Shell
 
-With `extras` on, each new Ghostty window opens with fastfetch: the wallpaper's snowflake breaking up into pixels, in colored characters with EPHEMERAL under it, next to the system info in boxed sections (System, Hardware, Desktop, Terminal). Ghostty opens at 151×43 so both fit. The logo is drawn from `assets/wallpaper.svg` when the system is built (`modules/dotfiles/fastfetch/`), so it follows the wallpaper if you change that file. fzf adds Ctrl-T (pick a file) and Alt-C (jump to a directory). atuin owns Ctrl-R: a searchable history that stays on this machine, with no account or sync. Import your existing history once with `atuin import auto`. `bat` is `cat` with syntax highlighting, and `tldr <command>` shows short examples.
+With `extras` on, each new Ghostty window opens with fastfetch: the wallpaper's snowflake breaking up into pixels, in coloured characters with EPHEMERAL under it, next to the system info in boxed sections (System, Hardware, Desktop, Terminal). Ghostty opens at 151×43 so both fit. The logo is drawn from `assets/wallpaper.svg` when the system is built (`modules/dotfiles/fastfetch/`), so it follows the wallpaper if you change that file. fzf adds Ctrl-T (pick a file) and Alt-C (jump to a directory). atuin owns Ctrl-R: a searchable history that stays on this machine, with no account or sync. Import your existing history once with `atuin import auto`. `bat` is `cat` with syntax highlighting, and `tldr <command>` shows short examples.
 
 ## Apps
 
