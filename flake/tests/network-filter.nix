@@ -89,7 +89,9 @@ in
           # the guard table or already filtering again; curl must be refused either way
           with subtest("a crashed OpenSnitch blocks traffic until it's back"):
               killed = unit("MainPID")
-              machine.succeed("systemctl kill --signal=KILL opensnitchd.service")
+              # only the daemon, as in a real crash: systemctl kill takes the whole cgroup, and can catch
+              # the stop hook as it starts
+              machine.succeed(f"kill -KILL {killed}")
               machine.wait_until_succeeds(
                   f"[ \"$(systemctl show -p MainPID --value opensnitchd.service)\" != {killed} ] && [ \"$(systemctl show -p SubState --value opensnitchd.service)\" != stop-post ]",
                   timeout=timedelta(seconds=30),
