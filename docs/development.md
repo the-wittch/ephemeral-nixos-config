@@ -59,7 +59,7 @@ When only docs changed (Markdown, `docs/`, the license, issue templates), the se
 - `bootloader-switch` updates a v4.6.0 machine from systemd-boot to Limine, and checks systemd-boot is removed only once Limine has started the machine.
 - `secure-boot` turns `secureBoot` on after an update from the previous release, boots with Secure Boot enforced, also from the fallback path alone, and checks Limine refuses a changed kernel.
 
-Beside them, `desktop-build` builds every desktop and most feature hosts, `desktop-boot-plasma`, `-niri` and `-umbriel` boot those desktops to their login screen, `upgrade-boot` boots the current code on the `/persist` a VM of the previous release wrote, `profile-switch` switches a running small install to the full system, as `ephemeral-setup` does, then back, and `network-filter` checks OpenSnitch against a second machine and prints what gets through while it's stopped or has crashed.
+Beside them, `desktop-build` builds every desktop and most feature hosts, `desktop-boot-plasma`, `-niri` and `-umbriel` boot those desktops to their login screen, `upgrade-boot` boots the current code on the `/persist` a VM of the previous release wrote, `profile-switch` switches a running small install to the full system, as `ephemeral-setup` does, then back, and `network-filter` checks OpenSnitch against a second machine: what it blocks, what the guard holds back at boot and after a crash, and that a clean stop lets traffic through.
 
 To run the checks locally, use the same script as CI:
 

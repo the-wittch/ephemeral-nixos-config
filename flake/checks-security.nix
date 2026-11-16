@@ -70,6 +70,7 @@ let
   };
   unsandboxed = {
     credential-secret-setup = "it bind-mounts the credential key into the running system";
+    opensnitch-boot-guard = "it adds nftables rules to the system's network, so it can't have a private one; the rest of the sandbox applies";
   };
   ours = lib.filter (
     d: lib.hasPrefix (toString ../modules) d.file

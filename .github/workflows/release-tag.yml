@@ -25,4 +25,9 @@ jobs:
           # a PR's title is the merge's message, and anyone can open one; only the release branch counts
           head=$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" --jq '.[0].head.ref // empty')
           [[ $head == "release/$tag" ]] || { echo "::warning::$tag not tagged: the commit came from '${head:-a push}', not release/$tag"; exit 0; }
+          latest=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName 2>/dev/null || true)
+          if [[ -n $latest && ($tag == "$latest" || $(printf '%s\n%s\n' "$latest" "$tag" | sort -V | tail -n 1) != "$tag") ]]; then
+            echo "::error::$tag not tagged: $latest is already out"
+            exit 1
+          fi
           gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "$tag" --generate-notes

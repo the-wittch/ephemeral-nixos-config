@@ -27,6 +27,18 @@ jobs:
         run: |
           ./scripts/check-no-secrets.sh
           ./scripts/check-no-secrets.sh --range HEAD
+      # the weekly release picks its version when it starts, so another release can overtake it
+      - name: a release is newer than the last one
+        if: startsWith(github.head_ref, 'release/v')
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          next=${HEAD_REF#release/}
+          last=$(git tag --list 'v*.*.*' --sort=-v:refname | head -n 1)
+          if [[ $next == "$last" || $(printf '%s\n%s\n' "$last" "$next" | sort -V | tail -n 1) != "$next" ]]; then
+            echo "::error::$next isn't newer than $last, the latest release. Close this and let the next weekly run open one."
+            exit 1
+          fi
       - name: what changed
         id: changes
         run: ./.github/changed.sh
