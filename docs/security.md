@@ -28,11 +28,11 @@ Off unless `"secureBoot": true` is in `settings.json`. With it on, the firmware 
 
 To turn it on:
 
-1. Restart into the firmware setup and put Secure Boot in Setup Mode, which deletes the keys it came with. Where that is depends on the maker: look under Secure Boot for "Delete all keys", "Clear Secure Boot keys" or "Reset to Setup Mode". On Dell it's under Expert Key Management. Secure Boot stays off in Setup Mode, so the machine starts as before.
-2. Set `"secureBoot": true` and run `ephemeral-update`. It makes the keys, signs Limine, and puts the keys into the firmware. Microsoft's keys and the firmware's own go back in with them, so docks, graphics cards, firmware updates and Windows on another disk keep working.
+1. Restart into the firmware setup and put Secure Boot in Setup Mode. Deleting only the platform key (PK) does that, and keeps the list of revoked bootloaders (dbx). Look for it under Secure Boot; on Dell it's in Expert Key Management. If the firmware only has "Delete all keys" or "Reset to Setup Mode", use that, but the dbx goes with it: after step 3, run `fwupdmgr refresh && fwupdmgr update` to put the current one back. Secure Boot stays off in Setup Mode, so the machine starts as before.
+2. Set `"secureBoot": true` and run `ephemeral-update`. It makes the keys, signs Limine, and puts the keys into the firmware. Microsoft's keys go back in with them, and the firmware's own where it lists them, so docks, graphics cards, firmware updates and Windows on another disk keep working.
 3. Restart into the firmware setup again. Turn Secure Boot on, and set a firmware password: without one, anyone can turn Secure Boot off there.
 
-`ephemeral-doctor` says which of these steps the machine is on. If you turn `secureBoot` on in the same rebuild as the update to v4.8.0, the keys aren't put into the firmware yet, because the folder they're kept in only moves to `/persist` when the new system starts; the rebuild says so, and the next `ephemeral-update` finishes the job.
+`ephemeral-doctor` says which of these steps the machine is on. If you turn `secureBoot` on in the same rebuild as an update from a release before v4.8.0, the keys aren't put into the firmware yet, because that rebuild still keeps them where the next boot wipes them; it says so, and the next `ephemeral-update` finishes the job.
 
 The keys are kept in `/persist/var/lib/sbctl`, encrypted with the rest of the disk, and `ephemeral-backup` saves them. After a reinstall, restore the backup before you turn `secureBoot` on. Otherwise new keys are made that the firmware doesn't trust, and the machine won't start until you put the firmware in Setup Mode again and rebuild.
 

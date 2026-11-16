@@ -9,8 +9,7 @@
     let
       esp = config.boot.loader.efi.efiSysMountPoint;
       loaderInfo = "/sys/firmware/efi/efivars/LoaderInfo-4a67b082-0a4c-41cf-b6c7-440b29bb8c4f";
-      # bootctl adds a "Fallback Linux Boot Manager" entry beside its own. Only the ones on this
-      # machine's ESP go: another disk's are none of this system's business.
+      # bootctl adds a "Fallback" entry too; entries for other disks are left alone
       removeSystemdBootEntries = ''
         esp_uuid=$(${pkgs.util-linux}/bin/findmnt -no PARTUUID ${esp} || true)
         for entry in $(${pkgs.efibootmgr}/bin/efibootmgr | ${pkgs.gawk}/bin/awk -F '\t' -v uuid="''${esp_uuid,,}" '
@@ -27,19 +26,16 @@
           enable = true;
           efiSupport = true;
           maxGenerations = 5;
-          # Limine boots from its own firmware entry. Firmware that loses its entries, or a disk
-          # moved to another machine, only finds the fallback path, so the same binary goes there
-          # too. That also replaces systemd-boot's copy from before the switch. Copied and renamed
-          # the way Limine copies its own files: FAT refuses the mode change install -m would make.
-          # A machine that can't write firmware variables gets Limine at the fallback path alone.
+          # a copy at the fallback path, for firmware that loses its entries or the disk in another
+          # machine. Without firmware variables Limine installs itself there. cp and mv because FAT
+          # refuses the chmod that install -m does.
           extraInstallCommands =
             lib.optionalString (!config.boot.loader.limine.efiInstallAsRemovable) ''
               ${pkgs.coreutils}/bin/mkdir -p ${esp}/efi/boot
               ${pkgs.coreutils}/bin/cp ${esp}/efi/limine/BOOTX64.EFI ${esp}/efi/boot/BOOTX64.EFI.tmp
               ${pkgs.coreutils}/bin/mv ${esp}/efi/boot/BOOTX64.EFI.tmp ${esp}/efi/boot/BOOTX64.EFI
             ''
-            # systemd-boot's files from before v4.7.0 stay as a way back until this machine has
-            # started from Limine once; the firmware says which bootloader started it
+            # systemd-boot stays as a way back until Limine has started this machine once
             + ''
               loader=$(${pkgs.coreutils}/bin/tail -c +5 ${loaderInfo} 2>/dev/null | ${pkgs.coreutils}/bin/tr -d '\0' || true)
               if [[ $loader == Limine* ]]; then
@@ -72,8 +68,8 @@
         ];
       };
 
-      # Secure Boot's keys (secure-boot.nix). Kept on every machine, not only once it's turned on:
-      # the rebuild that turns it on makes the keys before the new system mounts what's kept.
+      # for secure-boot.nix, on every machine: the rebuild that turns it on still runs with the
+      # old system, so its keys only reach /persist through this
       environment.persistence."/persist".directories = [
         {
           directory = "/var/lib/sbctl";
