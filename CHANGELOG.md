@@ -2,6 +2,12 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.6.1
+
+### Changed
+
+- nixpkgs and the other inputs updated to 2026-11-16.
+
 ## 4.6.0
 
 ### Changed
