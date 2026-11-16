@@ -9,6 +9,17 @@
     let
       esp = config.boot.loader.efi.efiSysMountPoint;
       loaderInfo = "/sys/firmware/efi/efivars/LoaderInfo-4a67b082-0a4c-41cf-b6c7-440b29bb8c4f";
+      # bootctl adds a "Fallback Linux Boot Manager" entry beside its own. Only the ones on this
+      # machine's ESP go: another disk's are none of this system's business.
+      removeSystemdBootEntries = ''
+        esp_uuid=$(${pkgs.util-linux}/bin/findmnt -no PARTUUID ${esp} || true)
+        for entry in $(${pkgs.efibootmgr}/bin/efibootmgr | ${pkgs.gawk}/bin/awk -F '\t' -v uuid="''${esp_uuid,,}" '
+          $1 ~ /^Boot[0-9A-Fa-f]{4}[* ] (Fallback )?Linux Boot Manager$/ && uuid != "" && index(tolower($2), uuid) {
+            print substr($1, 5, 4)
+          }'); do
+          ${pkgs.efibootmgr}/bin/efibootmgr -q -B -b "$entry"
+        done
+      '';
     in
     {
       boot = {
@@ -33,12 +44,7 @@
               loader=$(${pkgs.coreutils}/bin/tail -c +5 ${loaderInfo} 2>/dev/null | ${pkgs.coreutils}/bin/tr -d '\0' || true)
               if [[ $loader == Limine* ]]; then
                 ${pkgs.coreutils}/bin/rm -rf ${esp}/loader ${esp}/efi/systemd ${esp}/efi/nixos
-                ${lib.optionalString config.boot.loader.efi.canTouchEfiVariables ''
-                  for entry in $(${pkgs.efibootmgr}/bin/efibootmgr |
-                    ${pkgs.gawk}/bin/awk -F '\t' '$1 ~ /^Boot[0-9A-Fa-f]{4}[* ] Linux Boot Manager$/ { print substr($1, 5, 4) }'); do
-                    ${pkgs.efibootmgr}/bin/efibootmgr -q -B -b "$entry"
-                  done
-                ''}
+                ${lib.optionalString config.boot.loader.efi.canTouchEfiVariables removeSystemdBootEntries}
               fi
             '';
         };
