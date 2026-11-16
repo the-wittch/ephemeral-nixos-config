@@ -69,7 +69,7 @@ That only lasts until the network reconnects. If it still doesn't load, run `eph
 
 **An app can't connect.** Check OpenSnitch's rules first (see the note in the [README](../README.md)).
 
-**Nothing can connect, and `systemctl status opensnitchd` shows it failed.** When OpenSnitch crashes, new connections out are refused until it's running again, so one that keeps crashing leaves you offline. `sudo systemctl restart opensnitchd` tries again; if it still fails, `sudo nft destroy table inet opensnitch-down` lets traffic through until the next reboot, and `ephemeral-report` collects what's needed to report it.
+**Nothing can connect, and `systemctl status opensnitchd` shows it failed.** New connections out are refused at boot until OpenSnitch is filtering, and after it crashes until it's running again, so one that doesn't start or keeps crashing leaves you offline. `sudo systemctl restart opensnitchd` tries again; if it still fails, `sudo nft destroy table inet opensnitch-down` lets traffic through until the next reboot, and `ephemeral-report` collects what's needed to report it.
 
 ## Reporting a problem
 

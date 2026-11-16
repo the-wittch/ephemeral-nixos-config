@@ -1,6 +1,7 @@
 # nix build path:.#checks.x86_64-linux.network-filter -L
-# OpenSnitch against a second machine: what's blocked while it runs, and what gets through when
-# it's stopped or has crashed. The boot test only sees the one machine, so it can't show either.
+# OpenSnitch against a second machine: what's blocked while it runs, what the guard holds back
+# at boot and after a crash, and what gets through when it's stopped. The boot test only sees
+# the one machine, so it can't show any of them.
 { config, ... }:
 let
   nixos = config.ephemeral.aspects.nixos;
@@ -70,6 +71,15 @@ in
           server.wait_for_open_port(8000)
           filtering()
 
+          def since_boot(unit):
+              return int(machine.succeed(f"systemctl show -p ActiveEnterTimestampMonotonic --value {unit}").strip())
+
+          with subtest("at boot the guard goes up before the network, and comes down once OpenSnitch filters"):
+              machine.succeed("systemctl is-active opensnitch-boot-guard.service")
+              guard_up = since_boot("opensnitch-boot-guard.service")
+              assert 0 < guard_up < since_boot("network-pre.target"), "the guard came up after the network"
+              machine.fail("nft list table inet opensnitch-down")
+
           with subtest("while OpenSnitch runs, an allowed program connects and an unapproved one can't"):
               machine.succeed("wget -q -T 20 -O /dev/null http://server:8000/")
               assert not curl_gets_through(), "curl reached the server with no rule allowing it"
@@ -84,6 +94,18 @@ in
               machine.succeed("systemctl start opensnitchd.service")
               filtering()
               assert not curl_gets_through(), "curl reached the server after OpenSnitch started again"
+
+          # as at boot: the guard is up and the daemon isn't running yet
+          with subtest("before OpenSnitch filters, the guard holds every new connection out"):
+              machine.succeed("systemctl stop opensnitchd.service")
+              machine.succeed("systemctl restart opensnitch-boot-guard.service")
+              assert not curl_gets_through(), "curl reached the server behind the guard"
+              machine.fail("wget -q -T 10 -O /dev/null http://server:8000/")
+              machine.succeed("systemctl start opensnitchd.service")
+              filtering()
+              machine.fail("nft list table inet opensnitch-down")
+              machine.succeed("wget -q -T 20 -O /dev/null http://server:8000/")
+              assert not curl_gets_through(), "curl reached the server after the guard came down"
 
           # once the killed process is gone and the stop is handled, OpenSnitch is either down behind
           # the guard table or already filtering again; curl must be refused either way
@@ -108,9 +130,6 @@ in
               machine.fail("nft list table inet opensnitch-down")
               assert not curl_gets_through(), "curl reached the server after OpenSnitch restarted"
               machine.succeed("wget -q -T 20 -O /dev/null http://server:8000/")
-
-          with subtest("measure: where OpenSnitch starts in the boot"):
-              print("MEASURED ordering: " + machine.succeed("systemctl show -p After -p WantedBy opensnitchd.service").replace("\n", " "))
         '';
       };
     };

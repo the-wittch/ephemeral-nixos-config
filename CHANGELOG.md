@@ -2,6 +2,17 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.9.0
+
+### Changed
+
+- On the full system with OpenSnitch on, new outgoing connections are refused at boot until OpenSnitch is filtering, with the same rules as after a crash. Until now the network came up first, so for the first seconds of each boot nothing was asked about. If OpenSnitch doesn't start, the machine stays offline; `sudo nft destroy table inet opensnitch-down` lets traffic through until the next boot.
+- That guard now lets DHCP and IPv6 neighbour discovery through, so the network can come up behind it.
+
+### Fixed
+
+- A weekly release could pick a version older than one released while it waited, as v4.6.1 did after v4.7.0. CI now fails such a pull request, and no tag older than the latest release is made.
+
 ## 4.8.2
 
 ### Fixed
