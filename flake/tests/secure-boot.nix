@@ -99,7 +99,7 @@ in
               machine.succeed(f"test -s /persist{db}/db.key")
               signed_with_this_key()
               assert efivar("SetupMode") == 0, "the keys weren't enrolled"
-              key = machine.succeed(f"sha256sum {db}/db.key")
+              key = machine.succeed(f"sha256sum < {db}/db.key")
 
           with subtest("the machine boots with Secure Boot on"):
               reboot()
@@ -109,7 +109,13 @@ in
           with subtest("a rebuild signs again with the same key"):
               machine.succeed("${signed}/bin/switch-to-configuration boot >&2")
               signed_with_this_key()
-              assert machine.succeed(f"sha256sum {db}/db.key") == key, "the key changed"
+              assert machine.succeed(f"sha256sum < {db}/db.key") == key, "the key changed"
+
+          with subtest("with /var/lib/sbctl not mounted, as in a chroot, a rebuild still uses the key on /persist"):
+              machine.succeed("umount /var/lib/sbctl")
+              machine.succeed("${signed}/bin/switch-to-configuration boot >&2")
+              machine.succeed(f"for efi in {limine}; do sbverify --cert /persist{db}/db.pem $efi; done")
+              assert machine.succeed(f"sha256sum < /persist{db}/db.key") == key, "new keys were made"
 
           with subtest("with every firmware entry gone, the signed fallback copy starts the machine"):
               out = machine.succeed("efibootmgr")

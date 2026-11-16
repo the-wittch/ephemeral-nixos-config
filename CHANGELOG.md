@@ -2,6 +2,16 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.8.2
+
+### Fixed
+
+- With `secureBoot` on, a rebuild from a chroot, such as a repair from the installer ISO, made new keys and signed Limine with them, because `/var/lib/sbctl` is only mounted from `/persist` on the running system. With Secure Boot on, the machine then didn't start. sbctl now reads and writes its keys on `/persist` directly, the signature is checked against the key there, and a rebuild with `/persist` not mounted stops.
+
+### Changed
+
+- [Secure Boot](docs/security.md#secure-boot) says to enter Setup Mode by deleting only the platform key where the firmware allows it. "Delete all keys" also removes the list of revoked bootloaders, which `fwupdmgr update` puts back.
+
 ## 4.8.1
 
 ### Fixed
