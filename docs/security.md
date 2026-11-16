@@ -2,7 +2,7 @@
 
 Found a security problem? Report it privately, as described in [SECURITY.md](../SECURITY.md).
 
-- The disk is LUKS2 with argon2id. `/boot` is not encrypted and Secure Boot is not set up, so someone with the laptop in hand could swap the kernel or initrd for one that records the passphrase. TRIM passes through the encryption, which shows which blocks are in use but not what's in them.
+- The disk is LUKS2 with argon2id. `/boot` is not encrypted, so someone with the laptop in hand could swap the kernel or initrd for one that records the passphrase, unless [Secure Boot](#secure-boot) is on. TRIM passes through the encryption, which shows which blocks are in use but not what's in them.
 - `/` starts empty on every boot, so anything that isn't explicitly kept on `/persist` disappears. That undoes a mistake, but it won't get rid of malware. Anything running as you can hide in your home folder, in shell startup files or autostart entries, and the home folder is kept. With root it can also change `/persist`, the empty snapshot `/` is reset from, and the boot partition. And nothing is wiped until the next reboot anyway.
 - Users are defined by the config, so `passwd` doesn't stick. Change your password with `ephemeral-passwd`. It asks twice and only replaces `/persist/passwords/$USER` once it has a valid hash, since an empty or broken file there locks you out at the next boot.
 - Everything in `/persist/etc/nixos` is copied into the Nix store at every rebuild, where any user and service can read it. `.gitignore` makes no difference, and the `.git` folder is copied too, so your machine flake's history ends up there. Keep secrets in `/persist/etc/<name>`, owned by root with mode 600, the way the Control D id and SMB passwords are kept. `ephemeral-update` and `ephemeral-setup` refuse to rebuild when the folder has a file named like a key or password, a private key or token inside a file, or a token in a git remote URL. They can't see a secret that was committed and deleted again: it's still in `.git`, so rewrite the history or start a fresh repo.
@@ -21,3 +21,21 @@ Found a security problem? Report it privately, as described in [SECURITY.md](../
 - On niri and Umbriel, Noctalia locks the screen after 10 idle minutes and before the laptop sleeps. Plasma and GNOME use their own lock settings.
 - smartd's desktop warnings go over the system bus, which lets any local process show you a notification. That's fine with the single user this setup has; turn it off with `services.smartd.notifications.systembus-notify.enable = false`.
 - With `fingerprint` on, a finger also works for `sudo`. To keep sudo on the password only, set `security.pam.services.sudo.fprintAuth = false` in a module of your own.
+
+## Secure Boot
+
+Off unless `"secureBoot": true` is in `settings.json`. With it on, the firmware only starts a Limine signed with keys made on this machine, and that Limine only starts the kernels and initrds its signed menu lists, checked by their checksums. It's what stops the swapped kernel or initrd in the first note above.
+
+To turn it on:
+
+1. Restart into the firmware setup and put Secure Boot in Setup Mode, which deletes the keys it came with. Where that is depends on the maker: look under Secure Boot for "Delete all keys", "Clear Secure Boot keys" or "Reset to Setup Mode". On Dell it's under Expert Key Management. Secure Boot stays off in Setup Mode, so the machine starts as before.
+2. Set `"secureBoot": true` and run `ephemeral-update`. It makes the keys, signs Limine, and puts the keys into the firmware. Microsoft's keys and the firmware's own go back in with them, so docks, graphics cards, firmware updates and Windows on another disk keep working.
+3. Restart into the firmware setup again. Turn Secure Boot on, and set a firmware password: without one, anyone can turn Secure Boot off there.
+
+`ephemeral-doctor` says which of these steps the machine is on. If you turn `secureBoot` on in the same rebuild as the update to v4.8.0, the keys aren't put into the firmware yet, because the folder they're kept in only moves to `/persist` when the new system starts; the rebuild says so, and the next `ephemeral-update` finishes the job.
+
+The keys are kept in `/persist/var/lib/sbctl`, encrypted with the rest of the disk, and `ephemeral-backup` saves them. After a reinstall, restore the backup before you turn `secureBoot` on. Otherwise new keys are made that the firmware doesn't trust, and the machine won't start until you put the firmware in Setup Mode again and rebuild.
+
+To turn it off, turn Secure Boot off in the firmware first, then set `"secureBoot": false` and rebuild. The other way round, the next Limine isn't signed and the firmware refuses it. If that happens, turn Secure Boot off in the firmware, and it starts again.
+
+Secure Boot doesn't help once something has root on the running system: it can read the keys and sign whatever it likes. And the disk is still unlocked by your passphrase, not by the TPM.

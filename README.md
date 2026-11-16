@@ -38,7 +38,7 @@ New here? Start with [the first hour](docs/first-hour.md).
 
 ## Limits
 
-- x86_64 with UEFI, Secure Boot off.
+- x86_64 with UEFI, Secure Boot off for the install. It can be [turned on](docs/security.md#secure-boot) afterwards.
 - The whole disk is wiped at install. No dual boot.
 - One user per machine.
 - Suspend works; hibernation doesn't.

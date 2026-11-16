@@ -90,6 +90,7 @@ let
               {
                 nvidia = settings.nvidia != "none";
                 inherit (settings) laptop fingerprint;
+                secure-boot = settings.secureBoot;
                 tailscale = settings.useTailscale;
                 encrypted-dns = settings.encryptedDns != "none";
                 opensnitch = full && settings.useOpenSnitch;

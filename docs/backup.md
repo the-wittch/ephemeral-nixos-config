@@ -6,7 +6,7 @@ Snapshots undo a delete, but they live on the same disk. A reinstall, a dead dis
 
 - **Your home folder.** All your files, and the settings of every app.
 - **The machine config.** `/persist/etc/nixos` is best kept in a private git repo. What git leaves out is saved by `ephemeral-backup`, below.
-- **Secrets you can't download again:** the Control D id, SMB and Wi-Fi passwords, and the SSH host key. They're root-only, so a backup app running as you can't read them; `ephemeral-backup` saves them too.
+- **Secrets you can't download again:** the Control D id, SMB and Wi-Fi passwords, the SSH host key, and the Secure Boot keys. They're root-only, so a backup app running as you can't read them; `ephemeral-backup` saves them too.
 - **The LUKS header**, once, with [`luks-header-backup`](features.md#luks-header-backup).
 
 Skip `/persist/.snapshots`, which is old copies of all of the above, along with `/persist/var` and `/nix`. A rebuild brings those back.

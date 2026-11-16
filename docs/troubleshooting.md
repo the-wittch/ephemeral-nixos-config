@@ -22,6 +22,8 @@ Your own config in `/persist/etc/nixos` is untouched, so a plain `ephemeral-upda
 
 **The graphical login doesn't come up.** Press Ctrl+Alt+F3 for a text console, log in, and look at `journalctl -b -p err`. Rolling back as above is usually the quickest fix.
 
+**The firmware refuses to start the machine after you turned Secure Boot on**, or after a reinstall. Turn Secure Boot off in the firmware setup and it starts again. Then `ephemeral-doctor` says what's missing; the steps are in [Secure Boot](security.md#secure-boot).
+
 **The disk won't unlock with the right passphrase.** The LUKS header may be damaged. Boot the NixOS installer USB and restore the copy you made with [`luks-header-backup`](features.md#luks-header-backup):
 
 ```bash
@@ -75,4 +77,4 @@ Run `ephemeral-report`, read it, and paste it into a [new issue](https://github.
 
 ## What's tested
 
-This is a personal project shared as-is. x86_64 machines with UEFI are supported. Every change is evaluated on GNOME, Plasma, niri and Umbriel with both profiles, with each optional feature, and with every app in the picker. Each release builds every desktop, boots each of them in a VM, and moves a machine from the previous release to the new one, both by switching and by booting. A small install is also switched to the full system and back, as `ephemeral-setup` does it. NVIDIA is only evaluated, not run, and there's no Secure Boot.
+This is a personal project shared as-is. x86_64 machines with UEFI are supported. Every change is evaluated on GNOME, Plasma, niri and Umbriel with both profiles, with each optional feature, and with every app in the picker. Each release builds every desktop, boots each of them in a VM, and moves a machine from the previous release to the new one, both by switching and by booting. A small install is also switched to the full system and back, as `ephemeral-setup` does it. NVIDIA is only evaluated, not run. Secure Boot is tested on the VM's firmware, not on real hardware.
