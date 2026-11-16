@@ -30,6 +30,7 @@ for arg in "$@"; do
       usage
       exit 0
       ;;
+    -*) usage_error ;;
     *)
       version_arg=$arg
       ;;

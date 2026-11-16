@@ -2,9 +2,9 @@
 
 set -euo pipefail
 
-flake=${FLAKE_DIR:-/persist/etc/nixos}
+flake=$(flake_dir)
 installed=${EPHEMERAL_INSTALLED_DIR:-/persist/etc/nixos-install}
-repo=the-wittch/ephemeral-nixos-config
+repo=$(release_repo)
 
 usage() {
   cat <<'USAGE'
@@ -30,10 +30,7 @@ case ${1:-} in
   --previous) mode=previous ;;
   --as-installed) mode=installed ;;
   --list) mode=list ;;
-  -*)
-    usage >&2
-    exit 2
-    ;;
+  -*) usage_error ;;
 esac
 [[ $mode == switch ]] || shift
 
@@ -64,10 +61,7 @@ case $mode in
     ;;
 esac
 
-if [[ ! -f $flake/flake.nix ]]; then
-  [[ -d $flake && ! -r $flake ]] && die "can't read $flake; fix it with: sudo chmod 755 $flake"
-  die "no flake at $flake"
-fi
+flake=$(require_flake)
 refuse_secret_files "$flake"
 
 if [[ $mode == check ]]; then
@@ -77,15 +71,7 @@ if [[ $mode == check ]]; then
   exit 0
 fi
 
-ask() {
-  local answer
-  [[ -t 0 ]] || return 1
-  read -r -p "$1 [y/N] " answer
-  [[ ${answer:-n} =~ ^[Yy] ]]
-}
-
-# the installer leaves the flake to root, which keeps you from updating its lock or editing it
-if [[ ! -w $flake/flake.lock ]] &&
+if flake_needs_owner "$flake" &&
   ask "$flake belongs to root. Make it yours, so it can be updated and edited?"; then
   sudo chown -R "$USER": "$flake"
 fi
@@ -104,16 +90,14 @@ changes_between() {
     awk -v stop="## ${1#v}" '/^## [0-9]/ { if ($0 == stop) exit; on = 1 } on' || true
 }
 
-pinned=$(sed -nE "s#.*\"github:$repo/(v[0-9]+\.[0-9]+\.[0-9]+)\".*#\1#p" "$flake/flake.nix" | head -n 1)
+pinned=$(pinned_release "$flake")
 latest=
+# offline, or GitHub slow to answer: latest is empty, and the release already pinned is rebuilt
 if [[ -n $pinned && -t 0 ]]; then
-  # offline, or GitHub slow to answer: carry on with the release already pinned
-  latest=$(curl -fsS --max-time 5 "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null |
-    jq -r '.tag_name // empty' 2>/dev/null) || latest=
-  [[ $latest =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || latest=
+  latest=$(latest_release)
 fi
 
-if [[ -n $latest && $latest != "$pinned" && $(printf '%s\n' "$pinned" "$latest" | sort -V | tail -n 1) == "$latest" ]]; then
+if is_newer "$latest" "$pinned"; then
   echo "$latest is out; this machine is on $pinned. What changed since:"
   echo
   changes=$(changes_between "$pinned" "$latest")
@@ -143,8 +127,7 @@ asked=${XDG_STATE_HOME:-$HOME/.local/state}/ephemeral/apps-asked
 if [[ -t 0 && ! -e $flake/apps.json && ! -e $asked ]] && command -v ephemeral-apps >/dev/null; then
   mkdir -p "$(dirname "$asked")"
   touch "$asked"
-  read -r -p "Pick extra apps now? You can run ephemeral-apps any time. [y/N] " answer
-  if [[ ${answer:-n} =~ ^[Yy] ]]; then
+  if ask "Pick apps now? You can run ephemeral-apps any time."; then
     exec ephemeral-apps
   fi
 fi

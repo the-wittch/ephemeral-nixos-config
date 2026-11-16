@@ -50,11 +50,11 @@ DNS over HTTPS isn't supported; systemd-resolved, which does the lookups, only s
 }
 ```
 
-It's strict: when the provider can't be reached over TLS, names don't resolve, rather than falling back to plain DNS. That also means a hotel or airport Wi-Fi login page that relies on hijacking DNS won't open; see [When something breaks](troubleshooting.md). On the full profile, OpenSnitch lets the resolver through on port 853 without asking. This works on the small install too.
+It's strict: when the provider can't be reached over TLS, names don't resolve, rather than falling back to plain DNS. That also means a hotel or airport Wi-Fi login page that relies on hijacking DNS won't open; see [When something breaks](troubleshooting.md). On the full system, OpenSnitch lets the resolver through on port 853 without asking. This works on the small install too.
 
 ## Control D
 
-For your own filtering rules, Control D gives you a resolver id. It's only on the full profile, and can't be on together with `encryptedDns`.
+For your own filtering rules, Control D gives you a resolver id. It's only on the full system, and can't be on together with `encryptedDns`.
 
 ```bash
 controld-setup
@@ -76,7 +76,7 @@ Asks for the server, share, user and password. The password goes to `/persist/et
 
 The installer asks about drivers when it finds an NVIDIA card, and writes the answer to `nvidia` in `settings.json`. To change it later, edit that key and rebuild. `open` uses the current driver with NVIDIA's open kernel modules; `legacy` uses the 580 driver, the last one for GTX 900 and 10 series cards. The driver isn't in the NixOS binary cache, since it's unfree, so the first build compiles its kernel module and takes a few minutes.
 
-Laptops with both an NVIDIA and an Intel or AMD GPU also need [PRIME](https://wiki.nixos.org/wiki/NVIDIA) set up in a private module, with the bus IDs from `lspci`.
+Laptops with both an NVIDIA and an Intel or AMD GPU also need [PRIME](https://wiki.nixos.org/wiki/NVIDIA) set up in a module of your own, with the bus IDs from `lspci`.
 
 ## GNOME extensions
 
@@ -96,7 +96,7 @@ Set `"useTailscale": true`, rebuild, then sign in once with `sudo tailscale up`.
 
 ## Scanners
 
-SANE is set up with the driverless `sane-airscan` backend, and Document Scanner is installed on every desktop, so most USB scanners work without a driver. Network scanners aren't found automatically, because mDNS discovery (Avahi) is off on purpose. Add yours by address in a private module:
+SANE is set up with the driverless `sane-airscan` backend, and Document Scanner is installed on every desktop, so most USB scanners work without a driver. Network scanners aren't found automatically, because mDNS discovery (Avahi) is off on purpose. Add yours by address in a module of your own:
 
 ```nix
 {
@@ -121,7 +121,7 @@ On the full system, `ephemeral-apps` is where apps come from. What isn't in it i
 
 It offers over 100 common apps by category: browsers, chat, office, media, graphics, games, development, security and penetration testing (Metasploit, Nmap, Burp Suite, Ghidra and more), terminal apps, utilities, Nerd Fonts, system tuning and virtual machines. Labels show which ones are unfree, which come from Flathub, and which carry a warning (Docker and Wireshark add you to a powerful group, LocalSend opens a port, Nmap notes that OpenSnitch asks about each host a scan reaches). Every warning is shown again before anything is saved.
 
-The installer offers the same list. Your picks are saved to `apps.json` next to `settings.json`, a plain list such as `["discord", "obsidian", "-vlc"]`, where `-vlc` leaves out an app that's ticked by default. Commit it with the rest of your private flake; it isn't a secret, and it brings the same apps to your next machine. On a rebuild:
+The installer offers the same list. Your picks are saved to `apps.json` next to `settings.json`, a plain list such as `["discord", "obsidian", "-vlc"]`, where `-vlc` leaves out an app that's ticked by default. Commit it with the rest of your machine flake; it isn't a secret, and it brings the same apps to your next machine. On a rebuild:
 
 - Nix packages are installed system-wide, and unfree ones are added to the allowlist for you.
 - Apps that need more (Docker, Wireshark, GameMode, LocalSend) get their settings, groups and `/persist` folders.
@@ -133,7 +133,7 @@ A name in `apps.json` that's no longer in the catalog gives a warning, not a fai
 
 The small install ignores `apps.json` and has a fixed set instead: Firefox, VLC, 7-Zip, vim, distrobox, htop, ripgrep, dig and the WireGuard tools, with GNOME Tweaks on GNOME or Discover and Partition Manager on Plasma.
 
-Your private flake can add its own apps to the picker. `label` and `description` can't contain commas:
+Your machine flake can add its own apps to the picker. `label` and `description` can't contain commas:
 
 ```nix
 {
@@ -191,7 +191,7 @@ settings-from-pass
 ephemeral-update
 ```
 
-`ssh-pubs-from-pass` writes the public half of each SSH key item in the `Personal` vault, or the one given with `--vault`, to `~/.ssh/<title>.pub` (lowercased, with anything but letters, digits, `.`, `_` and `-` turned into `_`), for `IdentityFile` lines. It only opens SSH key items. `--list` shows what it would write. `PASS_SETTINGS_VAULT`, `PASS_SETTINGS_ITEM` and `PASS_SSH_VAULT` change where they look; `ssh-pubs-from-pass` doesn't read `passSshVault` from `settings.json`.
+`ssh-pubs-from-pass` writes the public half of each SSH key item in `passSshVault` to `~/.ssh/<title>.pub` (lowercased, with anything but letters, digits, `.`, `_` and `-` turned into `_`), for `IdentityFile` lines. It only opens SSH key items. `--list` shows what it would write. `PASS_SETTINGS_VAULT`, `PASS_SETTINGS_ITEM` and `PASS_SSH_VAULT` (or `--vault`) change where they look.
 
 ### SSH agent
 
@@ -205,3 +205,5 @@ ssh-add -l
 ```
 
 Turning the setting on takes effect for apps at the next login. `journalctl --user -u proton-pass-ssh-agent` shows why the agent didn't start.
+
+`pass-cli` keeps its session in `~/.local/share/proton-pass-cli`, and `PROTON_PASS_LINUX_KEYRING=dbus` tells it to keep its key in the desktop's keyring. Programs running as you can usually reach both, and a Flatpak with access to your home folder can read the folder; Flatseal shows which ones have that. `pass-cli session create-lock` makes it ask for a code before the session is used again. The folder is in the hourly snapshots with the rest of your home, so a copy of the session stays there, root-only, for up to four weeks after `pass-cli logout`.

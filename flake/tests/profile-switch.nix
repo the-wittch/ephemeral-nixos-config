@@ -2,9 +2,10 @@
 # A live switch from the small install to the full system and back, as ephemeral-setup
 # does it. Booting each one can't show units failing on the switch, or new kept folders
 # not mounting until a reboot.
-{ config, ... }:
+{ config, lib, ... }:
 let
   nixos = config.ephemeral.aspects.nixos;
+  hostApps = import ./_host-apps.nix { inherit config lib; };
 
   settings = {
     hostname = "profileswitch";
@@ -29,6 +30,7 @@ let
             nixos.full
             nixos.gnome
             nixos.opensnitch
+            (hostApps "gnome-full")
           ]
         else
           [

@@ -2,12 +2,7 @@
 { config, lib, ... }:
 let
   nixos = config.ephemeral.aspects.nixos;
-  # what host-builder.nix picks for a GNOME machine with no apps.json
-  defaultApps = lib.attrNames (
-    lib.filterAttrs (
-      _: app: app.default && (app.desktops == [ ] || lib.elem "gnome" app.desktops)
-    ) config.ephemeral.apps
-  );
+  hostApps = import ./_host-apps.nix { inherit config lib; };
 in
 {
   perSystem =
@@ -32,10 +27,9 @@ in
               nixos.laptop
               nixos.fingerprint
               nixos.tailscale
-            ]
-            ++ map (id: config.ephemeral.apps.${id}.nixos) defaultApps;
-
-            ephemeral.pickedApps = defaultApps;
+              # a GNOME machine with no apps.json
+              (hostApps "gnome-full")
+            ];
 
             ephemeral.settings = {
               hostname = "boottest";
@@ -88,8 +82,7 @@ in
 
                 for unit in ["nix-daemon.socket", "systemd-resolved.service", "controld-resolver.service",
                              "flatpak-flathub.service", "home-manager-alice.service",
-                             "display-manager.service",
-                             "snapper-persist-setup.service", "snapper-timeline.timer"]:
+                             "display-manager.service", "snapper-timeline.timer"]:
                     machine.succeed(f"systemctl is-active --quiet {unit}")
                 print(f"ok: boot {boot} is clean")
 
@@ -168,6 +161,35 @@ in
                 machine.succeed("useradd -m mallory")
                 machine.fail("runuser -u mallory -- nix store info")
 
+            with subtest("root is locked, and sudo is for wheel only"):
+                assert machine.succeed("getent shadow root | cut -d: -f2").strip() == "!"
+                machine.fail("runuser -u mallory -- sudo -n true")
+
+            with subtest("the firewall refuses what it wasn't told to allow, over IPv4 and IPv6, and SSH is off"):
+                for ipt in ["iptables", "ip6tables"]:
+                    rules = machine.succeed(f"{ipt} -S nixos-fw").splitlines()
+                    assert rules[-1] == "-A nixos-fw -j nixos-fw-log-refuse", f"{ipt} nixos-fw doesn't end in a refusal:\n" + "\n".join(rules)
+                    opened = [r for r in rules if "-p tcp" in r and "nixos-fw-accept" in r]
+                    assert opened == [], f"{ipt} accepts TCP ports:\n" + "\n".join(opened)
+                machine.fail("systemctl is-active --quiet sshd.service")
+
+            with subtest("nothing new listens on TCP beyond loopback"):
+                import ipaddress
+                # each one here is kept closed by the firewall, which the subtest above checks
+                known = {"22000": "Syncthing's sync port"}
+                exposed = []
+                for line in machine.succeed("ss -Htln").splitlines():
+                    host, port = line.split()[3].rsplit(":", 1)
+                    host = host.strip("[]").split("%")[0]
+                    if (host in ("*", "0.0.0.0", "::") or not ipaddress.ip_address(host).is_loopback) and port not in known:
+                        exposed.append(line)
+                assert exposed == [], "listening beyond loopback, and not in the known list:\n" + "\n".join(exposed)
+
+            with subtest("DNS goes over TLS, with no plaintext fallback"):
+                status = machine.succeed("resolvectl status")
+                assert "+DNSOverTLS" in status, status
+                assert "Fallback DNS" not in status, status
+
             with subtest("Flathub was added offline"):
                 machine.succeed("flatpak remotes --system --columns=name | grep -qx flathub")
 
@@ -216,10 +238,12 @@ in
                 machine.succeed(f"cp -a /persist/.snapshots/{n}/snapshot/home/alice/notes.txt /home/alice/")
                 assert machine.succeed("cat /home/alice/notes.txt").strip() == "precious"
                 assert machine.succeed("stat -c %a /persist/.snapshots").strip() == "750"
+                # a subvolume's root is inode 256, so snapshots of /persist don't contain the earlier ones
+                assert machine.succeed("stat -c %i /persist/.snapshots").strip() == "256"
                 machine.fail("runuser -u alice -- ls /persist/.snapshots")
                 machine.succeed(f"btrfs property get -ts /persist/.snapshots/{n}/snapshot ro | grep -qx 'ro=true'")
 
-            with subtest("luks-header-backup refuses the same disk and memory, then writes a real header"):
+            with subtest("luks-header-backup and ephemeral-backup refuse the same disk and memory, then a header is written"):
                 machine.succeed(
                     "truncate -s 64M /persist/fake-disk.img"
                     " && printf secret > /root/key"
@@ -227,9 +251,13 @@ in
                     "    --key-file /root/key /persist/fake-disk.img"
                     " && cryptsetup open --key-file /root/key /persist/fake-disk.img cryptroot"
                 )
-                machine.fail("luks-header-backup /tmp/header.img")
+                for cmd in ["luks-header-backup /tmp/header.img", "ephemeral-backup /tmp"]:
+                    out = machine.fail(f"{cmd} 2>&1")
+                    assert "in memory" in out, f"{cmd}: {out}"
                 machine.succeed("mkfs.ext4 -q /dev/mapper/cryptroot && install -d /mnt/inside && mount /dev/mapper/cryptroot /mnt/inside")
-                machine.fail("luks-header-backup /mnt/inside/header.img")
+                for cmd in ["luks-header-backup /mnt/inside/header.img", "ephemeral-backup /mnt/inside"]:
+                    out = machine.fail(f"{cmd} 2>&1")
+                    assert "on the encrypted disk itself" in out, f"{cmd}: {out}"
                 machine.succeed("umount /mnt/inside")
                 machine.succeed("install -d /mnt/usb && mkfs.ext4 -q /dev/disk/by-id/virtio-usb && mount /dev/disk/by-id/virtio-usb /mnt/usb")
                 machine.succeed("luks-header-backup /mnt/usb/header.img")

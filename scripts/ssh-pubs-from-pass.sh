@@ -2,7 +2,9 @@
 
 set -euo pipefail
 
-VAULT=${PASS_SSH_VAULT:-Personal}
+# the vault the SSH agent serves, unless PASS_SSH_VAULT or --vault says otherwise
+settings=$(flake_dir)/settings.json
+VAULT=${PASS_SSH_VAULT:-$(jq -r '.passSshVault // "Personal"' "$settings" 2>/dev/null || echo Personal)}
 OUTDIR=${PASS_SSH_DIR:-$HOME/.ssh}
 DRY_RUN=0
 LIST_ONLY=0
@@ -18,7 +20,7 @@ usage() {
 
   ssh-pubs-from-pass [--list | --debug | --dry-run] [--vault NAME] [--outdir DIR] [title...]
 
-PASS_SSH_VAULT   default Personal
+PASS_SSH_VAULT   default passSshVault from settings.json, or Personal
 PASS_SSH_DIR     default ~/.ssh
 USAGE
   exit "${1:-0}"
@@ -27,9 +29,18 @@ USAGE
 while [[ $# -gt 0 ]]; do
   case $1 in
     -h | --help) usage 0 ;;
-    --dry-run) DRY_RUN=1; shift ;;
-    --list) LIST_ONLY=1; shift ;;
-    --debug) DEBUG=1; shift ;;
+    --dry-run)
+      DRY_RUN=1
+      shift
+      ;;
+    --list)
+      LIST_ONLY=1
+      shift
+      ;;
+    --debug)
+      DEBUG=1
+      shift
+      ;;
     --vault)
       VAULT=${2:?--vault needs a name}
       shift 2
@@ -45,7 +56,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     -*)
       echo "unknown option: $1" >&2
-      usage 1
+      usage 2 >&2
       ;;
     *)
       TITLES+=("$1")
@@ -62,7 +73,6 @@ need() {
 }
 
 need pass-cli
-need python3
 
 # shellcheck disable=SC2329
 cleanup() {
@@ -123,31 +133,8 @@ read_public_key() {
 
   pub=$(
     pass-cli item view --vault-name "$VAULT" --item-title "$title" --output json 2>/dev/null |
-      python3 -c '
-import json, sys, re
-try:
-    data = json.load(sys.stdin)
-except Exception:
-    sys.exit(1)
-
-def walk(o):
-    if isinstance(o, dict):
-        for v in o.values():
-            yield from walk(v)
-    elif isinstance(o, list):
-        for v in o:
-            yield from walk(v)
-    elif isinstance(o, str):
-        yield o
-
-pat = re.compile(r"^(ssh-(?:ed25519|rsa|dss)|ecdsa-sha2-\S+)\s+\S+")
-for s in walk(data):
-    s = s.strip()
-    if pat.match(s):
-        print(s.splitlines()[0])
-        sys.exit(0)
-sys.exit(1)
-' || true
+      jq -r '[.. | strings | gsub("^\\s+|\\s+$"; "")
+        | select(test("^(ssh-(ed25519|rsa|dss)|ecdsa-sha2-\\S+)\\s+\\S+"))] | first // empty | split("\n")[0]' 2>/dev/null || true
   )
   if pub=$(normalize_pub "$pub"); then
     printf '%s\n' "$pub"
@@ -157,30 +144,12 @@ sys.exit(1)
 }
 
 list_item_rows() {
-  python3 - "$JSON_FILE" <<'PY'
-import json, sys
-
-with open(sys.argv[1], encoding="utf-8") as f:
-    data = json.load(f)
-
-if isinstance(data, dict):
-    items = data.get("items") or []
-elif isinstance(data, list):
-    items = data
-else:
-    items = []
-
-for it in items:
-    if not isinstance(it, dict):
-        continue
-    title = (it.get("title") or it.get("name") or "").strip()
-    if not title:
-        continue
-    typ = it.get("item_type", it.get("type", it.get("itemType")))
-    if isinstance(typ, dict):
-        typ = next(iter(typ), "")
-    print(f"{title}\t{typ}")
-PY
+  jq -r '(if type == "object" then .items // [] elif type == "array" then . else [] end)[]
+    | select(type == "object")
+    | ((.title // .name // "") | gsub("^\\s+|\\s+$"; "")) as $title
+    | select($title != "")
+    | (.item_type // .type // .itemType // "") as $type
+    | "\($title)\t\(if ($type | type) == "object" then ($type | keys_unsorted[0] // "") else $type end)"' "$JSON_FILE"
 }
 
 title_wanted() {

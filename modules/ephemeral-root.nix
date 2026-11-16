@@ -21,17 +21,8 @@
           fi
 
           if [[ -e /btrfs_tmp/root ]]; then
-            # nested subvolumes first
-            list=$(btrfs subvolume list -o /btrfs_tmp/root)
-            if [[ -n $list ]]; then
-              mapfile -t subvols < <(printf '%s\n' "$list" | cut -d' ' -f9-)
-              for ((i = ''${#subvols[@]} - 1; i >= 0; i--)); do
-                subvolume=''${subvols[i]}
-                [[ -n $subvolume ]] || continue
-                btrfs subvolume delete "/btrfs_tmp/$subvolume"
-              done
-            fi
-            btrfs subvolume delete /btrfs_tmp/root
+            # -R also deletes the subvolumes nested inside, at any depth
+            btrfs subvolume delete -R /btrfs_tmp/root
           fi
 
           btrfs subvolume snapshot /btrfs_tmp/root-blank /btrfs_tmp/root
@@ -44,13 +35,16 @@
         inherit (config.boot.initrd.systemd.services.rollback) enable;
         description = "Check that / was reset on this boot";
         wantedBy = [ "multi-user.target" ];
-        # missing until the first boot with this initrd
-        unitConfig.ConditionPathExists = "/.root-reset";
         serviceConfig = config.ephemeral.sandbox // {
           Type = "oneshot";
           RemainAfterExit = true;
         };
+        # the reset writes the marker, so a missing one means it hasn't worked since this was installed
         script = ''
+          if [[ ! -e /.root-reset ]]; then
+            echo "/ has no reset marker, so it wasn't reset at this boot and isn't ephemeral now. See journalctl -b -u rollback." >&2
+            exit 1
+          fi
           if [[ $(</.root-reset) != "$(</proc/sys/kernel/random/boot_id)" ]]; then
             echo "/ was not reset on this boot, so it isn't ephemeral now. See journalctl -b -u rollback." >&2
             exit 1

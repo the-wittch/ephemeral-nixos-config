@@ -18,6 +18,15 @@ let
     unfree = app.unfree != [ ];
   }) config.ephemeral.apps;
 
+  # every command gets all of them; a function no command calls costs nothing
+  shellLib = map (name: ../../scripts/lib/${name}.sh) [
+    "core"
+    "flake"
+    "release"
+    "files"
+    "apps"
+  ];
+
   toolsFor =
     pkgs:
     withSystem pkgs.stdenv.hostPlatform.system ({ config, ... }: config.legacyPackages.ephemeralTools);
@@ -49,18 +58,15 @@ in
           minimal = true;
           deps = [
             coreutils
-            curl
             gawk
             gnugrep
             gnused
             jq
-            nh
             pciutils
-            util-linux
           ];
         };
         ephemeral-doctor = {
-          description = "check this machine is healthy, and say how to fix what isn't";
+          description = "check the machine and say how to fix what isn't right";
           minimal = true;
           deps = [
             btrfs-progs
@@ -75,17 +81,20 @@ in
           ];
         };
         ephemeral-backup = {
-          description = "save the machine's settings and secrets to an encrypted file";
+          description = "save the settings and secrets a reinstall needs, encrypted";
           minimal = true;
           deps = [
             age
             coreutils
+            cryptsetup
+            gawk
+            gnugrep
             gnutar
             util-linux
           ];
         };
         ephemeral-setup = {
-          description = "switch profile and turn the main options on or off, then rebuild";
+          description = "switch between the full system and the small install, and turn the main options on or off";
           minimal = true;
           deps = [
             gum
@@ -106,12 +115,13 @@ in
           ];
         };
         ephemeral-update = {
-          description = "rebuild after a change and get new releases; also --check, --previous and --list";
+          description = "rebuild after a change and get new releases; also --check, --previous, --list and --as-installed";
           minimal = true;
           deps = [
             nh
             curl
             gawk
+            gnugrep
             jq
             gnused
             findutils
@@ -168,7 +178,7 @@ in
           description = "write SSH public keys from Proton Pass to ~/.ssh";
           deps = [
             coreutils
-            python3
+            jq
             gnused
           ];
         };
@@ -192,7 +202,7 @@ in
           runtimeInputs = tool.deps;
           text =
             lib.concatStrings (lib.mapAttrsToList (k: v: "${k}=${lib.escapeShellArg v}\n") (tool.env or { }))
-            + builtins.readFile ../../scripts/lib.sh
+            + lib.concatMapStrings builtins.readFile shellLib
             + builtins.readFile ../../scripts/${name}.sh;
           meta.description = tool.description;
         };

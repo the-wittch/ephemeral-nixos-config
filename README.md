@@ -32,7 +32,7 @@ fastfetch on a new Ghostty window, with btop (bottom left) and [fetch](https://g
 
 The installer asks about extras and offers the same apps. Anything else you don't want, including the desktop's own apps, can be left out in your own modules ([Customizing](docs/customizing.md#leaving-things-out)).
 
-> **On the full profile, outgoing connections are blocked until you allow them.** OpenSnitch asks the first time each program connects somewhere. If an app can't connect, a missed or denied prompt is the likely cause: open OpenSnitch and check its Rules. `"useOpenSnitch": false` turns it off.
+> **On the full system, outgoing connections are blocked until you allow them.** OpenSnitch asks the first time each program connects somewhere. If an app can't connect, a missed or denied prompt is the likely cause: open OpenSnitch and check its Rules. `"useOpenSnitch": false` turns it off.
 
 New here? Start with [the first hour](docs/first-hour.md).
 

@@ -2,17 +2,23 @@
 
 set -euo pipefail
 
+usage() {
+  echo "ephemeral-report: system details for a bug report. Leaves out user, host and vault names; read it before posting."
+}
+
 case ${1:-} in
   -h | --help)
-    echo "ephemeral-report: system details for a bug report. Leaves out user, host and vault names; read it before posting."
+    usage
     exit 0
     ;;
+  "") ;;
+  *) usage_error ;;
 esac
 
-FLAKE_DIR=${FLAKE_DIR:-/persist/etc/nixos}
-settings=$FLAKE_DIR/settings.json
+flake=$(flake_dir)
+settings=$flake/settings.json
 user=$(id -un)
-host=$(hostname)
+host=$(</proc/sys/kernel/hostname)
 
 # everything goes through this, so no line has the user or host name in it
 scrub() { sed -e "s/\\<$host\\>/<host>/g" -e "s/\\<$user\\>/<user>/g"; }
@@ -25,13 +31,13 @@ report() {
   echo "- NixOS: $(nixos-version 2>/dev/null || echo unknown)"
   echo "- kernel: $(uname -r)"
   echo "- config release this system was built from: $(cat /etc/ephemeral/release 2>/dev/null || echo "before v4.1.0")"
-  if [[ -f $FLAKE_DIR/flake.lock ]]; then
+  if [[ -f $flake/flake.lock ]]; then
     jq -r '
       .nodes as $n
       | ($n.root.inputs.ephemeral // empty) as $e
       | $n[$e].original.ref // $n[$e].locked.rev // "unknown"
       | "- pinned in the flake: \(.)"
-    ' "$FLAKE_DIR/flake.lock"
+    ' "$flake/flake.lock"
   fi
   if [[ -f $settings ]]; then
     jq -r '
@@ -41,8 +47,8 @@ report() {
       | "- settings:\n" + join("\n")
     ' "$settings"
   fi
-  if [[ -f $FLAKE_DIR/apps.json ]]; then
-    echo "- apps: $(jq -r 'join(", ")' "$FLAKE_DIR/apps.json")"
+  if [[ -f $flake/apps.json ]]; then
+    echo "- apps: $(jq -r 'join(", ")' "$flake/apps.json")"
   fi
   echo "- session: ${XDG_CURRENT_DESKTOP:-none} on ${XDG_SESSION_TYPE:-unknown}"
   echo "- GPU: $(lspci 2>/dev/null | grep -iE 'vga|3d|display' | cut -d: -f3- | paste -sd ';' | sed 's/^ *//' || echo unknown)"

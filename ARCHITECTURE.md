@@ -61,14 +61,29 @@ Changing any of these is a breaking change and needs a migration for existing ma
 These hold on every machine, in every profile:
 
 1. **The disk passphrase and the login password never appear in a command line, an environment variable, a log, or a file other than the password hash** in `/persist/passwords/<user>`, mode 600, owned by root.
-2. **No secret goes into `/persist/etc/nixos`**, or anywhere else built with `path:`. Those are copied into the world-readable Nix store, whatever `.gitignore` says. Secrets live in `/persist/etc/<name>`, owned by root with mode 600, and are read at runtime. `ephemeral-update` refuses to rebuild when the folder has files that look like secrets.
+2. **No secret goes into `/persist/etc/nixos`**, or anywhere else built with `path:`. Those are copied into the world-readable Nix store, whatever `.gitignore` says. Secrets live in `/persist/etc/<name>`, owned by root with mode 600, and are read at runtime. `ephemeral-update` refuses to rebuild when the folder has a file named like a secret, a private key or token inside a file, or a token in a git remote URL. It can't see a secret that was committed and later deleted: that stays in `.git`, which goes into the store too.
 3. **Secret permissions are set again at every boot**, by tmpfiles rules next to the feature that owns the secret.
 4. **Root has no password. sudo is for `wheel`, with a password. The Nix daemon is for `wheel` only. Users are declared by the config** (`mutableUsers = false`).
 5. **The firewall is on, SSH is off, and no port opens without an explicit setting.** On the full profile, OpenSnitch denies outgoing connections that haven't been allowed.
-6. **Root services this repo adds run in `config.ephemeral.sandbox`**, unless their file says why they can't.
+6. **Root services this repo adds run in `config.ephemeral.sandbox`**, unless `unsandboxed` in `flake/checks-security.nix` says why they can't.
 7. **Anything a user typed reaches a shell only through a validator, `escapeShellArg`, an environment variable or `jq --arg`.** Never through string concatenation.
 8. **Every value in `settings.json` that ends up in a script or a path has a type that refuses what would break it.** `settings-reject` checks the refusals.
 9. **Kernel hardening only gets stronger.** Turning something off needs a changelog entry saying how to undo it.
+
+What checks each one:
+
+| rule | checked by |
+|---|---|
+| 1 | the installer's install test: neither is in the install logs, on the installed disk or in its store, and the passphrase unlocks the disk it went to disko with |
+| 2 | `scripts-behaviour`: key files, tokens in files and tokens in a git remote stop a rebuild; an ordinary flake doesn't |
+| 3 | `boot`: secrets written with loose modes are root-only after a reboot |
+| 4 | `exposure-eval`: no root password and `mutableUsers` off on every desktop and profile; `boot`: root locked, sudo refused outside `wheel`, the Nix daemon refused outside `wheel` |
+| 5 | `exposure-eval`: firewall on, no open ports, SSH off and OpenSnitch on, on every desktop and profile; `boot`: IPv4 and IPv6 refuse what isn't allowed, `sshd` isn't running, nothing new listens beyond loopback; `network-filter`: an unapproved program can't reach another machine |
+| 6 | `sandbox-eval`, which finds the services from where they're defined |
+| 7, 8 | `settings-reject`, the installer's validation cases (shared by its Go and shell tests), and the script tests |
+| 9 | `boot`: the sysctls, kernel command line and blocked modules are in effect |
+
+Encrypted DNS and Control D have no plaintext fallback: `boot` checks it with Control D, `features-eval` with a provider.
 
 ## Helper commands
 
@@ -86,6 +101,9 @@ These hold on every machine, in every profile:
 4. **A breaking change gets a new major version**, and the old behaviour gets a clear error or warning that says what to change, not a silent change.
 5. **The installer only moves to a config release once its install test passes** with that release.
 6. **CI workflows pin every action by commit, ask for their permissions per job, and keep tokens out of the checkout.** zizmor and actionlint check them.
+7. **Only a merge from `release/vX.Y.Z` makes a release from a `release vX.Y.Z` commit.** A pull request's title becomes its merge message, and anyone can open one.
+
+A machine moving to a new release trusts GitHub: its answer for the newest release, over TLS, and the rulesets that keep tags from moving. Nothing on the machine checks a signature, and CI makes the weekly tags unsigned. Whoever controls the maintainer's account or `FLAKE_UPDATE_TOKEN`, which can push branches and turn on auto-merge, can publish a release every machine is offered. That's why the token has to be fine-grained: this repository's contents and pull requests only, with an expiry. The user still confirms each move, after seeing what changed.
 
 ## Tests
 
@@ -93,6 +111,7 @@ These hold on every machine, in every profile:
 2. **Cheap checks run on every pull request; VM tests run on release pull requests and manual runs.** A new VM test says in its file what it catches that a cheaper check can't.
 3. **A refactor that only moves code leaves every machine's system unchanged.** `.github/drv-diff.sh` shows it. Where a derivation changes only in the order of a list, show that the sorted contents are the same.
 4. **A check has to be able to fail.** When adding one, break the thing it checks on purpose and see it fail.
+5. **Every security rule names what checks it**, in the table under Security. A rule without a check is a gap to close.
 
 ## Documentation
 

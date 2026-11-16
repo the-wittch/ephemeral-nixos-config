@@ -45,6 +45,8 @@ in
           machine.send_console("${passphrase}\n")
         '';
         extraTestScript = ''
+          import shlex
+
           def reboot():
               machine.shutdown()
               machine.start()
@@ -83,11 +85,28 @@ in
               assert "fmask=0077" in boot and "dmask=0077" in boot, f"/boot is readable by users: {boot}"
               machine.succeed("swapon --show=NAME --noheadings | grep -qx /.swapvol/swapfile")
 
-          with subtest("a subvolume made inside / is removed too, as containers make them"):
-              machine.succeed("btrfs subvolume create /nested && touch /nested/was-here")
+          with subtest("subvolumes made inside /, nested two deep, are removed too, as containers make them"):
+              machine.succeed("btrfs subvolume create /nested && btrfs subvolume create /nested/inner")
+              machine.succeed("touch /nested/inner/was-here")
               reboot()
               machine.fail("test -e /nested")
               machine.succeed("systemctl is-active --quiet root-reset-check.service")
+
+          with subtest("subvolumes nested past any depth, or under a name with a newline, don't stop the reset"):
+              # /var/tmp is on / and anyone can write it; btrfs lets users make subvolumes there
+              deep = "d=/var/tmp/deep; mkdir -p $d; for i in $(seq 70); do btrfs subvolume create $d/s >/dev/null; d=$d/s; done; touch $d/was-here"
+              odd = 'n=$(printf "odd\\nroot"); mkdir -p "/var/tmp/$n" && btrfs subvolume create "/var/tmp/$n/persist" && touch "/var/tmp/$n/persist/was-here"'
+              for name, cmd in [("deep", deep), ("odd", odd)]:
+                  status, _ = machine.execute(f"runuser -u alice -- bash -c {shlex.quote(cmd)}")
+                  print(f"MEASURED {name} subvolumes as an unprivileged user: {'allowed' if status == 0 else 'refused, made as root instead'}")
+                  if status != 0:
+                      machine.succeed(f"bash -c {shlex.quote(cmd)}")
+              machine.succeed("touch /persist/kept-past-the-attack")
+              reboot()
+              machine.succeed("systemctl is-active --quiet root-reset-check.service")
+              machine.fail("test -e /var/tmp/deep")
+              assert machine.succeed("find /var/tmp -maxdepth 1 -name 'odd*'").strip() == "", machine.succeed("ls -lA /var/tmp")
+              machine.succeed("test -e /persist/kept-past-the-attack")
 
           with subtest("a reboot wipes /, and keeps /persist and /var/log"):
               machine.succeed("touch /root-was-here /persist/persist-was-here /var/log/log-was-here")
@@ -97,9 +116,9 @@ in
               machine.succeed("test -e /var/log/log-was-here")
               machine.succeed("systemctl is-active --quiet root-reset-check.service")
 
-          with subtest("without root-blank it still boots, keeps /, and root-reset-check fails"):
+          with subtest("without root-blank it still boots, keeps /, and root-reset-check fails, with no marker either"):
               top_level("btrfs subvolume delete /mnt/btrfs/root-blank")
-              machine.succeed("touch /root-was-here")
+              machine.succeed("touch /root-was-here && rm /.root-reset")
               reboot()
               machine.succeed("test -e /root-was-here")
               machine.succeed("systemctl is-failed --quiet root-reset-check.service")

@@ -26,6 +26,10 @@
           LockPersonality = true;
           MemoryDenyWriteExecute = true;
           SystemCallArchitectures = "native";
+          SystemCallFilter = [ "@system-service" ];
+          SystemCallErrorNumber = "EPERM";
+          RestrictRealtime = true;
+          ProtectProc = "invisible";
         };
       };
     };

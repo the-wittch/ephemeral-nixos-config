@@ -18,21 +18,20 @@ case ${1:-} in
     [[ -n ${1:-} ]] && exit 0
     exit 2
     ;;
+  -*) usage_error ;;
 esac
 
-FLAKE_DIR=${FLAKE_DIR:-/persist/etc/nixos}
+flake=$(flake_dir)
 dir=$1
 [[ -d $dir ]] || die "no folder $dir"
-case $(findmnt -no FSTYPE -T "$dir") in
-  tmpfs | ramfs) die "$dir is in memory and won't survive a reboot; use a USB stick or another disk" ;;
-esac
-[[ -t 0 ]] || die "ephemeral-backup needs a terminal to ask for the passphrase"
+check_offline_destination "$dir"
+require_tty
 
-out="$dir/ephemeral-backup-$(hostname)-$(date +%F).tar.age"
+out="$dir/ephemeral-backup-$(</proc/sys/kernel/hostname)-$(date +%F).tar.age"
 [[ ! -e $out ]] || die "$out already exists"
 
 paths=()
-for p in "$FLAKE_DIR"/{settings.json,hardware-configuration.nix,apps.json,smb-shares.json} \
+for p in "$flake"/{settings.json,hardware-configuration.nix,apps.json,smb-shares.json} \
   /persist/etc/controld-resolver /persist/etc/smb /persist/etc/NetworkManager/system-connections \
   /persist/etc/ssh; do
   if sudo test -e "$p"; then
@@ -44,9 +43,13 @@ done
 echo "Saving:"
 printf '  %s\n' "${paths[@]}"
 echo "Pick a passphrase, and keep it somewhere other than this machine."
+# written under another name until it's complete, so a stopped backup isn't mistaken for one
+partial=$out.partial
+trap 'rm -f "$partial"' EXIT
 # age reads the passphrase from the terminal, so the archive can come in on stdin
-sudo tar -C / -cf - "${paths[@]#/}" | age -p -o "$out"
-sync -f "$out"
+sudo tar -C / -cf - "${paths[@]#/}" | age -p -o "$partial"
+sync -f "$partial"
+mv -f "$partial" "$out"
 
 echo
 echo "Wrote $out ($(du -h "$out" | cut -f1))."

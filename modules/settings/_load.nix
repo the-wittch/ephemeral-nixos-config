@@ -14,7 +14,9 @@ let
   # the pass file can't turn itself on
   usePass = fromSettings.usePassSettings or false;
 
-  # only what settings-from-pass writes, so the file can't turn off OpenSnitch or the like
+  # Only what settings-from-pass writes, so the file can't turn off OpenSnitch or the like. The
+  # Proton Pass item is trusted for these, except that it can only turn Control D on: someone who
+  # can edit the item shouldn't be able to send DNS back to the network unencrypted.
   passKeys = lib.genAttrs [
     "hostname"
     "username"
@@ -26,10 +28,15 @@ let
     "useControlD"
   ] (_: null);
   fromPass =
-    if usePass then
-      builtins.intersectAttrs passKeys (readData (flakeRoot + "/settings.from-pass") { })
+    let
+      read = builtins.intersectAttrs passKeys (readData (flakeRoot + "/settings.from-pass") { });
+    in
+    if !usePass then
+      { }
+    else if (read.useControlD or null) == false then
+      removeAttrs read [ "useControlD" ]
     else
-      { };
+      read;
 
   merged =
     if !(fromSettings ? username) || fromSettings.username == "" then

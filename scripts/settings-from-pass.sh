@@ -2,8 +2,25 @@
 
 set -euo pipefail
 
-REPO_ROOT=${FLAKE_DIR:-/persist/etc/nixos}
-[[ -f $REPO_ROOT/flake.nix ]] || die "no flake at $REPO_ROOT (set FLAKE_DIR)"
+usage() {
+  cat <<'USAGE'
+settings-from-pass
+Pull settings from a Proton Pass item into settings.from-pass.json, and the Control D id
+into /persist/etc/controld-resolver. PASS_SETTINGS_VAULT and PASS_SETTINGS_ITEM choose the item.
+USAGE
+}
+
+case ${1:-} in
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  "") ;;
+  *) usage_error ;;
+esac
+
+flake=$(require_flake)
+REPO_ROOT=$flake
 
 OUT="$REPO_ROOT/settings.from-pass.json"
 SETTINGS=$(settings_json "$REPO_ROOT")
@@ -30,10 +47,6 @@ need() {
 }
 
 need pass-cli
-
-write_root_file() {
-  printf '%s\n' "$2" | sudo install -D -m 600 /dev/stdin "$1"
-}
 
 get_field() {
   local key=$1

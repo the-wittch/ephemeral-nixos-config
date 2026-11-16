@@ -7,8 +7,26 @@ if ! command -v gum >/dev/null; then
   exit 1
 fi
 
-FLAKE_DIR=${FLAKE_DIR:-/persist/etc/nixos}
-SHARES_JSON="$FLAKE_DIR/smb-shares.json"
+usage() {
+  cat <<'USAGE'
+smb-setup
+Add or remove SMB shares. Passwords go to /persist/etc/smb/<label>.creds, readable only by
+root; the mounts go to smb-shares.json next to settings.json.
+USAGE
+}
+
+case ${1:-} in
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  "") ;;
+  *) usage_error ;;
+esac
+
+require_tty
+flake=$(require_flake)
+SHARES_JSON="$flake/smb-shares.json"
 CREDS_DIR=/persist/etc/smb
 LIST_FILE="$CREDS_DIR/shares.list"
 

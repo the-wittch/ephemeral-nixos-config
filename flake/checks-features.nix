@@ -21,6 +21,7 @@ let
         map (d: d.directory) c.environment.persistence."/persist".directories
       )
       && c.services.resolved.settings.Resolve.DNSOverTLS == "yes"
+      && c.services.resolved.settings.Resolve.FallbackDNS == ""
       && lib.elem "9.9.9.9#dns.quad9.net" c.services.resolved.settings.Resolve.DNS;
     feat-network = c: c.services.tailscale.enable && !c.services.opensnitch.enable;
     feat-nvidia-legacy = c: !c.hardware.nvidia.open && c.services.xserver.videoDrivers == [ "nvidia" ];

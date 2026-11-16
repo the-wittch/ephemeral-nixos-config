@@ -2,6 +2,33 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.6.0
+
+### Changed
+
+- `ssh-pubs-from-pass` reads its vault from `passSshVault` in `settings.json`, the one the SSH agent serves, instead of always using `Personal`. `PASS_SSH_VAULT` and `--vault` still override it. It no longer needs Python.
+- `ephemeral-setup`, `ephemeral-apps`, `controld-setup` and `smb-setup` stop with an error when there's no terminal to ask in. Before, they exited with 0 having done nothing, so a script running them couldn't tell.
+- Every helper command exits with 2 on an option it doesn't know, before doing anything. `ephemeral-setup` and `ephemeral-passwd` exited with 1, `ephemeral-report` ignored it, and `ephemeral-backup`, `luks-header-backup` and `update-pass-cli` took it for a path or a version. `controld-setup`, `smb-setup` and `settings-from-pass` have `--help` now.
+- `ephemeral-doctor --fix-root-reset` only goes ahead when its question is answered in a terminal.
+- `ephemeral-apps` stops on a leftover `settings.nix`, as a rebuild does, instead of showing every desktop's apps.
+- The root services this repo adds run with a system call filter, and Control D's also gets a private `/tmp` and no device access.
+- `/persist/.snapshots` is made by a tmpfiles rule instead of a root service that could write anywhere on `/persist`. Nothing changes on existing machines.
+
+### Fixed
+
+- A program running as any user could stop `/` from being reset at every boot, by making subvolumes in `/var/tmp` nested more than 64 levels deep, or inside a folder whose name has a newline. The reset read the list of subvolumes as text; btrfs now deletes them itself, at any depth and whatever they're named. `/persist` was never at risk, and `ephemeral-doctor` reported the failed reset.
+- A rebuild copies `/persist/etc/nixos` into the Nix store, `.git` included, but the check for secrets there only looked at file names. It now also stops on a private key or token inside a file and on a token in a git remote URL. A secret committed and deleted again is still in `.git`, and still can't be seen; [Security notes](docs/security.md) says what to do.
+- If `/` had never been reset since the install, `root-reset-check` skipped itself instead of failing, so `ephemeral-doctor` didn't say so. A missing reset marker now fails it.
+- `ephemeral-backup` wrote to the encrypted disk itself when asked, though a reinstall erases it with everything else. It refuses that now, as `luks-header-backup` already did. A backup that's stopped partway is removed instead of left looking like a finished one.
+- `settings.from-pass.json` could turn Control D off, so someone who could edit your Proton Pass settings item could send DNS back to the network unencrypted. It can still turn Control D on.
+- A pull request titled `release vX.Y.Z` would have been released when merged. Only a merge from the `release/vX.Y.Z` branch makes a release now.
+- `ephemeral-apps` and `controld-setup` could leave a temp file behind when they failed, and an interrupted settings edit could leave one in `/persist/etc/nixos`, where the next rebuild would copy it into the store. Files in the flake are now replaced in one step, and the Control D id goes to its file from a pipe.
+
+### Added
+
+- Checks for the security rules in [ARCHITECTURE.md](ARCHITECTURE.md#security), each listed there: no open port, no SSH and no root password on any desktop or profile; every root service from `modules/` sandboxed; the firewall refusing traffic over IPv4 and IPv6 on a running machine; and a VM test of OpenSnitch against a second machine.
+- The boot and profile-switch tests take their apps from the same place a real install does, so they can't drift from it again.
+
 ## 4.5.1
 
 ### Fixed
