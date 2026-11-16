@@ -12,7 +12,7 @@ in
     {
       disko.enableConfig = false;
       boot.initrd.systemd.services.rollback.enable = false;
-      boot.loader.systemd-boot.enable = lib.mkForce false;
+      boot.loader.limine.enable = lib.mkForce false;
       hardware.enableRedistributableFirmware = lib.mkForce false;
       services.speechd.enable = lib.mkForce false;
       users.users.root.hashedPasswordFile = lib.mkForce null;

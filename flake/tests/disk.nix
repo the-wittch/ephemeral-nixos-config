@@ -22,6 +22,9 @@ in
               swapSize = "256M";
             };
             boot.consoleLogLevel = lib.mkForce 7;
+            # disko installs from a VM with no firmware variables to write, and boots the disk
+            # with fresh ones, so this also shows the fallback copy starts Limine
+            boot.loader.efi.canTouchEfiVariables = lib.mkForce false;
           }
         ];
       };
@@ -60,6 +63,11 @@ in
               )
 
           machine.wait_for_unit("multi-user.target")
+
+          with subtest("firmware with no boot entries starts Limine from the fallback path"):
+              machine.succeed("test -s /boot/limine/limine.conf")
+              machine.succeed("cmp /boot/EFI/BOOT/BOOTX64.EFI /boot/EFI/limine/BOOTX64.EFI")
+              machine.fail("test -e /boot/loader/loader.conf")
 
           with subtest("the first boot reset /"):
               machine.succeed("systemctl is-active --quiet root-reset-check.service")

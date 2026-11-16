@@ -2,6 +2,21 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.7.0
+
+### Breaking
+
+- Machines boot with Limine instead of systemd-boot. **If a module of your own sets `boot.loader.systemd-boot.enable`, remove it**: the rebuild stops with "Only one bootloader can be enabled at a time" until you do. Other `boot.loader.systemd-boot` settings no longer do anything; most have a `boot.loader.limine` counterpart.
+
+### Changed
+
+- The next rebuild installs Limine and puts it first in the firmware's boot order. It's also copied to the path firmware falls back on, so it starts on firmware that loses its boot entries, or with the disk in another machine. The boot menu works as before: a key stops the 3-second countdown, and older generations are listed under the newest.
+- systemd-boot's files and its firmware entry are left alone for now, as a way back if Limine doesn't start: pick "Linux Boot Manager" in the firmware's own boot menu. It only lists the generations from before the switch, and those stop working once they're more than 30 days old and cleaned up. A later release removes it.
+
+### Added
+
+- A test of the update from the previous release on a real boot partition, with firmware entries that survive a reboot: Limine has to come first in the boot order, boot this code, list the generations from before, and still start once every firmware entry is deleted. The disk test boots with no firmware entries at all, from the fallback path.
+
 ## 4.6.0
 
 ### Changed
