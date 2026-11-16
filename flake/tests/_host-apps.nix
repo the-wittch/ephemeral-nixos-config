@@ -1,6 +1,6 @@
 # The apps host-builder.nix picks for one of tests/'s machines, as a module, so a test machine
 # put together from aspects gets the same apps as an install instead of drifting from it.
-{ config, lib }:
+{ config }:
 host:
 let
   picked = config.flake.nixosConfigurations.${host}.config.ephemeral.pickedApps;

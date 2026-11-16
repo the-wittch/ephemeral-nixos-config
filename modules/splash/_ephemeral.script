@@ -55,6 +55,9 @@ word.SetOpacity(0);
 label_img = scaled("label.png");
 label = Sprite(label_img);
 label.SetPosition(cx - label_img.GetWidth() / 2, cy + 253 * u, 3);
+pin_img = scaled("pin.png");
+pin_label = Sprite(pin_img);
+pin_label.SetPosition(cx - pin_img.GetWidth() / 2, cy + 253 * u, 3);
 box_img = scaled("box.png");
 box = Sprite(box_img);
 box_x = cx - box_img.GetWidth() / 2;
@@ -75,7 +78,8 @@ while (i < max_dots) {
 }
 
 fun show_panel(on, n) {
-  global.label.SetOpacity(on);
+  global.label.SetOpacity(on * (1 - global.pin));
+  global.pin_label.SetOpacity(on * global.pin);
   global.box.SetOpacity(on);
   global.wrong.SetOpacity(on * global.wrong_shown);
   global.caret.SetOpacity(on);
@@ -91,6 +95,7 @@ fun show_panel(on, n) {
 }
 
 wrong_shown = 0;
+pin = 0;
 asking = 0;
 typed = 0;
 submitted = 0;
@@ -178,7 +183,19 @@ fun refresh() {
 }
 Plymouth.SetRefreshFunction(refresh);
 
+# systemd asks "Please enter TPM2 PIN:" for the TPM, and for the passphrase otherwise
+fun asks_for_pin(text) {
+  local.i = 0;
+  while (local.i + 3 <= text.Length()) {
+    if (text.SubString(local.i, local.i + 3) == "PIN")
+      return 1;
+    local.i = local.i + 1;
+  }
+  return 0;
+}
+
 fun display_password(prompt, bullets) {
+  global.pin = asks_for_pin(prompt);
   # asked again after an answer: that passphrase didn't unlock the disk
   if (global.submitted) {
     global.submitted = 0;

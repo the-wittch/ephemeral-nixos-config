@@ -83,6 +83,7 @@ in
     laptop = flag false "Laptop extras: thermald on Intel, battery reporting, sensors.";
     fingerprint = flag false "Fingerprint login and sudo through fprintd.";
     secureBoot = flag false "Secure Boot with keys made on this machine. The firmware steps are in docs/security.md.";
+    tpmUnlock = flag false "Unlock the disk with the TPM and a PIN, the passphrase as a fallback. Needs secureBoot; ephemeral-setup turns it on.";
     useControlD = flag false "DNS over TLS to Control D; the id is in /persist/etc/controld-resolver.";
     encryptedDns = mkOption {
       type = types.enum [

@@ -25,6 +25,7 @@ let
     "release"
     "files"
     "apps"
+    "tpm"
   ];
 
   toolsFor =
@@ -71,6 +72,7 @@ in
           deps = [
             btrfs-progs
             coreutils
+            cryptsetup
             curl
             findutils
             gawk
@@ -100,6 +102,8 @@ in
             gum
             jq
             coreutils
+            cryptsetup
+            gawk
             gnugrep
             findutils
             gnused

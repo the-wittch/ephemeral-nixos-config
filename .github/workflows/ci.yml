@@ -240,3 +240,6 @@ jobs:
       - name: OpenSnitch against a second machine
         if: steps.changes.outputs.code == 'true'
         run: nix build path:.#checks.x86_64-linux.network-filter -L --no-link
+      - name: unlock the disk with the TPM and a PIN
+        if: steps.changes.outputs.code == 'true'
+        run: nix build path:.#checks.x86_64-linux.tpm-unlock -L --no-link

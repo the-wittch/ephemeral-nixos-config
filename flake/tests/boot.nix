@@ -1,8 +1,8 @@
 # nix build path:.#checks.x86_64-linux.boot -L
-{ config, lib, ... }:
+{ config, ... }:
 let
   nixos = config.ephemeral.aspects.nixos;
-  hostApps = import ./_host-apps.nix { inherit config lib; };
+  hostApps = import ./_host-apps.nix { inherit config; };
 in
 {
   perSystem =

@@ -24,6 +24,8 @@ Your own config in `/persist/etc/nixos` is untouched, so a plain `ephemeral-upda
 
 **The firmware refuses to start the machine after you turned Secure Boot on**, or after a reinstall. Turn Secure Boot off in the firmware setup and it starts again. Then `ephemeral-doctor` says what's missing; the steps are in [Secure Boot](security.md#secure-boot).
 
+**The disk asks for the passphrase although you set up a TPM PIN.** The TPM didn't unlock it: a wrong PIN, Secure Boot off, or a firmware update that changed its keys or revocation list. The passphrase works as always. Once the machine is up, run `sudo ephemeral-doctor`, then `ephemeral-setup` to enroll the PIN again if it says so.
+
 **The disk won't unlock with the right passphrase.** The LUKS header may be damaged. Boot the NixOS installer USB and restore the copy you made with [`luks-header-backup`](features.md#luks-header-backup):
 
 ```bash

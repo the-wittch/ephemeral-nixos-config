@@ -30,8 +30,9 @@ Each helper command is a Bash script. `modules/packages/packages.nix` builds it 
 | `release.sh` | the release a flake pins, the newest one, and comparing them |
 | `files.sh` | writing a root-only file from a pipe, and checking a backup goes somewhere that outlives this disk |
 | `apps.sh` | the rules for `apps.json`, without the screens |
+| `tpm.sh` | the firmware's Secure Boot state, whether there's a TPM, and enrolling or removing the disk's TPM slot |
 
-A command's `deps` in `packages.nix` lists every tool it runs, the ones the `scripts/lib/` functions it calls run included. Three come from the system instead and aren't listed: `sudo`, which has to be the setuid wrapper in `/run/wrappers`, and `nix` and `systemctl`, which have to match the running daemon and systemd. The commands with questions use gum, and stop when there's no terminal rather than do nothing.
+A command's `deps` in `packages.nix` lists every tool it runs, the ones the `scripts/lib/` functions it calls run included. Four come from the system instead and aren't listed: `sudo`, which has to be the setuid wrapper in `/run/wrappers`, `nix` and `systemctl`, which have to match the running daemon and systemd, and `systemd-cryptenroll`, which has to match the systemd in the initrd that unlocks the disk. The commands with questions use gum, and stop when there's no terminal rather than do nothing.
 
 Turn on the git hooks once per clone:
 
@@ -58,7 +59,7 @@ When only docs changed (Markdown, `docs/`, the license, issue templates), the se
 - `disk` formats a VM disk with the real layout (LUKS, btrfs, the rollback the other tests switch off), checks the wipe and what survives it, then deletes `root-blank` and brings it back with the steps `ephemeral-doctor --fix-root-reset` runs.
 - `secure-boot` turns `secureBoot` on after an update from the previous release, boots with Secure Boot enforced, also from the fallback path alone, and checks Limine refuses a changed kernel.
 
-Beside them, `desktop-build` builds every desktop and most feature hosts, `desktop-boot-plasma`, `-niri` and `-umbriel` boot those desktops to their login screen, `upgrade-boot` boots the current code on the `/persist` a VM of the previous release wrote, `profile-switch` switches a running small install to the full system, as `ephemeral-setup` does, then back, and `network-filter` checks OpenSnitch against a second machine: what it blocks, what the guard holds back at boot and after a crash, and that a clean stop lets traffic through.
+Beside them, `desktop-build` builds every desktop and most feature hosts, `desktop-boot-plasma`, `-niri` and `-umbriel` boot those desktops to their login screen, `upgrade-boot` boots the current code on the `/persist` a VM of the previous release wrote, `profile-switch` switches a running small install to the full system, as `ephemeral-setup` does, then back, `network-filter` checks OpenSnitch against a second machine: what it blocks, what the guard holds back at boot and after a crash, and that a clean stop lets traffic through, and `tpm-unlock` unlocks a LUKS root with a software TPM and a PIN, then falls back to the passphrase after a wrong one.
 
 To run the checks locally, use the same script as CI:
 
@@ -73,7 +74,7 @@ cp hardware-configuration.example.nix hardware-configuration.nix
 Build the VM tests one at a time:
 
 ```bash
-for t in boot boot-minimal upgrade disk secure-boot desktop-boot-umbriel upgrade-boot profile-switch network-filter; do
+for t in boot boot-minimal upgrade disk secure-boot desktop-boot-umbriel upgrade-boot profile-switch network-filter tpm-unlock; do
   nix build "path:.#checks.x86_64-linux.$t" -L --no-link
 done
 ```

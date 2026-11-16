@@ -6,7 +6,7 @@
 }:
 
 let
-  readData = import ./settings/_read-data.nix { inherit lib; };
+  readData = import ./settings/_read-data.nix;
   loadSettings = flakeRoot: import ./settings/_load.nix { inherit lib flakeRoot; };
 
   build =
@@ -91,6 +91,7 @@ let
                 nvidia = settings.nvidia != "none";
                 inherit (settings) laptop fingerprint;
                 secure-boot = settings.secureBoot;
+                tpm-unlock = settings.tpmUnlock;
                 tailscale = settings.useTailscale;
                 encrypted-dns = settings.encryptedDns != "none";
                 opensnitch = full && settings.useOpenSnitch;

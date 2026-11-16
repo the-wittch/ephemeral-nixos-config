@@ -39,7 +39,7 @@ fail() {
 }
 
 tool() {
-  cat "$SCRIPTS"/lib/{core,flake,release,files,apps}.sh "$SCRIPTS/$1.sh" >"$work/$1"
+  cat "$SCRIPTS"/lib/{core,flake,release,files,apps,tpm}.sh "$SCRIPTS/$1.sh" >"$work/$1"
   echo "$work/$1"
 }
 update=$(tool ephemeral-update)
@@ -244,6 +244,12 @@ doctor_sb
 if grep -qF "Secure Boot is on" "$work/out" && ! grep -qF "no list of revoked bootloaders" "$work/out"; then
   pass "doctor: a dbx with entries isn't reported"
 else fail "doctor: warned about a dbx that has entries"; fi
+: >"$sb/etc/ephemeral/tpm-unlock"
+printf '\x06\x00\x00\x00\x00' >"$vars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c"
+doctor_sb
+if grep -qF "unlock with the TPM, but Secure Boot is off" "$work/out"; then
+  pass "doctor: TPM unlock with Secure Boot off is reported"
+else fail "doctor: missed TPM unlock with Secure Boot off"; fi
 rm "$fakes/systemctl"
 
 pubs=$(tool ssh-pubs-from-pass)
@@ -263,7 +269,7 @@ else fail "ssh-pubs-from-pass: PASS_SSH_VAULT"; fi
 
 # scripts/lib on its own: runs the code with every library loaded, as the commands get them
 lib() {
-  bash -c "set -euo pipefail; $(cat "$SCRIPTS"/lib/{core,flake,release,files,apps}.sh); $1" >"$work/out" 2>&1 </dev/null
+  bash -c "set -euo pipefail; $(cat "$SCRIPTS"/lib/{core,flake,release,files,apps,tpm}.sh); $1" >"$work/out" 2>&1 </dev/null
 }
 
 flake_at v4.2.0
@@ -286,6 +292,27 @@ lib '! is_newer v4.9.0 v4.10.0 && ! is_newer v4.9.0 v4.9.0 && ! is_newer "v5.0.0
 if ((newer == 0)); then
   pass "lib: is_newer orders versions as numbers, and refuses anything that isn't vX.Y.Z"
 else fail "lib: is_newer"; fi
+
+fake systemd-cryptenroll 'echo "systemd-cryptenroll $*" >>"$CALLS"'
+: >"$calls"
+if lib 'tpm_enroll /dev/vda2' &&
+  grep -qxF "systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 --tpm2-with-pin=yes --wipe-slot=tpm2 /dev/vda2" "$calls"; then
+  pass "lib: tpm_enroll binds to PCR 7 with a PIN, and replaces only an older TPM slot"
+else fail "lib: tpm_enroll"; fi
+: >"$calls"
+if lib 'tpm_remove /dev/vda2' && grep -qxF "systemd-cryptenroll --wipe-slot=tpm2 /dev/vda2" "$calls"; then
+  pass "lib: tpm_remove wipes the TPM slot and no other"
+else fail "lib: tpm_remove"; fi
+rm "$fakes/systemd-cryptenroll"
+tr=$work/tpmroot
+mkdir -p "$tr/dev" "$tr/sys/firmware/efi/efivars"
+absent=0
+EPHEMERAL_ROOT=$tr lib '! tpm_present && [[ -z $(efi_flag SecureBoot) ]]' || absent=1
+: >"$tr/dev/tpmrm0"
+printf '\x06\x00\x00\x00\x01' >"$tr/sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c"
+if ((absent == 0)) && EPHEMERAL_ROOT=$tr lib 'tpm_present && [[ $(efi_flag SecureBoot) == 1 ]]'; then
+  pass "lib: tpm_present and efi_flag see the TPM and the firmware's Secure Boot state, and their absence"
+else fail "lib: tpm_present or efi_flag"; fi
 
 if lib 'ask "go on?"'; then fail "lib: ask said yes without a terminal"; else
   pass "lib: ask is a no without a terminal"

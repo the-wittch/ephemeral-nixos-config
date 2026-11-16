@@ -42,7 +42,7 @@ New here? Start with [the first hour](docs/first-hour.md).
 - The whole disk is wiped at install. No dual boot.
 - One user per machine.
 - Suspend works; hibernation doesn't.
-- The disk unlocks with a passphrase only, no TPM.
+- The disk unlocks with a passphrase, or with the TPM and a PIN once Secure Boot is on ([TPM unlock](docs/security.md#tpm-unlock)).
 - It's opinionated: Catppuccin, Ghostty and zsh by default. Changing them takes a module of your own ([appearance](docs/appearance.md)).
 
 ## Setup

@@ -101,6 +101,14 @@ in
               machine.fail("test -e /nested")
               machine.succeed("systemctl is-active --quiet root-reset-check.service")
 
+          # as a reset that stopped between making the new root and swapping it in leaves things
+          with subtest("a root-new left from an interrupted reset is replaced, and the reset goes on"):
+              top_level("btrfs subvolume create /mnt/btrfs/root-new && touch /mnt/btrfs/root-new/stale")
+              reboot()
+              machine.succeed("systemctl is-active --quiet root-reset-check.service")
+              machine.fail("test -e /stale")
+              top_level("test ! -e /mnt/btrfs/root-new")
+
           with subtest("subvolumes nested past any depth, or under a name with a newline, don't stop the reset"):
               # /var/tmp is on / and anyone can write it; btrfs lets users make subvolumes there
               deep = "d=/var/tmp/deep; mkdir -p $d; for i in $(seq 70); do btrfs subvolume create $d/s >/dev/null; d=$d/s; done; touch $d/was-here"

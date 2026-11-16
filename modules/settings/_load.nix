@@ -1,7 +1,7 @@
 { lib, flakeRoot }:
 
 let
-  readData = import ./_read-data.nix { inherit lib; };
+  readData = import ./_read-data.nix;
 
   # a missing file must not become username nixuser
   fromSettings = readData (flakeRoot + "/settings") (throw ''

@@ -2,6 +2,19 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.11.0
+
+### Added
+
+- With Secure Boot on, the disk can be unlocked with the TPM and a short PIN. `ephemeral-setup` asks how to unlock it when the machine has a TPM 2.0 and Secure Boot is on, and enrolls the PIN; the passphrase stays as the fallback. The TPM is bound to the Secure Boot state (PCR 7), so it asks for the passphrase again after Secure Boot's keys or revocation list change; `ephemeral-setup` enrolls the PIN again. `"tpmUnlock"` in `settings.json` refuses to build without `"secureBoot"`. See [TPM unlock](docs/security.md#tpm-unlock).
+- The boot splash says "TPM PIN" when it asks for the PIN.
+- `ephemeral-doctor` reports TPM unlock that can't work: with Secure Boot off, or, run with sudo, without a TPM slot on the disk.
+- A test that unlocks a LUKS root with a software TPM and a PIN, and falls back to the passphrase after a wrong PIN.
+
+### Fixed
+
+- The reset of `/` at boot deleted the old root before making the new one, so a failure in between left no root to boot. It makes the new one first now, and a failure at any step leaves a root that boots, with `ephemeral-doctor` reporting that it wasn't reset.
+
 ## 4.10.0
 
 ### Added

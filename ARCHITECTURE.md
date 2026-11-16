@@ -69,6 +69,7 @@ These hold on every machine, in every profile:
 7. **Anything a user typed reaches a shell only through a validator, `escapeShellArg`, an environment variable or `jq --arg`.** Never through string concatenation.
 8. **Every value in `settings.json` that ends up in a script or a path has a type that refuses what would break it.** `settings-reject` checks the refusals.
 9. **Kernel hardening only gets stronger.** Turning something off needs a changelog entry saying how to undo it.
+10. **The TPM only unlocks the disk with Secure Boot on and a PIN, and never in place of the passphrase.** `tpmUnlock` refuses to build without `secureBoot`, and enrolling never removes a passphrase slot.
 
 What checks each one:
 
@@ -82,6 +83,7 @@ What checks each one:
 | 6 | `sandbox-eval`, which finds the services from where they're defined |
 | 7, 8 | `settings-reject`, the installer's validation cases (shared by its Go and shell tests), and the script tests |
 | 9 | `boot`: the sysctls, kernel command line and blocked modules are in effect |
+| 10 | `features-eval`: `tpmUnlock` without `secureBoot` doesn't build; `scripts-behaviour`: enrolling binds to PCR 7 with a PIN and wipes only TPM slots; `tpm-unlock`: the PIN unlocks the disk, and the passphrase still does after a wrong one |
 
 Encrypted DNS and Control D have no plaintext fallback: `boot` checks it with Control D, `features-eval` with a provider.
 

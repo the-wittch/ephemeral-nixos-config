@@ -117,9 +117,56 @@ if [[ $dns == custom ]]; then
   done
 fi
 
-args=(--arg profile "$profile" --arg dns "$dns" --arg servers "$servers")
+# The TPM key is bound to Secure Boot being on, with this machine's keys; without that, the PIN
+# alone would guard the disk.
+tpm=$(get tpmUnlock)
+tpm=${tpm:-false}
+tpm_action=
+if tpm_present && [[ $(get secureBoot) == true && $(efi_flag SecureBoot) == 1 ]]; then
+  unlock_pass="The passphrase"
+  unlock_tpm="A TPM PIN, with the passphrase as the fallback"
+  unlock_again="A TPM PIN, enrolled again after a firmware, key or revocation list change"
+  choices=("$unlock_pass" "$unlock_tpm")
+  current=$unlock_pass
+  if [[ $tpm == true ]]; then
+    choices+=("$unlock_again")
+    current=$unlock_tpm
+  fi
+  picked=$(printf '%s\n' "${choices[@]}" |
+    gum choose --header "Unlocking the disk at boot" --selected "$current") || exit 0
+  case $picked in
+    "$unlock_tpm")
+      [[ $tpm == true ]] || tpm_action=enroll
+      tpm=true
+      ;;
+    "$unlock_again")
+      tpm_action=enroll
+      tpm=true
+      ;;
+    *)
+      [[ $tpm == false ]] || tpm_action=remove
+      tpm=false
+      ;;
+  esac
+elif [[ $tpm == true ]]; then
+  echo "TPM unlock stays as it is; changing it needs a TPM and Secure Boot on. ephemeral-doctor says more."
+fi
+
+# before saving, so a failure here leaves the settings as they were
+if [[ -n $tpm_action ]]; then
+  luks=$(luks_device)
+  if [[ $tpm_action == enroll ]]; then
+    echo "systemd-cryptenroll asks for the disk passphrase, then the new PIN twice."
+    tpm_enroll "$luks" || die "the TPM wasn't enrolled; nothing changed"
+  else
+    echo "systemd-cryptenroll asks for the disk passphrase to remove the TPM slot."
+    tpm_remove "$luks" || die "the TPM slot wasn't removed; nothing changed"
+  fi
+fi
+
+args=(--arg profile "$profile" --arg dns "$dns" --arg servers "$servers" --argjson tpm "$tpm")
 # shellcheck disable=SC2016 # jq variables
-filter='.profile = $profile | .encryptedDns = (if $dns == "controld" then "none" else $dns end) | if $dns == "custom" then .customDns = ($servers | split(" ") | map(select(. != ""))) else . end'
+filter='.profile = $profile | .encryptedDns = (if $dns == "controld" then "none" else $dns end) | if $dns == "custom" then .customDns = ($servers | split(" ") | map(select(. != ""))) else . end | .tpmUnlock = $tpm'
 # only one of them can have the DNS; on the small install Control D is ignored, so it's left alone there
 if [[ $profile == full ]]; then
   # shellcheck disable=SC2016
@@ -160,4 +207,9 @@ if [[ $profile == full ]]; then
   if [[ $dns == controld ]]; then
     echo "- Run controld-setup if you haven't entered your Control D resolver id yet."
   fi
+fi
+if [[ $tpm_action == enroll ]]; then
+  echo "- At the next boot the disk asks for the TPM PIN. When the TPM can't unlock it, it asks for the passphrase."
+elif [[ $tpm_action == remove ]]; then
+  echo "- From the next boot the disk asks for the passphrase again."
 fi
