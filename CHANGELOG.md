@@ -2,6 +2,21 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.10.0
+
+### Added
+
+- `ephemeral-doctor` warns when Secure Boot is on but the firmware has no list of revoked bootloaders (dbx), which "Delete all keys" in the firmware setup also wipes. `fwupdmgr refresh && fwupdmgr update` puts it back.
+
+### Removed
+
+- The clean-up of systemd-boot's files and firmware entries from before v4.7.0. Every rebuild on v4.8.0 to v4.9.0 did it once Limine had started the machine. A machine that skipped those releases keeps them; they do no harm, and once it has started from Limine, `sudo rm -rf /boot/loader /boot/EFI/systemd /boot/EFI/nixos` removes the files, and the "Linux Boot Manager" entries can be deleted in the firmware's boot settings.
+- The test of the update from systemd-boot, which booted v4.6.0 every time.
+
+### Fixed
+
+- `ephemeral-doctor` stopped partway if `/nix/var/nix/profiles` couldn't be read.
+
 ## 4.9.0
 
 ### Changed

@@ -34,9 +34,17 @@ percent_used() { df --output=pcent "$1" | tail -n 1 | tr -dc 0-9; }
 
 boot_time() { awk '/^btime/ { print $2 }' /proc/stat; }
 
+efivars=${EPHEMERAL_ROOT:-}/sys/firmware/efi/efivars
+
 # 1 or 0 from the firmware, or nothing when it doesn't have the variable
 efi_flag() {
-  od -An -tu1 -j4 -N1 "/sys/firmware/efi/efivars/$1-8be4df61-93ca-11d2-aa0d-00e098032b8c" 2>/dev/null | tr -d ' ' || true
+  od -An -tu1 -j4 -N1 "$efivars/$1-8be4df61-93ca-11d2-aa0d-00e098032b8c" 2>/dev/null | tr -d ' ' || true
+}
+
+# the attributes and a list header, but not one entry; or no variable at all
+dbx_empty() {
+  local dbx=$efivars/dbx-d719b2cb-3d3a-4596-a3bc-dad00e67656f
+  [[ ! -e $dbx ]] || (($(stat -c %s "$dbx") < 76))
 }
 
 fix_root_reset() {
@@ -190,7 +198,7 @@ else
 fi
 
 used=$(percent_used /nix)
-generations=$(find /nix/var/nix/profiles -maxdepth 1 -name 'system-*-link' | wc -l)
+generations=$(find /nix/var/nix/profiles -maxdepth 1 -name 'system-*-link' 2>/dev/null | wc -l || true)
 if ((used >= 90)); then
   warn "/nix is $used% full, holding $generations systems" "sudo nix-collect-garbage --delete-older-than 14d"
 else
@@ -250,10 +258,14 @@ else
     "luks-header-backup /run/media/$USER/<stick>/luks-header.img"
 fi
 
-if [[ -e /etc/ephemeral/secure-boot ]]; then
+if [[ -e ${EPHEMERAL_ROOT:-}/etc/ephemeral/secure-boot ]]; then
   if [[ $(efi_flag SecureBoot) == 1 ]]; then
     # only this machine's key signs Limine, so a boot with it on means that key is trusted
     ok "Secure Boot is on, with this machine's keys"
+    if dbx_empty; then
+      warn "the firmware has no list of revoked bootloaders (dbx), so ones Microsoft has revoked still start" \
+        "fwupdmgr refresh && fwupdmgr update"
+    fi
   elif [[ $(efi_flag SetupMode) == 1 ]]; then
     warn "the firmware is in Setup Mode, waiting for this machine's keys" \
       "ephemeral-update puts them in; then turn Secure Boot on in the firmware (docs/security.md)"

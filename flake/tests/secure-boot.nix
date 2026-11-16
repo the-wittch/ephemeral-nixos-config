@@ -6,13 +6,38 @@ let
   pin = lib.importJSON ../../tests/upgrade/previous.json;
   previous = builtins.getFlake "git+https://github.com/the-wittch/ephemeral-nixos-config?rev=${pin.rev}";
 
-  machine = import ./_efi-machine.nix { hostname = "secureboot"; };
-
-  limine =
-    { lib, pkgs, ... }:
+  # from either release's aspects, on a real ESP; vm.nix boots the kernel directly with no disk
+  machine =
+    nixos:
     {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
+    {
+      imports = [
+        nixos.vm
+        nixos.base
+      ];
+      ephemeral.settings = {
+        hostname = "secureboot";
+        username = "alice";
+        diskDevice = "/dev/vda";
+        swapSize = "1G";
+      };
+      boot.consoleLogLevel = lib.mkForce 7;
       boot.loader.limine.enable = lib.mkOverride 10 true;
-      environment.systemPackages = [ pkgs.sbsigntool ];
+      system.switch.enable = true;
+      environment.systemPackages = [
+        pkgs.efibootmgr
+        pkgs.sbsigntool
+      ];
+      virtualisation = {
+        useBootLoader = true;
+        useEFIBoot = true;
+        diskImage = lib.mkOverride 10 "./${config.system.name}.qcow2";
+      };
     };
 in
 {
@@ -25,11 +50,7 @@ in
         (pkgs.testers.runNixOSTest {
           inherit name;
           node.pkgsReadOnly = false;
-          nodes.machine.imports = [
-            (machine nixos)
-            limine
-          ]
-          ++ modules;
+          nodes.machine.imports = [ (machine nixos) ] ++ modules;
           testScript = "";
         }).nodes.machine.system.build.toplevel;
       next = build "secure-boot-next" [ ];
@@ -41,10 +62,7 @@ in
         node.pkgsReadOnly = false;
 
         nodes.machine = {
-          imports = [
-            (machine previous.modules.nixos)
-            limine
-          ];
+          imports = [ (machine previous.modules.nixos) ];
           virtualisation.additionalPaths = [
             next
             signed

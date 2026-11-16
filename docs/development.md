@@ -56,7 +56,6 @@ When only docs changed (Markdown, `docs/`, the license, issue templates), the se
 - `boot-minimal` boots the first-boot system twice and checks the wipe, the login screen, that nothing failed, and that the boot splash draws its passphrase prompt.
 - `upgrade` boots a machine on the previous release (`tests/upgrade/previous.json`) and switches it to the current code.
 - `disk` formats a VM disk with the real layout (LUKS, btrfs, the rollback the other tests switch off), checks the wipe and what survives it, then deletes `root-blank` and brings it back with the steps `ephemeral-doctor --fix-root-reset` runs.
-- `bootloader-switch` updates a v4.6.0 machine from systemd-boot to Limine, and checks systemd-boot is removed only once Limine has started the machine.
 - `secure-boot` turns `secureBoot` on after an update from the previous release, boots with Secure Boot enforced, also from the fallback path alone, and checks Limine refuses a changed kernel.
 
 Beside them, `desktop-build` builds every desktop and most feature hosts, `desktop-boot-plasma`, `-niri` and `-umbriel` boot those desktops to their login screen, `upgrade-boot` boots the current code on the `/persist` a VM of the previous release wrote, `profile-switch` switches a running small install to the full system, as `ephemeral-setup` does, then back, and `network-filter` checks OpenSnitch against a second machine: what it blocks, what the guard holds back at boot and after a crash, and that a clean stop lets traffic through.
@@ -74,7 +73,7 @@ cp hardware-configuration.example.nix hardware-configuration.nix
 Build the VM tests one at a time:
 
 ```bash
-for t in boot boot-minimal upgrade disk bootloader-switch secure-boot desktop-boot-umbriel upgrade-boot profile-switch network-filter; do
+for t in boot boot-minimal upgrade disk secure-boot desktop-boot-umbriel upgrade-boot profile-switch network-filter; do
   nix build "path:.#checks.x86_64-linux.$t" -L --no-link
 done
 ```
