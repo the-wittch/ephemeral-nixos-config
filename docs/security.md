@@ -46,12 +46,12 @@ Secure Boot doesn't help once something has root on the running system: it can r
 
 With Secure Boot on, the disk can be unlocked with a short PIN instead of the passphrase. `ephemeral-setup` asks how to unlock it when the machine has a TPM 2.0 and Secure Boot is on; picking the TPM PIN asks for the passphrase once, then the new PIN twice. The passphrase stays and keeps working.
 
-At boot the TPM only gives up the disk's key when the PIN is right and Secure Boot is in the state it was in when you picked the PIN: on, with this machine's keys and the same revocation list (PCR 7). Secure Boot already makes sure only your Limine starts, and Limine only starts kernels and initrds it has a checksum for, so that state covers the whole boot. After a run of wrong PINs, how many depends on the TPM, it stops answering for a while, which is what makes a short PIN safe. The PIN is also run through Argon2id before the TPM sees it, so a TPM that gives up its secrets doesn't give up the disk without the PIN.
+At boot the TPM only gives up the disk's key when the PIN is right and Secure Boot is in the state it was in when you picked the PIN: on, with this machine's keys and the same revocation list (PCR 7). Secure Boot already makes sure only your Limine starts, and Limine only starts kernels and initrds it has a checksum for, so that state covers the whole boot. After a run of wrong PINs it stops answering for a while, which is what makes a short PIN safe. How many it takes, and how long it waits, are the TPM's own settings: 3 tries on the software TPM in the tests, often many more on a PC's. `sudo nix shell nixpkgs#tpm2-tools -c tpm2_getcap properties-variable` shows them, as `TPM2_PT_MAX_AUTH_FAIL` and `TPM2_PT_LOCKOUT_INTERVAL` in seconds. The PIN is also run through Argon2id before the TPM sees it, so a TPM that gives up its secrets doesn't give up the disk without the PIN.
 
-When the TPM can't unlock the disk, the boot asks for the passphrase instead:
+The boot always asks for the PIN first, since the TPM needs it to try. A wrong PIN is asked for again. The boot asks for the passphrase once the TPM won't unlock the disk:
 
-- after wrong PINs;
-- when Secure Boot is off, or its keys or revocation list changed, which a firmware update can do. Run `ephemeral-setup` and pick the option that enrolls the PIN again;
-- after the TPM was cleared in the firmware settings, or with the disk in another machine.
+- after enough wrong PINs that the TPM stops taking them. A forgotten PIN gets you to the passphrase this way, and until the TPM takes PINs again, every boot asks for the PIN once and then the passphrase;
+- when Secure Boot is off, or its keys or revocation list changed, which a firmware update can do. Whatever you type for the PIN, it then asks for the passphrase. Run `ephemeral-setup` and pick the option that enrolls the PIN again;
+- after the TPM was cleared in the firmware settings, or with the disk in another machine, the same way.
 
 It doesn't help against someone who knows the PIN and has the laptop, nor against something with root on the running system. The PIN starts any system in the boot menu built with TPM unlock on, older ones included. `ephemeral-doctor` says whether TPM unlock is set up, and, run with sudo, whether the disk has its TPM slot. LUKS header backups made before keep opening with the passphrase. To go back to the passphrase only, pick it in `ephemeral-setup`, which removes the TPM slot.

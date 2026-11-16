@@ -1,6 +1,6 @@
 # nix build path:.#checks.x86_64-linux.tpm-unlock -L
-# The disk unlocked by the TPM and a PIN, with the passphrase still there for when the PIN is
-# wrong. A software TPM and a real LUKS root; the disk test can't have a TPM, since disko starts
+# The disk unlocked by the TPM and a PIN, and by the passphrase once wrong PINs have locked the
+# TPM out. A software TPM and a real LUKS root; the disk test can't have a TPM, since disko starts
 # its machine itself.
 { config, ... }:
 let
@@ -78,15 +78,21 @@ in
           ''
             from datetime import timedelta
 
-            def asked():
-                # whichever prompt came last on the console
-                machine.wait_for_console_text(r"PIN:|assphrase", timeout=timedelta(minutes=3))
-                log = machine.get_console_log()
-                return "pin" if log.rfind("PIN:") > log.rfind("assphrase") else "passphrase"
+            # The prompts end without a newline, and the driver only sees whole lines, so these
+            # wait for the lines systemd logs around them.
+            def query():
+                machine.wait_for_console_text(r"Starting password query on /dev/ttyS0", timeout=timedelta(minutes=3))
+                # it logs that just before it writes the prompt and reads the answer
+                machine.sleep(timedelta(seconds=2))
 
+            # each start begins a new console log
             def boot():
                 machine.shutdown()
                 machine.start()
+
+            # logged when systemd gives up on the TPM and asks for the passphrase
+            fallback = "falling back to traditional unlocking"
+            lockout = "dictionary attack lock-out mode"
 
             machine.start()
             machine.wait_for_unit("multi-user.target")
@@ -112,20 +118,28 @@ in
 
             with subtest("the PIN unlocks the disk, without the passphrase"):
                 boot()
-                assert asked() == "pin", "the boot asked for the passphrase, not the PIN"
+                query()
                 machine.send_console("${pin}\n")
                 machine.wait_for_unit("multi-user.target")
                 assert machine.succeed("findmnt -no SOURCE /").strip() == "/dev/mapper/cryptroot"
-                assert "assphrase" not in machine.get_console_log().split("PIN:")[-1], "the passphrase was asked for too"
+                log = machine.get_console_log()
+                assert "TPM2 PIN" in log or "token PIN" in log, "the first question wasn't the PIN"
+                assert fallback not in log, "the TPM didn't unlock it"
+                assert log.count("Starting password query on /dev/ttyS0") == 1, "it asked more than once"
 
-            with subtest("after a wrong PIN, the passphrase still unlocks it"):
+            # The PIN is asked again until the TPM locks out, after 3 wrong ones in swtpm; only then
+            # does systemd ask for the passphrase.
+            with subtest("after wrong PINs lock the TPM out, the passphrase still unlocks it"):
                 boot()
-                for _ in range(5):
-                    if asked() == "passphrase":
+                for _ in range(6):
+                    query()
+                    # systemd asks for the passphrase right after the TPM refuses to try
+                    if lockout in machine.get_console_log():
                         break
                     machine.send_console("0000\n")
+                    machine.wait_for_console_text(r"Bad password|Bad PIN|lock-out mode", timeout=timedelta(minutes=1))
                 else:
-                    raise AssertionError("never fell back to the passphrase")
+                    raise AssertionError("the TPM never locked out")
                 machine.send_console("${passphrase}\n")
                 machine.wait_for_unit("multi-user.target")
                 assert machine.succeed("findmnt -no SOURCE /").strip() == "/dev/mapper/cryptroot"

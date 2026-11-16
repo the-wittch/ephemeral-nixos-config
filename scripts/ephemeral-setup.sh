@@ -209,7 +209,7 @@ if [[ $profile == full ]]; then
   fi
 fi
 if [[ $tpm_action == enroll ]]; then
-  echo "- At the next boot the disk asks for the TPM PIN. When the TPM can't unlock it, it asks for the passphrase."
+  echo "- At the next boot the disk asks for the TPM PIN. A wrong one is asked for again until the TPM stops taking guesses; then it asks for the passphrase."
 elif [[ $tpm_action == remove ]]; then
   echo "- From the next boot the disk asks for the passphrase again."
 fi

@@ -6,10 +6,10 @@ Breaking changes are listed first in each release, with what to do about them. R
 
 ### Added
 
-- With Secure Boot on, the disk can be unlocked with the TPM and a short PIN. `ephemeral-setup` asks how to unlock it when the machine has a TPM 2.0 and Secure Boot is on, and enrolls the PIN; the passphrase stays as the fallback. The TPM is bound to the Secure Boot state (PCR 7), so it asks for the passphrase again after Secure Boot's keys or revocation list change; `ephemeral-setup` enrolls the PIN again. `"tpmUnlock"` in `settings.json` refuses to build without `"secureBoot"`. See [TPM unlock](docs/security.md#tpm-unlock).
+- With Secure Boot on, the disk can be unlocked with the TPM and a short PIN. `ephemeral-setup` asks how to unlock it when the machine has a TPM 2.0 and Secure Boot is on, and enrolls the PIN; the passphrase stays, and the boot asks for it once the TPM won't unlock the disk, after enough wrong PINs to lock the TPM out among other things. The TPM is bound to the Secure Boot state (PCR 7), so it asks for the passphrase again after Secure Boot's keys or revocation list change; `ephemeral-setup` enrolls the PIN again. `"tpmUnlock"` in `settings.json` refuses to build without `"secureBoot"`. See [TPM unlock](docs/security.md#tpm-unlock).
 - The boot splash says "TPM PIN" when it asks for the PIN.
 - `ephemeral-doctor` reports TPM unlock that can't work: with Secure Boot off, or, run with sudo, without a TPM slot on the disk.
-- A test that unlocks a LUKS root with a software TPM and a PIN, and falls back to the passphrase after a wrong PIN.
+- A test that unlocks a LUKS root with a software TPM and a PIN, and with the passphrase after wrong PINs have locked the TPM out.
 - Two outputs for the installer, so it can read the settings rules from the release it pins instead of keeping its own copies: `settings-contract`, a JSON file with what each setting may be, its default and which settings are on/off switches; and `settings`, each machine's settings checked the way a rebuild checks them, without building the system.
 - CI fails when `docs/settings.md` doesn't describe a setting.
 
