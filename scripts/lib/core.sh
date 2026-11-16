@@ -28,3 +28,9 @@ ask() {
   read -r -p "$1 [y/N] " answer
   [[ ${answer:-n} =~ ^[Yy] ]]
 }
+
+# controld_id_re comes from modules/settings/_rules.nix; packages.nix puts it in front of each command
+# shellcheck disable=SC2154,SC2329
+valid_controld_id() {
+  [[ $1 =~ ^${controld_id_re}$ ]]
+}

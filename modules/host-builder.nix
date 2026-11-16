@@ -131,4 +131,7 @@ in
   };
 
   config.flake.nixosConfigurations = lib.concatMapAttrs build config.ephemeral.hosts;
+  # checked the way a rebuild checks them, without putting the machine together; the installer
+  # reads it to refuse a bad answer in seconds rather than after evaluating the whole system
+  config.flake.settings = lib.mapAttrs (_: host: loadSettings host.root) config.ephemeral.hosts;
 }

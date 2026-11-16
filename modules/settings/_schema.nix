@@ -8,74 +8,62 @@ let
       type = types.bool;
       inherit default description;
     };
-  # these end up in shell scripts, such as the login environment
-  vaultName = types.strMatching "[^\"$`\\\\[:cntrl:]]+";
+  rules = import ./_rules.nix;
+  matching = key: types.strMatching rules.${key};
 in
 {
   options.ephemeral.settings = {
     hostname = mkOption {
-      type = types.nonEmptyStr;
+      type = matching "hostname";
       default = "nixos";
       description = "Hostname.";
     };
     username = mkOption {
-      type = types.strMatching "[a-z_][a-z0-9_-]{0,31}";
+      type = matching "username";
       description = "The one login user.";
     };
     timeZone = mkOption {
-      type = types.strMatching "[A-Za-z0-9_/+-]+";
+      type = matching "timeZone";
       default = "UTC";
       description = "Time zone, e.g. Europe/Berlin.";
     };
     locale = mkOption {
-      type = types.strMatching "[A-Za-z_]+\\.UTF-8";
+      type = matching "locale";
       default = "en_US.UTF-8";
       description = "System language, e.g. de_DE.UTF-8.";
     };
     keyboardLayout = mkOption {
-      type = types.strMatching "[a-z]{2,3}(,[a-z]{2,3})*";
+      type = matching "keyboardLayout";
       default = "us";
       description = "XKB layout, also used for the console and the LUKS prompt, e.g. de or us,de.";
     };
     keyboardVariant = mkOption {
-      type = types.strMatching "[a-z0-9_-]*(,[a-z0-9_-]*)*";
+      type = matching "keyboardVariant";
       default = "";
       description = "XKB variant, e.g. nodeadkeys. Empty for the default.";
     };
     diskDevice = mkOption {
-      type = types.addCheck (types.strMatching "/dev/[A-Za-z0-9/_.:+-]+") (d: !lib.hasInfix ".." d);
+      type = types.addCheck (matching "diskDevice") (d: !lib.hasInfix ".." d);
       default = "/dev/nvme0n1";
       description = "Whole disk the system is installed on.";
     };
     swapSize = mkOption {
-      type = types.strMatching "[0-9]+[KMGT]?";
+      type = matching "swapSize";
       default = "16G";
       description = "Swap file size, e.g. 16G.";
     };
     desktop = mkOption {
-      type = types.enum [
-        "plasma"
-        "gnome"
-        "niri"
-        "umbriel"
-      ];
+      type = types.enum rules.desktop;
       default = "plasma";
       description = "Desktop environment.";
     };
     profile = mkOption {
-      type = types.enum [
-        "minimal"
-        "full"
-      ];
+      type = types.enum rules.profile;
       default = "full";
       description = "minimal is the small first-boot system the installer sets up; full is everything here.";
     };
     nvidia = mkOption {
-      type = types.enum [
-        "none"
-        "open"
-        "legacy"
-      ];
+      type = types.enum rules.nvidia;
       default = "none";
       description = "NVIDIA driver: open for RTX 20 / GTX 16 and newer, legacy (580) for GTX 900 and 10 series.";
     };
@@ -86,19 +74,12 @@ in
     tpmUnlock = flag false "Unlock the disk with the TPM and a PIN, the passphrase as a fallback. Needs secureBoot; ephemeral-setup turns it on.";
     useControlD = flag false "DNS over TLS to Control D; the id is in /persist/etc/controld-resolver.";
     encryptedDns = mkOption {
-      type = types.enum [
-        "none"
-        "cloudflare"
-        "quad9"
-        "adguard"
-        "custom"
-      ];
+      type = types.enum rules.encryptedDns;
       default = "none";
       description = "DNS over TLS to a public resolver, without an account, or to the servers in customDns. Use useControlD for Control D.";
     };
     customDns = mkOption {
-      # address#name: resolved checks the server's certificate against the name
-      type = types.listOf (types.strMatching "[0-9A-Fa-f.:]+#[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?");
+      type = types.listOf (matching "customDns");
       default = [ ];
       description = "DNS over TLS servers for encryptedDns = \"custom\", each as address#name, e.g. 194.242.2.2#dns.mullvad.net.";
     };
@@ -107,18 +88,18 @@ in
     useFlakePassCli = flag false "Build modules/packages/_pass-cli.nix instead of nixpkgs proton-pass-cli.";
     usePassSettings = flag false "Merge settings.from-pass.json.";
     passSettingsVault = mkOption {
-      type = vaultName;
+      type = matching "passSettingsVault";
       default = "Personal";
       description = "Proton Pass vault for settings-from-pass.";
     };
     passSettingsItem = mkOption {
-      type = vaultName;
+      type = matching "passSettingsItem";
       default = "nixos-settings";
       description = "Proton Pass item for settings-from-pass.";
     };
     usePassSshAgent = flag false "Proton Pass SSH agent at login, serving the keys in passSshVault.";
     passSshVault = mkOption {
-      type = vaultName;
+      type = matching "passSshVault";
       default = "Personal";
       description = "Proton Pass vault the SSH agent and ssh-pubs-from-pass read keys from.";
     };

@@ -48,6 +48,10 @@ let
   );
   example = lib.importJSON ../settings.example.json;
   differ = lib.filter (name: example.${name} or null != defaults.${name}) (lib.attrNames defaults);
+  # docs/settings.md names each one in backticks, in its table
+  undocumented = lib.filter (
+    name: !lib.hasInfix "`${name}`" (builtins.readFile ../docs/settings.md)
+  ) options;
   hostsUnderTest = [
     "gnome-full"
     "gnome-minimal"
@@ -205,6 +209,9 @@ in
               unknown: ${toString (lib.subtractLists options (lib.attrNames example))}
               different from the defaults in modules/settings/_schema.nix:${toString differ}
           '';
+          assert lib.assertMsg (
+            undocumented == [ ]
+          ) "docs/settings.md doesn't describe: ${toString undocumented}";
           pkgs.runCommand "settings-example" { } "touch $out";
       };
     };

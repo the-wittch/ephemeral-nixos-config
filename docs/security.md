@@ -51,7 +51,7 @@ At boot the TPM only gives up the disk's key when the PIN is right and Secure Bo
 When the TPM can't unlock the disk, the boot asks for the passphrase instead:
 
 - after wrong PINs;
-- when Secure Boot is off, or its keys or revocation list changed, which a firmware update can do. Run `ephemeral-setup` and pick the PIN that's enrolled again;
+- when Secure Boot is off, or its keys or revocation list changed, which a firmware update can do. Run `ephemeral-setup` and pick the option that enrolls the PIN again;
 - after the TPM was cleared in the firmware settings, or with the disk in another machine.
 
-It doesn't help against someone who knows the PIN and has the laptop, nor against something with root on the running system. Any of the five systems in the boot menu can be started with the PIN, older ones included. `ephemeral-doctor` says whether TPM unlock is set up, and, run with sudo, whether the disk has its TPM slot. LUKS header backups made before keep opening with the passphrase. To go back to the passphrase only, pick it in `ephemeral-setup`, which removes the TPM slot.
+It doesn't help against someone who knows the PIN and has the laptop, nor against something with root on the running system. The PIN starts any system in the boot menu built with TPM unlock on, older ones included. `ephemeral-doctor` says whether TPM unlock is set up, and, run with sudo, whether the disk has its TPM slot. LUKS header backups made before keep opening with the passphrase. To go back to the passphrase only, pick it in `ephemeral-setup`, which removes the TPM slot.

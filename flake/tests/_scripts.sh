@@ -39,7 +39,10 @@ fail() {
 }
 
 tool() {
-  cat "$SCRIPTS"/lib/{core,flake,release,files,apps,tpm}.sh "$SCRIPTS/$1.sh" >"$work/$1"
+  {
+    printf 'controld_id_re=%q\n' "$CONTROLD_ID_RE"
+    cat "$SCRIPTS"/lib/{core,flake,release,files,apps,tpm}.sh "$SCRIPTS/$1.sh"
+  } >"$work/$1"
   echo "$work/$1"
 }
 update=$(tool ephemeral-update)
@@ -269,7 +272,7 @@ else fail "ssh-pubs-from-pass: PASS_SSH_VAULT"; fi
 
 # scripts/lib on its own: runs the code with every library loaded, as the commands get them
 lib() {
-  bash -c "set -euo pipefail; $(cat "$SCRIPTS"/lib/{core,flake,release,files,apps,tpm}.sh); $1" >"$work/out" 2>&1 </dev/null
+  bash -c "set -euo pipefail; controld_id_re=$(printf %q "$CONTROLD_ID_RE"); $(cat "$SCRIPTS"/lib/{core,flake,release,files,apps,tpm}.sh); $1" >"$work/out" 2>&1 </dev/null
 }
 
 flake_at v4.2.0
@@ -313,6 +316,9 @@ printf '\x06\x00\x00\x00\x01' >"$tr/sys/firmware/efi/efivars/SecureBoot-8be4df61
 if ((absent == 0)) && EPHEMERAL_ROOT=$tr lib 'tpm_present && [[ $(efi_flag SecureBoot) == 1 ]]'; then
   pass "lib: tpm_present and efi_flag see the TPM and the firmware's Secure Boot state, and their absence"
 else fail "lib: tpm_present or efi_flag"; fi
+if lib 'valid_controld_id abc-1_2 && ! valid_controld_id "a b" && ! valid_controld_id "x;y" && ! valid_controld_id ""'; then
+  pass "lib: valid_controld_id takes the rule from the settings rules"
+else fail "lib: valid_controld_id"; fi
 
 if lib 'ask "go on?"'; then fail "lib: ask said yes without a terminal"; else
   pass "lib: ask is a no without a terminal"

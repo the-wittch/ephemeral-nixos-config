@@ -19,6 +19,28 @@ An opinionated NixOS for one person on one machine. `/` is wiped at every boot; 
 
 A machine only ever builds a pinned, released tag. Nothing builds from a branch.
 
+## One owner for each thing
+
+Every fact the two repos share has one owner. The other side reads it from a release it pins, never from a branch. The installer has its own [ARCHITECTURE.md](https://github.com/the-wittch/ephemeral-nixos/blob/main/ARCHITECTURE.md) for its side of these.
+
+| what | owner | read by |
+|---|---|---|
+| the settings: names, rules, allowed values, defaults | `modules/settings/_rules.nix` and `_schema.nix` | the rebuild; `controld.nix` and the helper commands, through `packages.nix`; exported for the installer as the `settings-contract` package and the `settings` output |
+| the app catalog: ids, labels, categories, defaults, desktops | `ephemeral.apps`, one file per category in `modules/apps/` | `ephemeral-apps`, `host-builder.nix`, and the installer, through the `app-catalog` package |
+| the disk layout | `modules/_disko-layout.nix` | disko when installing, the rebuild, and the disk test |
+| what's kept across reboots | the feature that needs it, in `environment.persistence."/persist"` | impermanence, `ephemeral-doctor kept` and `audit`, and the boot test, which reads the same list |
+| the version | the newest heading in `CHANGELOG.md` | `modules/release.nix`, `ephemeral-update --list`, and the release scripts |
+| the installer's wording, screens, disk checks and install steps | the installer | nothing here |
+
+`settings-contract` and `settings` are a public interface, like the aspect names: renaming or removing what they hold is a breaking change for the installer.
+
+Where things go:
+
+- **A setting**: its rule in `_rules.nix` if it has one, its option in `_schema.nix`, a row in `docs/settings.md`, its default in `settings.example.json`, and the aspect it switches in `host-builder.nix`. CI fails on a missing row or default. The contract carries the rule to the installer; asking about the setting on its screens is the installer's job.
+- **An app**: one entry in `ephemeral.apps`. The installer and `ephemeral-apps` both list it from there.
+- **A desktop**: its value in `_rules.nix`, its aspects in `modules/desktop/`, and its full and minimal variants agreeing as `desktop-parity` checks. The installer needs its own label and description for it before offering it.
+- **Anything else a machine does**: a file in `modules/`, as the module rules below say.
+
 ## Layout
 
 - **`modules/` is what machines get.** Every `.nix` file in it is a flake-parts module, loaded by import-tree. Paths with `/_` are skipped, and that is the only exclusion.
@@ -34,7 +56,7 @@ A machine only ever builds a pinned, released tag. Nothing builds from a branch.
 4. **Dependencies are imports, through `config.ephemeral.aspects`.** An aspect that sets another's options imports it. Each aspect has a key there, so importing one from several places applies it once. Never import `config.flake.modules.<class>.<name>` directly.
 5. **Home Manager config is always a named `homeManager.*` aspect.** NixOS aspects only switch it on, with `home-manager.sharedModules`.
 6. **`host-builder.nix` is the only place a machine is composed**, from typed settings to a list of aspects.
-7. **Settings are evaluated once, on their own, before anything is composed.** Their options and defaults are in `settings/_schema.nix`, and nowhere else.
+7. **Settings are evaluated once, on their own, before anything is composed.** What each may be is in `settings/_rules.nix`; their options and defaults, built from it, are in `settings/_schema.nix`. Nothing else, here or in the installer, keeps its own copy.
 8. **Prefer the module system to scripts.** Use options, tmpfiles and systemd units. An activation script needs a reason it can't be one of those, written next to it.
 9. **Priorities have names.** Use `mkDefault`, `mkOptionDefault` and `mkForce`. A number in `mkOverride` needs a comment saying why.
 10. **A full and a minimal variant of the same thing agree**, except where `allowedDrift` in `flake/checks.nix` says why they don't.

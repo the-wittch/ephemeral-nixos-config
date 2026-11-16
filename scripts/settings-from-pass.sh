@@ -96,7 +96,7 @@ done
 
 resolver=$(get_field controldResolver || true)
 if [[ -n ${resolver:-} ]]; then
-  if [[ ! $resolver =~ ^[A-Za-z0-9_-]+$ ]]; then
+  if ! valid_controld_id "$resolver"; then
     echo "  ! controldResolver has unexpected characters" >&2
     exit 1
   fi

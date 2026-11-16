@@ -18,6 +18,9 @@ let
     unfree = app.unfree != [ ];
   }) config.ephemeral.apps;
 
+  # the rules the commands check by, from where the settings schema gets them
+  rulesSh = "controld_id_re=${lib.escapeShellArg (import ../settings/_rules.nix).controldResolver}\n";
+
   # every command gets all of them; a function no command calls costs nothing
   shellLib = map (name: ../../scripts/lib/${name}.sh) [
     "core"
@@ -206,6 +209,7 @@ in
           runtimeInputs = tool.deps;
           text =
             lib.concatStrings (lib.mapAttrsToList (k: v: "${k}=${lib.escapeShellArg v}\n") (tool.env or { }))
+            + rulesSh
             + lib.concatMapStrings builtins.readFile shellLib
             + builtins.readFile ../../scripts/${name}.sh;
           meta.description = tool.description;

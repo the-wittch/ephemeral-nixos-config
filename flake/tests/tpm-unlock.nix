@@ -73,9 +73,11 @@ in
             onLuks = nodes.machine.specialisation.on-luks.configuration.system.build.toplevel;
           in
           ''
+            from datetime import timedelta
+
             def asked():
                 # whichever prompt came last on the console
-                machine.wait_for_console_text(r"TPM2 PIN|assphrase")
+                machine.wait_for_console_text(r"TPM2 PIN|assphrase", timeout=timedelta(minutes=3))
                 log = machine.get_console_log()
                 return "pin" if log.rfind("TPM2 PIN") > log.rfind("assphrase") else "passphrase"
 
@@ -99,7 +101,11 @@ in
                 dump = machine.succeed("cryptsetup luksDump ${luks}")
                 assert "systemd-tpm2" in dump, "no TPM token in the LUKS header"
                 machine.succeed("cryptsetup close cryptroot")
-                machine.succeed("${onLuks}/bin/switch-to-configuration boot >&2")
+                # Limine always starts the newest generation's main system, never a specialisation
+                machine.succeed(
+                    "nix-env -p /nix/var/nix/profiles/system --set ${onLuks}"
+                    " && ${onLuks}/bin/switch-to-configuration boot >&2"
+                )
 
             with subtest("the PIN unlocks the disk, without the passphrase"):
                 boot()

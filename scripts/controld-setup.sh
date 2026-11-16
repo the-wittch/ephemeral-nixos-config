@@ -55,7 +55,7 @@ current_id() {
 
 write_id() {
   local id=$1
-  [[ $id =~ ^[A-Za-z0-9_-]+$ ]] || die "resolver id must be letters, digits, _ or -"
+  valid_controld_id "$id" || die "resolver id must be letters, digits, _ or -"
   write_root_file "$ID_FILE" "$id"
 }
 
@@ -89,7 +89,7 @@ set_id() {
   id=$(gum input --header "Control D resolver id" --value "$current" --placeholder "your-resolver-id") || return 0
   id=$(printf '%s' "$id" | tr -d '[:space:]')
   [[ -z $id ]] && return 0
-  if [[ ! $id =~ ^[A-Za-z0-9_-]+$ ]]; then
+  if ! valid_controld_id "$id"; then
     gum style --foreground 1 "Id must be letters, digits, _ or -"
     return 1
   fi
