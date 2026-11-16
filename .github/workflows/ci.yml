@@ -122,6 +122,9 @@ jobs:
       - name: disk
         if: steps.changes.outputs.code == 'true'
         run: nix build path:.#checks.x86_64-linux.disk -L --no-link
+      - name: update from the previous release's systemd-boot to Limine
+        if: steps.changes.outputs.code == 'true'
+        run: nix build path:.#checks.x86_64-linux.bootloader-switch -L --no-link
 
   # The boot tests only build GNOME. This builds every desktop and most feature hosts, so a config
   # that fails to build (Umbriel's and Noctalia's are checked when built) or a package nixpkgs broke

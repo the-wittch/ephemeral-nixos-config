@@ -65,7 +65,7 @@ cp hardware-configuration.example.nix hardware-configuration.nix
 Build the VM tests one at a time:
 
 ```bash
-for t in boot boot-minimal upgrade disk desktop-boot-umbriel upgrade-boot profile-switch network-filter; do
+for t in boot boot-minimal upgrade disk bootloader-switch desktop-boot-umbriel upgrade-boot profile-switch network-filter; do
   nix build "path:.#checks.x86_64-linux.$t" -L --no-link
 done
 ```
