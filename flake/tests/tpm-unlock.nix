@@ -64,6 +64,9 @@ in
                 };
               };
               virtualisation.rootDevice = "/dev/mapper/cryptroot";
+              # with the splash on, the prompt is drawn on the screen and never reaches the
+              # serial console the test reads and types into
+              boot.plymouth.enable = lib.mkForce false;
             };
           };
 
