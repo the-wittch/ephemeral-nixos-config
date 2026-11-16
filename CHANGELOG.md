@@ -20,6 +20,7 @@ Breaking changes are listed first in each release, with what to do about them. R
 - If `/` had never been reset since the install, `root-reset-check` skipped itself instead of failing, so `ephemeral-doctor` didn't say so. A missing reset marker now fails it.
 - `ephemeral-backup` wrote to the encrypted disk itself when asked, though a reinstall erases it with everything else. It refuses that now, as `luks-header-backup` already did. A backup that's stopped partway is removed instead of left looking like a finished one.
 - `settings.from-pass.json` could turn Control D off, so someone who could edit your Proton Pass settings item could send DNS back to the network unencrypted. It can still turn Control D on.
+- When OpenSnitch's daemon crashed, every program could connect out until it restarted 30 seconds later, because its own rules let traffic past while nothing is listening. New connections out are now refused until it's filtering again, and it restarts after 2 seconds. Stopping it with `systemctl stop` still lets everything through.
 - A pull request titled `release vX.Y.Z` would have been released when merged. Only a merge from the `release/vX.Y.Z` branch makes a release now.
 - `ephemeral-apps` and `controld-setup` could leave a temp file behind when they failed, and an interrupted settings edit could leave one in `/persist/etc/nixos`, where the next rebuild would copy it into the store. Files in the flake are now replaced in one step, and the Control D id goes to its file from a pipe.
 

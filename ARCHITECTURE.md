@@ -78,7 +78,7 @@ What checks each one:
 | 2 | `scripts-behaviour`: key files, tokens in files and tokens in a git remote stop a rebuild; an ordinary flake doesn't |
 | 3 | `boot`: secrets written with loose modes are root-only after a reboot |
 | 4 | `exposure-eval`: no root password and `mutableUsers` off on every desktop and profile; `boot`: root locked, sudo refused outside `wheel`, the Nix daemon refused outside `wheel` |
-| 5 | `exposure-eval`: firewall on, no open ports, SSH off and OpenSnitch on, on every desktop and profile; `boot`: IPv4 and IPv6 refuse what isn't allowed, `sshd` isn't running, nothing new listens beyond loopback; `network-filter`: an unapproved program can't reach another machine |
+| 5 | `exposure-eval`: firewall on, no open ports, SSH off and OpenSnitch on, on every desktop and profile; `boot`: IPv4 and IPv6 refuse what isn't allowed, `sshd` isn't running, nothing new listens beyond loopback; `network-filter`: an unapproved program can't reach another machine, while OpenSnitch runs or after it crashes |
 | 6 | `sandbox-eval`, which finds the services from where they're defined |
 | 7, 8 | `settings-reject`, the installer's validation cases (shared by its Go and shell tests), and the script tests |
 | 9 | `boot`: the sysctls, kernel command line and blocked modules are in effect |

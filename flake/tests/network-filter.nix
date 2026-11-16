@@ -74,21 +74,38 @@ in
               machine.succeed("wget -q -T 20 -O /dev/null http://server:8000/")
               assert not curl_gets_through(), "curl reached the server with no rule allowing it"
 
-          # measured, not asserted: what each one does is what decides how OpenSnitch should be set up
-          with subtest("measure: OpenSnitch stopped"):
+          def unit(prop):
+              return machine.succeed(f"systemctl show -p {prop} --value opensnitchd.service").strip()
+
+          # stopping it on purpose is the way to get the network back if OpenSnitch is in the way
+          with subtest("a stopped OpenSnitch lets traffic through"):
               machine.succeed("systemctl stop opensnitchd.service")
-              print(f"MEASURED stopped: unapproved traffic {'gets through' if curl_gets_through() else 'is blocked'}")
+              assert curl_gets_through(), "curl couldn't connect with OpenSnitch stopped"
               machine.succeed("systemctl start opensnitchd.service")
               filtering()
+              assert not curl_gets_through(), "curl reached the server after OpenSnitch started again"
 
-          with subtest("measure: OpenSnitch crashed, before it restarts"):
+          # once the killed process is gone and the stop is handled, OpenSnitch is either down behind
+          # the guard table or already filtering again; curl must be refused either way
+          with subtest("a crashed OpenSnitch blocks traffic until it's back"):
+              killed = unit("MainPID")
               machine.succeed("systemctl kill --signal=KILL opensnitchd.service")
-              print(f"MEASURED crashed: unapproved traffic {'gets through' if curl_gets_through() else 'is blocked'}")
+              machine.wait_until_succeeds(
+                  f"[ \"$(systemctl show -p MainPID --value opensnitchd.service)\" != {killed} ] && [ \"$(systemctl show -p SubState --value opensnitchd.service)\" != stop-post ]",
+                  timeout=timedelta(seconds=30),
+              )
+              print(f"MEASURED crashed: checked in state {unit('SubState')}")
+              assert not curl_gets_through(), "curl reached the server while OpenSnitch was down"
 
-          with subtest("a crashed OpenSnitch comes back and blocks again"):
-              machine.wait_until_succeeds("systemctl is-active --quiet opensnitchd.service", timeout=timedelta(seconds=120))
+          with subtest("a crashed OpenSnitch comes back, filters again and lifts the guard"):
+              machine.wait_until_succeeds(
+                  f"pid=$(systemctl show -p MainPID --value opensnitchd.service); [ \"$pid\" != 0 ] && [ \"$pid\" != {killed} ]",
+                  timeout=timedelta(seconds=120),
+              )
               filtering()
+              machine.fail("nft list table inet opensnitch-down")
               assert not curl_gets_through(), "curl reached the server after OpenSnitch restarted"
+              machine.succeed("wget -q -T 20 -O /dev/null http://server:8000/")
 
           with subtest("measure: where OpenSnitch starts in the boot"):
               print("MEASURED ordering: " + machine.succeed("systemctl show -p After -p WantedBy opensnitchd.service").replace("\n", " "))

@@ -67,6 +67,8 @@ That only lasts until the network reconnects. If it still doesn't load, run `eph
 
 **An app can't connect.** Check OpenSnitch's rules first (see the note in the [README](../README.md)).
 
+**Nothing can connect, and `systemctl status opensnitchd` shows it failed.** When OpenSnitch crashes, new connections out are refused until it's running again, so one that keeps crashing leaves you offline. `sudo systemctl restart opensnitchd` tries again; if it still fails, `sudo nft destroy table inet opensnitch-down` lets traffic through until the next reboot, and `ephemeral-report` collects what's needed to report it.
+
 ## Reporting a problem
 
 Run `ephemeral-report`, read it, and paste it into a [new issue](https://github.com/the-wittch/ephemeral-nixos-config/issues/new/choose). It lists versions, settings, what `ephemeral-doctor` found, the last lines of each failed service and recent errors, and leaves out user, host and vault names. It's on the small install too.
