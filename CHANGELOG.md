@@ -12,7 +12,6 @@ Breaking changes are listed first in each release, with what to do about them. R
 - `ephemeral-doctor --fix-root-reset` only goes ahead when its question is answered in a terminal.
 - `ephemeral-apps` stops on a leftover `settings.nix`, as a rebuild does, instead of showing every desktop's apps.
 - The root services this repo adds run with a system call filter, and Control D's also gets a private `/tmp` and no device access.
-- `/persist/.snapshots` is made by a tmpfiles rule instead of a root service that could write anywhere on `/persist`. Nothing changes on existing machines.
 
 ### Fixed
 

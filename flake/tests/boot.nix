@@ -82,7 +82,8 @@ in
 
                 for unit in ["nix-daemon.socket", "systemd-resolved.service", "controld-resolver.service",
                              "flatpak-flathub.service", "home-manager-alice.service",
-                             "display-manager.service", "snapper-timeline.timer"]:
+                             "display-manager.service",
+                             "snapper-persist-setup.service", "snapper-timeline.timer"]:
                     machine.succeed(f"systemctl is-active --quiet {unit}")
                 print(f"ok: boot {boot} is clean")
 

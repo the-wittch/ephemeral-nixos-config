@@ -120,7 +120,7 @@ in
         assert lib.assertMsg (lib.all (n: lib.elem n defined) [
           "root-reset-check"
           "controld-resolver"
-          "flatpak-flathub"
+          "snapper-persist-setup"
         ]) "sandbox-eval found only: ${toString defined}";
         assert lib.assertMsg (loose == [ ]) ''
           root services from modules/ without the sandbox: ${toString loose}
