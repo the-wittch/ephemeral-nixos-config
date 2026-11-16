@@ -7,9 +7,27 @@ if ! command -v gum >/dev/null; then
   exit 1
 fi
 
-FLAKE_DIR=${FLAKE_DIR:-/persist/etc/nixos}
-SETTINGS=$(settings_json "$FLAKE_DIR")
-PASS_SETTINGS="$FLAKE_DIR/settings.from-pass.json"
+usage() {
+  cat <<'USAGE'
+controld-setup
+Set or turn off the Control D resolver id. It's kept in /persist/etc/controld-resolver,
+readable only by root, and useControlD is set in settings.json.
+USAGE
+}
+
+case ${1:-} in
+  -h | --help)
+    usage
+    exit 0
+    ;;
+  "") ;;
+  *) usage_error ;;
+esac
+
+require_tty
+flake=$(require_flake)
+SETTINGS=$(settings_json "$flake")
+PASS_SETTINGS="$flake/settings.from-pass.json"
 ID_FILE=/persist/etc/controld-resolver
 
 flag_in() {
@@ -36,12 +54,9 @@ current_id() {
 }
 
 write_id() {
-  local id=$1 tmp
+  local id=$1
   [[ $id =~ ^[A-Za-z0-9_-]+$ ]] || die "resolver id must be letters, digits, _ or -"
-  tmp=$(mktemp)
-  printf '%s\n' "$id" >"$tmp"
-  sudo install -m 600 -o root -g root "$tmp" "$ID_FILE"
-  rm -f "$tmp"
+  write_root_file "$ID_FILE" "$id"
 }
 
 show_status() {

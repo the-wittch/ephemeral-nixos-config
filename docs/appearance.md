@@ -33,7 +33,7 @@ Some Stylix features are switched off:
 
 ## Plasma
 
-On the full profile, Plasma is set up with [plasma-manager](https://github.com/nix-community/plasma-manager) in `modules/desktop/plasma-home.nix`:
+On the full system, Plasma is set up with [plasma-manager](https://github.com/nix-community/plasma-manager) in `modules/desktop/plasma-home.nix`:
 
 - [Krohnkite](https://codeberg.org/anametologin/Krohnkite) tiles windows, starting in three columns. `Meta+F` floats or tiles a window, `Meta+\` cycles the layouts, and Steam always floats. Turn it off in System Settings, Window Management, KWin Scripts.
 - The colors come from the desktop wallpaper. [matugen](https://github.com/InioX/matugen) makes a dark color scheme from it at login and again whenever you pick a new wallpaper. Fonts and the cursor are the same as everywhere else.

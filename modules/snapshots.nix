@@ -17,7 +17,8 @@
         };
       };
 
-      # a subvolume, so snapshots don't contain each other
+      # a subvolume, so snapshots don't contain each other. Not a tmpfiles v line: that makes a
+      # subvolume only when / is one, so where / is in memory, as in the VM tests, it makes a folder.
       # root only: old snapshots hold old hashes and keys
       systemd.services.snapper-persist-setup = {
         description = "Create the snapper subvolume on /persist";

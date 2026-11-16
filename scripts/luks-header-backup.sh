@@ -15,6 +15,7 @@ case ${1:-} in
     [[ -n ${1:-} ]] && exit 0
     exit 2
     ;;
+  -*) usage_error ;;
 esac
 
 dest=$1
@@ -26,18 +27,7 @@ dir=$(cd -- "$dir" && pwd)
 luks=$(sudo cryptsetup status cryptroot | awk '$1 == "device:" { print $2 }')
 [[ -b $luks ]] || die "could not find the device behind cryptroot"
 
-src=$(findmnt -no SOURCE -T "$dir")
-src=${src%%\[*}
-fstype=$(findmnt -no FSTYPE -T "$dir")
-case $fstype in
-  tmpfs | ramfs) die "$dir is in memory and won't survive a reboot; use a USB stick or another disk" ;;
-esac
-if [[ -b $src ]] && lsblk -nslpo NAME "$src" | grep -qxF "$luks"; then
-  die "$dir is on the encrypted disk itself; use a USB stick or another disk"
-fi
-if [[ ! -b $src ]]; then
-  echo "warning: $dir is on $src ($fstype), make sure that's not this disk" >&2
-fi
+check_offline_destination "$dir"
 
 tmp=$(mktemp -d)
 trap 'sudo rm -rf "$tmp"' EXIT

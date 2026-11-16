@@ -2,21 +2,25 @@
 
 set -euo pipefail
 
-case ${1:-} in
-  -h | --help)
-    cat <<'USAGE'
+usage() {
+  cat <<'USAGE'
 ephemeral-passwd
 Change your login password. passwd doesn't stick here, because users come from
 the config; the password lives in /persist/passwords/<you>.
 USAGE
+}
+
+case ${1:-} in
+  -h | --help)
+    usage
     exit 0
     ;;
   "") ;;
-  *) die "unknown argument: $1 (try --help)" ;;
+  *) usage_error ;;
 esac
 
 [[ $EUID -ne 0 ]] || die "run ephemeral-passwd as your user"
-[[ -t 0 ]] || die "ephemeral-passwd needs a terminal to ask for the password"
+require_tty
 
 user=$(id -un)
 file=/persist/passwords/$user
@@ -32,7 +36,7 @@ echo
 hash=$(printf '%s\n' "$one" | mkpasswd -m yescrypt --stdin)
 unset one two
 # an empty or broken file here locks you out at the next boot
-[[ $hash == "\$y\$"* &&$hash != *[[:space:]:]* ]] || die "mkpasswd didn't give a yescrypt hash; nothing changed"
+[[ $hash == "\$y\$"* && $hash != *[[:space:]:]* ]] || die "mkpasswd didn't give a yescrypt hash; nothing changed"
 
 printf '%s\n' "$hash" | sudo install -m 600 -o root -g root /dev/stdin "$file.new"
 sudo mv -f "$file.new" "$file"

@@ -44,7 +44,10 @@ jobs:
           nix run --inputs-from path:. nixpkgs#zizmor -- --offline .github/workflows/
       - name: shellcheck
         if: steps.changes.outputs.code == 'true'
-        run: nix run --inputs-from path:. nixpkgs#shellcheck -- -x -P SCRIPTDIR scripts/*.sh .github/*.sh .githooks/* flake/tests/_scripts.sh
+        run: nix run --inputs-from path:. nixpkgs#shellcheck -- -x -P SCRIPTDIR scripts/*.sh scripts/lib/*.sh .github/*.sh .githooks/* flake/tests/_scripts.sh
+      - name: shfmt
+        if: steps.changes.outputs.code == 'true'
+        run: nix run --inputs-from path:. nixpkgs#shfmt -- -i 2 -ci -d scripts .github/*.sh .githooks/* flake/tests/_scripts.sh
       - name: nixfmt
         if: steps.changes.outputs.code == 'true'
         run: git ls-files -z '*.nix' | xargs -0 nix run --inputs-from path:. nixpkgs#nixfmt -- --check
@@ -219,3 +222,6 @@ jobs:
       - name: switch from the small install to the full system and back
         if: steps.changes.outputs.code == 'true'
         run: nix build path:.#checks.x86_64-linux.profile-switch -L --no-link
+      - name: OpenSnitch against a second machine
+        if: steps.changes.outputs.code == 'true'
+        run: nix build path:.#checks.x86_64-linux.network-filter -L --no-link

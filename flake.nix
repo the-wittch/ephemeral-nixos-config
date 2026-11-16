@@ -1,5 +1,5 @@
 {
-  description = "Ephemeral Nix: impermanence, LUKS, btrfs (Plasma / GNOME / niri)";
+  description = "Ephemeral Nix: an encrypted btrfs NixOS whose root is wiped at every boot, with Plasma, GNOME, niri or Umbriel";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";

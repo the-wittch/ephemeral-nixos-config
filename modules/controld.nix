@@ -22,6 +22,8 @@
         RuntimeDirectoryPreserve = "yes";
         ProtectSystem = "strict";
         ProtectHome = true;
+        PrivateTmp = true;
+        PrivateDevices = true;
         PrivateNetwork = true;
         NoNewPrivileges = true;
         CapabilityBoundingSet = [ "CAP_CHOWN" ];
@@ -37,6 +39,10 @@
         LockPersonality = true;
         MemoryDenyWriteExecute = true;
         SystemCallArchitectures = "native";
+        SystemCallFilter = [ "@system-service" ];
+        SystemCallErrorNumber = "EPERM";
+        RestrictRealtime = true;
+        ProtectProc = "invisible";
       };
       script = ''
         set -euo pipefail

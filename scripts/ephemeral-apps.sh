@@ -17,41 +17,22 @@ case ${1:-} in
     exit 0
     ;;
   "") ;;
-  *)
-    usage >&2
-    exit 2
-    ;;
+  *) usage_error ;;
 esac
 
 [[ $EUID -ne 0 ]] || die "run ephemeral-apps as your user; Flatpaks are installed for you"
 [[ -n ${CATALOG:-} && -f $CATALOG ]] || die "no app catalog"
+require_tty
+flake=$(require_flake)
+APPS="$flake/apps.json"
 
-FLAKE_DIR=${FLAKE_DIR:-/persist/etc/nixos}
-APPS="$FLAKE_DIR/apps.json"
-[[ -f $FLAKE_DIR/flake.nix ]] || die "no flake at $FLAKE_DIR (set FLAKE_DIR)"
-
-desktop=$(jq -r '.desktop // empty' "$FLAKE_DIR/settings.json" 2>/dev/null || true)
-
-# apps ticked by default are picked unless apps.json has them as -<name>
-declare -A picked=() before=() unpicked=()
-if [[ -f $APPS ]]; then
-  jq -e 'type == "array" and all(.[]; type == "string")' "$APPS" >/dev/null ||
-    die "$APPS has to be a list of app names"
-  while IFS= read -r id; do
-    if [[ $id == -* ]]; then
-      unpicked[${id#-}]=1
-    else
-      picked[$id]=1
-    fi
-  done < <(jq -r '.[]' "$APPS")
-fi
-mapfile -t defaults < <(jq -r 'to_entries | map(select(.value.default)) | .[].key' "$CATALOG")
-for id in "${defaults[@]}"; do
-  [[ -n ${unpicked[$id]:-} ]] || picked[$id]=1
-done
-for id in "${!picked[@]}"; do
+desktop=$(setting desktop)
+apps_check "$APPS"
+declare -A picked=() before=()
+while IFS= read -r id; do
+  picked[$id]=1
   before[$id]=1
-done
+done < <(apps_picked "$CATALOG" "$APPS")
 
 row() {
   jq -r --arg id "$1" '.[$id] |
@@ -61,11 +42,7 @@ row() {
     + (if .warn then " · read the warning" else "" end)' "$CATALOG"
 }
 
-ids_in() {
-  jq -r --arg c "$1" --arg d "$desktop" 'to_entries
-    | map(select(.value.category == $c and (.value.desktops == [] or $d == "" or (.value.desktops | index($d)))))
-    | sort_by(.value.label | ascii_downcase) | .[].key' "$CATALOG"
-}
+ids_in() { apps_offered "$CATALOG" "$desktop" "$1"; }
 
 pick_category() {
   local category=$1 id line out
@@ -97,7 +74,7 @@ pick_category() {
   done <<<"$out"
 }
 
-mapfile -t categories < <(jq -r --arg d "$desktop" '[.[] | select(.desktops == [] or $d == "" or (.desktops | index($d))) | .category] | unique | .[]' "$CATALOG")
+mapfile -t categories < <(apps_categories "$CATALOG" "$desktop")
 
 gum style --bold --foreground 212 "Apps"
 echo
@@ -153,22 +130,8 @@ done
 
 gum confirm "Save these changes?" || exit 0
 
-lines=("${!picked[@]}")
-for id in "${defaults[@]}"; do
-  [[ -n ${picked[$id]:-} ]] || lines+=("-$id")
-done
-tmp=$(mktemp)
-if ((${#lines[@]})); then
-  printf '%s\n' "${lines[@]}" | sort | jq -R . | jq -s . >"$tmp"
-else
-  echo '[]' >"$tmp"
-fi
-if [[ -w $FLAKE_DIR ]]; then
-  install -m 644 "$tmp" "$APPS"
-else
-  sudo install -m 644 "$tmp" "$APPS"
-fi
-rm -f "$tmp"
+content=$(printf '%s\n' "${!picked[@]}" | apps_file "$CATALOG")
+printf '%s\n' "$content" | write_flake_file "$APPS" 644
 gum style --foreground 2 "Saved $APPS"
 
 if gum confirm "Rebuild now?"; then

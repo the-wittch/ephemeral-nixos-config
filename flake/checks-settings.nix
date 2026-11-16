@@ -85,6 +85,15 @@ let
       }
     );
   wronglyAccepted = lib.attrNames (lib.filterAttrs (_: check) refused);
+  loaded =
+    root:
+    import ../modules/settings/_load.nix {
+      inherit lib;
+      flakeRoot = root;
+    };
+  # the Pass file can turn Control D on, and change the hostname, but not turn Control D off
+  passOff = loaded ../tests/pass-controld-off;
+  passOn = loaded ../tests/pass-controld-on;
   loaderAccepts = lib.filter load [
     ../tests/reject-legacy
     ../tests/reject-controld
@@ -99,6 +108,10 @@ in
         assert lib.assertMsg (wronglyAccepted == [ ])
           "these settings are accepted but have to be refused: ${lib.concatStringsSep ", " wronglyAccepted}";
         assert lib.assertMsg (loaderAccepts == [ ]) "the loader accepted ${toString loaderAccepts}";
+        assert lib.assertMsg (
+          passOff.useControlD && passOff.hostname == "frompass"
+        ) "settings.from-pass.json turned Control D off, or its other keys didn't apply";
+        assert lib.assertMsg passOn.useControlD "settings.from-pass.json couldn't turn Control D on";
         pkgs.runCommand "settings-reject" { } "touch $out";
     };
 }

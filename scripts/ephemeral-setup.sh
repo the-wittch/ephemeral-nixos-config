@@ -2,30 +2,33 @@
 
 set -euo pipefail
 
-case ${1:-} in
-  -h | --help)
-    cat <<'USAGE'
+usage() {
+  cat <<'USAGE'
 ephemeral-setup
 Switch between the minimal and full profile and turn the main options on or off,
 then rebuild. Run it again any time to change them.
 USAGE
+}
+
+case ${1:-} in
+  -h | --help)
+    usage
     exit 0
     ;;
   "") ;;
-  *) die "unknown argument: $1 (try --help)" ;;
+  *) usage_error ;;
 esac
 
 [[ $EUID -ne 0 ]] || die "run ephemeral-setup as your user; it asks for sudo when it needs it"
+require_tty
+flake=$(require_flake)
+refuse_secret_files "$flake"
 
-FLAKE_DIR=${FLAKE_DIR:-/persist/etc/nixos}
-[[ -f $FLAKE_DIR/flake.nix ]] || die "no flake at $FLAKE_DIR (set FLAKE_DIR)"
-refuse_secret_files "$FLAKE_DIR"
-
-SETTINGS=$(settings_json "$FLAKE_DIR")
-if [[ ! -w $SETTINGS ]]; then
-  gum confirm "$FLAKE_DIR belongs to root. Make it yours, so it can be edited and kept in git?" ||
+SETTINGS=$(settings_json "$flake")
+if flake_needs_owner "$flake"; then
+  gum confirm "$flake belongs to root. Make it yours, so it can be edited and kept in git?" ||
     die "nothing changed"
-  sudo chown -R "$USER": "$FLAKE_DIR"
+  sudo chown -R "$USER": "$flake"
 fi
 
 get() { jq -r --arg k "$1" '.[$k] // empty' "$SETTINGS"; }

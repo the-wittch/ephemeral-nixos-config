@@ -17,9 +17,21 @@
 | `flake/tests/` | the VM tests (boot, upgrade, disk layout, desktops, switching profiles) and the helper command tests |
 | `tests/` | machines CI evaluates (each desktop, full and minimal), and `upgrade/previous.json`, the release the upgrade test starts from |
 | `docs/` | the user docs; the README links each page |
-| `scripts/` | the helper commands' source and the secret scanner |
+| `scripts/` | the helper commands' source and the secret scanner; `scripts/lib/` has what they share |
 
 The installer adds no modules to the machines it installs: its `flake.nix` is the machine flake from the [README](../README.md#rebuild-and-update), pinned to a release of this repo. A change here reaches new installs once the installer pins a release with it.
+
+Each helper command is a Bash script. `modules/packages/packages.nix` builds it with `writeShellApplication`, with the files in `scripts/lib/` in front of it, so the commands share one way of finding the flake, reading settings, writing files, checking release tags and asking questions:
+
+| file | what |
+|------|------|
+| `core.sh` | `die`, `usage_error` (exit 2), `require_tty`, and `ask`, which is a no without a terminal |
+| `flake.sh` | the flake folder, `settings.json`, writing into the flake atomically, and the secret check |
+| `release.sh` | the release a flake pins, the newest one, and comparing them |
+| `files.sh` | writing a root-only file from a pipe, and checking a backup goes somewhere that outlives this disk |
+| `apps.sh` | the rules for `apps.json`, without the screens |
+
+A command's `deps` in `packages.nix` lists every tool it runs, the ones the `scripts/lib/` functions it calls run included. Three come from the system instead and aren't listed: `sudo`, which has to be the setuid wrapper in `/run/wrappers`, and `nix` and `systemctl`, which have to match the running daemon and systemd. The commands with questions use gum, and stop when there's no terminal rather than do nothing.
 
 Turn on the git hooks once per clone:
 
@@ -29,14 +41,16 @@ git config core.hooksPath .githooks
 
 They refuse machine files (`settings.json`, `smb-shares.json`, `hardware-configuration.nix`), `modules/local/`, credentials, private keys and API tokens. pre-push checks every commit you're pushing, so a secret that was added and later deleted is still caught, and CI scans the whole history. `SKIP_SECRET_CHECK=1` skips them on purpose.
 
-On every pull request, CI runs the secret scan, actionlint and zizmor on the workflows, shellcheck and nixfmt. Then `.github/eval-checks.sh` evaluates every check and builds the ones that don't boot a VM, which takes a few minutes. Among them:
+On every pull request, CI runs the secret scan, actionlint and zizmor on the workflows, shellcheck, shfmt (`-i 2 -ci`) and nixfmt. Then `.github/eval-checks.sh` evaluates every check and builds the ones that don't boot a VM, which takes a few minutes. Among them:
 
 - `features-eval` evaluates a machine with each optional feature on by itself, and one with all of them, and checks each really is on.
+- `exposure-eval` checks every desktop and profile for an open port, SSH, a root password, users that can change outside the config, and OpenSnitch turned off where it should be on.
+- `sandbox-eval` finds each root service a file in `modules/` defines, and fails on one without the sandbox unless `flake/checks-security.nix` says why.
 - `settings-reject` checks that bad `settings.json` values stay refused: an unknown desktop, a disk path with `..`, a vault name with `$`, an old `settings.nix`.
-- `scripts-behaviour` runs `ephemeral-update`, `ephemeral-passwd` and `ephemeral-doctor audit` against fake `curl`, `nh`, `sudo` and `systemctl`: what gets offered, what gets refused, that a bad password never replaces the old one, and what the audit reports.
+- `scripts-behaviour` runs `ephemeral-update`, `ephemeral-passwd`, `ephemeral-doctor audit` and `ssh-pubs-from-pass` against fake `curl`, `nh`, `sudo` and `systemctl`: what gets offered, what gets refused, which secrets stop a rebuild, that a bad password never replaces the old one, and what the audit reports. It also tests the `scripts/lib/` functions on their own, and every command's `--help`, its refusal of an unknown option (exit 2, nothing run), and that the ones with questions stop without a terminal.
 - the installer still evaluates against this code, so a change that would break it shows before the installer moves to the release.
 
-When only docs changed (Markdown, `docs/`, the license, issue templates), the secret scan is all that runs; `.github/changed.sh` decides. The boot tests run on manual runs, and on a pull request once you add the `boot-test` label. Release pull requests always get the label, so every release is boot-tested before it's merged: `boot` boots the full profile three times with a wiped root and checks services, persistence, snapshots, theming and the LUKS header backup; `boot-minimal` boots the first-boot system twice and checks the wipe, the login screen, that nothing failed, and that the boot splash draws its passphrase prompt; `upgrade` boots a machine on the previous release (`tests/upgrade/previous.json`) and switches it to the current code; `disk` formats a VM disk with the real layout (LUKS, btrfs, the rollback the other tests switch off), checks the wipe and what survives it, then deletes `root-blank` and brings it back with the steps `ephemeral-doctor --fix-root-reset` runs. Beside them, `desktop-build` builds every desktop and most feature hosts, `desktop-boot-plasma`, `-niri` and `-umbriel` boot those desktops to their login screen, `upgrade-boot` boots the current code on the `/persist` a VM of the previous release wrote, and `profile-switch` switches a running small install to the full system, as `ephemeral-setup` does, then back.
+When only docs changed (Markdown, `docs/`, the license, issue templates), the secret scan is all that runs; `.github/changed.sh` decides. The boot tests run on manual runs, and on a pull request once you add the `boot-test` label. Release pull requests always get the label, so every release is boot-tested before it's merged: `boot` boots the full profile three times with a wiped root and checks services, persistence, snapshots, theming and the LUKS header backup; `boot-minimal` boots the first-boot system twice and checks the wipe, the login screen, that nothing failed, and that the boot splash draws its passphrase prompt; `upgrade` boots a machine on the previous release (`tests/upgrade/previous.json`) and switches it to the current code; `disk` formats a VM disk with the real layout (LUKS, btrfs, the rollback the other tests switch off), checks the wipe and what survives it, then deletes `root-blank` and brings it back with the steps `ephemeral-doctor --fix-root-reset` runs. Beside them, `desktop-build` builds every desktop and most feature hosts, `desktop-boot-plasma`, `-niri` and `-umbriel` boot those desktops to their login screen, `upgrade-boot` boots the current code on the `/persist` a VM of the previous release wrote, `profile-switch` switches a running small install to the full system, as `ephemeral-setup` does, then back, and `network-filter` checks OpenSnitch against a second machine and prints what gets through while it's stopped or has crashed.
 
 To run the checks locally, use the same script as CI:
 
@@ -51,7 +65,7 @@ cp hardware-configuration.example.nix hardware-configuration.nix
 Build the VM tests one at a time:
 
 ```bash
-for t in boot boot-minimal upgrade disk desktop-boot-umbriel upgrade-boot profile-switch; do
+for t in boot boot-minimal upgrade disk desktop-boot-umbriel upgrade-boot profile-switch network-filter; do
   nix build "path:.#checks.x86_64-linux.$t" -L --no-link
 done
 ```

@@ -2,8 +2,7 @@
 
 set -euo pipefail
 
-flake=${FLAKE_DIR:-/persist/etc/nixos}
-repo=the-wittch/ephemeral-nixos-config
+flake=$(flake_dir)
 header_marker=/persist/etc/ephemeral/luks-header-backup
 
 usage() {
@@ -36,6 +35,7 @@ percent_used() { df --output=pcent "$1" | tail -n 1 | tr -dc 0-9; }
 boot_time() { awk '/^btime/ { print $2 }' /proc/stat; }
 
 fix_root_reset() {
+  require_tty
   [[ $EUID -eq 0 ]] || exec sudo "$0" --fix-root-reset
   local top=/mnt/ephemeral-btrfs
   mkdir -p "$top"
@@ -45,8 +45,7 @@ fix_root_reset() {
     echo "root-blank is there, so that isn't what stopped the reset. journalctl -b -u rollback says what did."
     exit 1
   fi
-  read -r -p "Make an empty root-blank, so / is reset again from the next boot? [y/N] " answer
-  [[ ${answer:-n} =~ ^[Yy] ]] || exit 0
+  ask "Make an empty root-blank, so / is reset again from the next boot?" || exit 0
   btrfs subvolume create "$top/blank"
   btrfs subvolume snapshot -r "$top/blank" "$top/root-blank"
   btrfs subvolume delete "$top/blank"
@@ -162,10 +161,7 @@ case ${1:-} in
     exit 0
     ;;
   "") ;;
-  *)
-    usage >&2
-    exit 2
-    ;;
+  *) usage_error ;;
 esac
 
 # / is reset in the initrd; the check after boot says whether it happened
@@ -220,17 +216,16 @@ if systemctl cat snapper-timeline.timer >/dev/null 2>&1; then
 fi
 
 if [[ -r $flake/flake.nix ]]; then
-  pinned=$(sed -nE "s#.*\"github:$repo/(v[0-9]+\.[0-9]+\.[0-9]+)\".*#\1#p" "$flake/flake.nix" | head -n 1)
-  latest=$(curl -fsS --max-time 5 "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null |
-    jq -r '.tag_name // empty' 2>/dev/null) || latest=
+  pinned=$(pinned_release "$flake")
+  latest=$(latest_release)
   if [[ -z $pinned ]]; then
-    ok "the config pins its own release of $repo"
-  elif [[ ! $latest =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    ok "the config pins its own release of $(release_repo)"
+  elif [[ -z $latest ]]; then
     ok "the config is on $pinned (offline, so not compared with the newest)"
-  elif [[ $latest == "$pinned" || $(printf '%s\n' "$pinned" "$latest" | sort -V | tail -n 1) != "$latest" ]]; then
-    ok "the config is on $pinned, the newest release"
-  else
+  elif is_newer "$latest" "$pinned"; then
     warn "the config is on $pinned; $latest is out" "ephemeral-update"
+  else
+    ok "the config is on $pinned, the newest release"
   fi
   secrets=$(secret_files "$flake")
   if [[ -n $secrets ]]; then
