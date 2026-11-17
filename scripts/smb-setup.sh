@@ -109,7 +109,7 @@ add_share() {
     return 1
   fi
 
-  if read_list | grep -q "^${name}|"; then
+  if grep -q "^${name}|" <<<"$(read_list)"; then
     gum confirm "Label '$name' exists. Replace it?" || return 0
     sudo sed -i "/^${name}|/d" "$LIST_FILE"
   fi

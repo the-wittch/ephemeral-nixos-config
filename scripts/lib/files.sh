@@ -17,7 +17,8 @@ check_offline_destination() {
   luks=$(sudo cryptsetup status cryptroot 2>/dev/null | awk '$1 == "device:" { print $2 }') || luks=
   src=$(findmnt -no SOURCE -T "$dir")
   src=${src%%\[*}
-  if [[ -b $luks && -b $src ]] && lsblk -nslpo NAME "$src" | grep -qxF "$luks"; then
+  # lsblk read whole first: cut off by grep -q stopping early, pipefail would count it as no match
+  if [[ -b $luks && -b $src ]] && grep -qxF "$luks" <<<"$(lsblk -nslpo NAME "$src")"; then
     die "$dir is on the encrypted disk itself; use a USB stick or another disk"
   fi
   if [[ ! -b $src ]]; then
