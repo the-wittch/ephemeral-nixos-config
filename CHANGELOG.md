@@ -2,6 +2,12 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.11.1
+
+### Fixed
+
+- `ephemeral-doctor` could report that the disk has no TPM slot when it has one, `ephemeral-backup` and `luks-header-backup` could miss that the folder they write to is on the disk being backed up, and `smb-setup` could miss that a share label already exists. Each piped a command into `grep -q`, which stops at the first match; the command was then cut off, and that counted as a failure, so a match read as none.
+
 ## 4.11.0
 
 ### Added

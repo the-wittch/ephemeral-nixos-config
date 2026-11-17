@@ -275,7 +275,8 @@ if [[ -e ${EPHEMERAL_ROOT:-}/etc/ephemeral/tpm-unlock ]]; then
       "turn Secure Boot on in the firmware (docs/security.md)"
   elif [[ $EUID -ne 0 ]]; then
     ok "the disk unlocks with the TPM and a PIN (sudo ephemeral-doctor checks the disk's TPM slot)"
-  elif sudo cryptsetup luksDump "$(luks_device)" 2>/dev/null | grep -q systemd-tpm2; then
+  # read whole first: grep -q stopping early would fail luksDump, which pipefail counts
+  elif grep -q systemd-tpm2 <<<"$(sudo cryptsetup luksDump "$(luks_device)" 2>/dev/null)"; then
     ok "the disk unlocks with the TPM and a PIN, with the passphrase as the fallback"
   else
     bad "the disk is set to unlock with the TPM, but it has no TPM slot, so every boot asks for the passphrase" \
