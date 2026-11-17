@@ -50,7 +50,7 @@ At boot the TPM only gives up the disk's key when the PIN is right and Secure Bo
 
 The boot always asks for the PIN first, since the TPM needs it to try. A wrong PIN is asked for again. The boot asks for the passphrase once the TPM won't unlock the disk:
 
-- after enough wrong PINs that the TPM stops taking them. A forgotten PIN gets you to the passphrase this way, and until the TPM takes PINs again, every boot asks for the PIN once and then the passphrase;
+- after enough wrong PINs that the TPM stops taking them. A forgotten PIN gets you to the passphrase this way, and until the TPM takes PINs again, every boot asks for the PIN before it asks for the passphrase;
 - when Secure Boot is off, or its keys or revocation list changed, which a firmware update can do. Whatever you type for the PIN, it then asks for the passphrase. Run `ephemeral-setup` and pick the option that enrolls the PIN again;
 - after the TPM was cleared in the firmware settings, or with the disk in another machine, the same way.
 
