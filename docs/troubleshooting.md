@@ -24,6 +24,8 @@ Your own config in `/persist/etc/nixos` is untouched, so a plain `ephemeral-upda
 
 **The firmware refuses to start the machine after you turned Secure Boot on**, or after a reinstall. Turn Secure Boot off in the firmware setup and it starts again. Then `ephemeral-doctor` says what's missing; the steps are in [Secure Boot](security.md#secure-boot).
 
+**`ephemeral-update` says the firmware doesn't say whether it's in Setup Mode**, and `bootctl status` shows `Secure Boot: disabled (unsupported)`. The firmware has stopped reporting Secure Boot at all. On Framework laptops, "Erase all Secure Boot Settings" does this. In the firmware setup, under Administer Secure Boot, pick "Restore Secure Boot to Factory Settings" and save with F10. Then delete the PK by hand: under PK Options, delete each entry. If `bootctl status` doesn't show `disabled (setup)` after that, delete the KEK and DB entries the same way. Then run `ephemeral-update`.
+
 **The disk asks for the passphrase although you set up a TPM PIN.** The TPM didn't unlock it: wrong PINs locked it out for a while, Secure Boot is off, or a firmware update changed its keys or revocation list. The passphrase works as always. Once the machine is up, run `sudo ephemeral-doctor`, then `ephemeral-setup` to enroll the PIN again if it says so.
 
 **The disk keeps asking for the TPM PIN.** The PIN was wrong. Once the TPM has had enough wrong ones it stops taking them, and the boot asks for the passphrase. See [TPM unlock](security.md#tpm-unlock).

@@ -65,12 +65,30 @@
           exit 1
         fi
 
+        flag() {
+          ${pkgs.coreutils}/bin/od -An -tu1 -j4 -N1 "/sys/firmware/efi/efivars/$1-8be4df61-93ca-11d2-aa0d-00e098032b8c" 2>/dev/null |
+            ${pkgs.coreutils}/bin/tr -d ' ' || true
+        }
+        setup=$(flag SetupMode)
         if [[ $cert != ${dir}/* ]]; then
           echo "secureBoot: the keys aren't on /persist yet, so they aren't enrolled this time." >&2
           echo "Once this rebuild has finished, run ephemeral-update once more to enroll them." >&2
-        elif [[ $(${pkgs.coreutils}/bin/od -An -tu1 -j4 -N1 ${efivar "SetupMode"} 2>/dev/null | ${pkgs.coreutils}/bin/tr -d ' ') == 1 ]]; then
+        elif [[ -z $setup ]]; then
+          echo "secureBoot: the firmware doesn't say whether it's in Setup Mode, so the keys aren't enrolled." >&2
+          echo "Look in its Secure Boot settings for Secure Boot being turned off or hidden altogether (docs/troubleshooting.md)." >&2
+        elif [[ $setup == 0 && $(flag SecureBoot) != 1 ]]; then
+          echo "secureBoot: Secure Boot is off and the firmware isn't in Setup Mode, so the keys aren't enrolled." >&2
+          echo "If they already are, turn Secure Boot on in the firmware. If not, put it in Setup Mode and run ephemeral-update (docs/security.md)." >&2
+        elif [[ $setup == 1 ]]; then
           # Microsoft's keys stay trusted for option ROMs, docks and firmware updates. sbctl 0.18
           # stops on a default list the firmware doesn't have, so only the ones it has are named.
+          # Linux marks firmware variables immutable against accidental deletion, and sbctl won't
+          # write over a KEK or db the firmware kept when only its PK was deleted
+          for var in PK-8be4df61-93ca-11d2-aa0d-00e098032b8c KEK-8be4df61-93ca-11d2-aa0d-00e098032b8c db-d719b2cb-3d3a-4596-a3bc-dad00e67656f; do
+            if [[ -e /sys/firmware/efi/efivars/$var ]]; then
+              ${pkgs.e2fsprogs}/bin/chattr -i "/sys/firmware/efi/efivars/$var"
+            fi
+          done
           builtin=()
           for list in db KEK; do
             if [[ -e ${efivar "\${list}Default"} ]]; then

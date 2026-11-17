@@ -262,6 +262,9 @@ if [[ -e ${EPHEMERAL_ROOT:-}/etc/ephemeral/secure-boot ]]; then
   elif [[ $(efi_flag SetupMode) == 1 ]]; then
     warn "the firmware is in Setup Mode, waiting for this machine's keys" \
       "ephemeral-update puts them in; then turn Secure Boot on in the firmware (docs/security.md)"
+  elif [[ -z $(efi_flag SetupMode) ]]; then
+    warn "the firmware doesn't report Secure Boot at all, so the keys can't be enrolled" \
+      "look in its Secure Boot settings for Secure Boot being turned off or hidden altogether (docs/troubleshooting.md)"
   else
     warn "secureBoot is on in settings.json, but Secure Boot is off in the firmware" \
       "if the keys are enrolled, turn it on in the firmware; if not, see docs/security.md"
