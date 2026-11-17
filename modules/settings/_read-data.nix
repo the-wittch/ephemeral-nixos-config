@@ -1,5 +1,3 @@
-{ lib }:
-
 base: default:
 let
   name = baseNameOf (toString base);

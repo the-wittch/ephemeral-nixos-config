@@ -34,16 +34,9 @@ percent_used() { df --output=pcent "$1" | tail -n 1 | tr -dc 0-9; }
 
 boot_time() { awk '/^btime/ { print $2 }' /proc/stat; }
 
-efivars=${EPHEMERAL_ROOT:-}/sys/firmware/efi/efivars
-
-# 1 or 0 from the firmware, or nothing when it doesn't have the variable
-efi_flag() {
-  od -An -tu1 -j4 -N1 "$efivars/$1-8be4df61-93ca-11d2-aa0d-00e098032b8c" 2>/dev/null | tr -d ' ' || true
-}
-
 # the attributes and a list header, but not one entry; or no variable at all
 dbx_empty() {
-  local dbx=$efivars/dbx-d719b2cb-3d3a-4596-a3bc-dad00e67656f
+  local dbx=${EPHEMERAL_ROOT:-}/sys/firmware/efi/efivars/dbx-d719b2cb-3d3a-4596-a3bc-dad00e67656f
   [[ ! -e $dbx ]] || (($(stat -c %s "$dbx") < 76))
 }
 
@@ -272,6 +265,21 @@ if [[ -e ${EPHEMERAL_ROOT:-}/etc/ephemeral/secure-boot ]]; then
   else
     warn "secureBoot is on in settings.json, but Secure Boot is off in the firmware" \
       "if the keys are enrolled, turn it on in the firmware; if not, see docs/security.md"
+  fi
+fi
+
+if [[ -e ${EPHEMERAL_ROOT:-}/etc/ephemeral/tpm-unlock ]]; then
+  if [[ $(efi_flag SecureBoot) != 1 ]]; then
+    # the TPM key is bound to Secure Boot being on, so it can't match
+    bad "the disk is set to unlock with the TPM, but Secure Boot is off, so the PIN can't unlock it and every boot asks for the passphrase after it" \
+      "turn Secure Boot on in the firmware (docs/security.md)"
+  elif [[ $EUID -ne 0 ]]; then
+    ok "the disk unlocks with the TPM and a PIN (sudo ephemeral-doctor checks the disk's TPM slot)"
+  elif sudo cryptsetup luksDump "$(luks_device)" 2>/dev/null | grep -q systemd-tpm2; then
+    ok "the disk unlocks with the TPM and a PIN, with the passphrase as the fallback"
+  else
+    bad "the disk is set to unlock with the TPM, but it has no TPM slot, so every boot asks for the passphrase" \
+      "ephemeral-setup, and pick the TPM PIN"
   fi
 fi
 

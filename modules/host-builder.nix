@@ -6,7 +6,7 @@
 }:
 
 let
-  readData = import ./settings/_read-data.nix { inherit lib; };
+  readData = import ./settings/_read-data.nix;
   loadSettings = flakeRoot: import ./settings/_load.nix { inherit lib flakeRoot; };
 
   build =
@@ -91,6 +91,7 @@ let
                 nvidia = settings.nvidia != "none";
                 inherit (settings) laptop fingerprint;
                 secure-boot = settings.secureBoot;
+                tpm-unlock = settings.tpmUnlock;
                 tailscale = settings.useTailscale;
                 encrypted-dns = settings.encryptedDns != "none";
                 opensnitch = full && settings.useOpenSnitch;
@@ -130,4 +131,7 @@ in
   };
 
   config.flake.nixosConfigurations = lib.concatMapAttrs build config.ephemeral.hosts;
+  # checked the way a rebuild checks them, without putting the machine together; the installer
+  # reads it to refuse a bad answer in seconds rather than after evaluating the whole system
+  config.flake.settings = lib.mapAttrs (_: host: loadSettings host.root) config.ephemeral.hosts;
 }

@@ -2,18 +2,12 @@
   flake.modules.homeManager.extras =
     { lib, pkgs, ... }:
     let
-      logo =
-        pkgs.runCommand "ephemeral-fastfetch-logo"
-          {
-            nativeBuildInputs = with pkgs; [
-              librsvg
-              imagemagick
-              gawk
-            ];
-          }
-          ''
-            bash ${./_logo.sh} ${../../../assets/wallpaper.svg} "$out"
-          '';
+      logo = import ../../branding/_logo.nix {
+        inherit pkgs;
+        cols = 72;
+        rows = 22;
+        named = true;
+      };
 
       # each section is a box: the key draws the left edge and label, jumps to the right
       # edge for the border, then jumps back so the value prints after the label

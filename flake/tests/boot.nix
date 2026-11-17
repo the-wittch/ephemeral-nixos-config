@@ -1,8 +1,8 @@
 # nix build path:.#checks.x86_64-linux.boot -L
-{ config, lib, ... }:
+{ config, ... }:
 let
   nixos = config.ephemeral.aspects.nixos;
-  hostApps = import ./_host-apps.nix { inherit config lib; };
+  hostApps = import ./_host-apps.nix { inherit config; };
 in
 {
   perSystem =
@@ -10,6 +10,8 @@ in
     {
       checks.boot = pkgs.testers.runNixOSTest {
         name = "boot";
+        # it usually takes 2.5 minutes
+        globalTimeout = 600;
 
         # the unfree allowlist sets nixpkgs.config
         node.pkgsReadOnly = false;

@@ -1,9 +1,9 @@
 # shellcheck shell=bash
-# Draws the fastfetch logo from the wallpaper: its snowflake and pixels in truecolor
-# characters, with EPHEMERAL under them. Args: wallpaper.svg out-file
+# The wallpaper's snowflake and its pixels in truecolor characters, for fastfetch and the
+# installer's welcome screen. Args: wallpaper.svg out-file columns rows, then "named" for
+# EPHEMERAL under it
 set -euo pipefail
-svg=$1 out=$2
-cols=72 rows=22
+svg=$1 out=$2 cols=$3 rows=$4 named=${5:-}
 
 # the snowflake and its pixels alone, arms filled so they read as characters
 sed -E \
@@ -31,17 +31,19 @@ rsvg-convert -w 3840 flake.svg -o flake.png
         line[y] = line[y] cell
       }
       END { for (y = 0; y in line; y++) { s = line[y]; sub(/ +$/, "", s); print s "\033[0m" } }'
-  echo
-  # the wallpaper's purple to blue, across the word
-  printf '%s\n' '█▀▀ █▀█ █ █ █▀▀ █▀▄▀█ █▀▀ █▀█ ▄▀█ █' '██▄ █▀▀ █▀█ ██▄ █ ▀ █ ██▄ █▀▄ █▀█ █▄▄' |
-    LC_ALL=C.UTF-8 awk -v pad=8 '
-      {
-        n = split($0, ch, "")
-        s = sprintf("%" pad "s", "")
-        for (i = 1; i <= n; i++) {
-          t = (i - 1) / (n - 1)
-          s = s sprintf("\033[38;2;%d;%d;%dm%s", 168 + (56 - 168) * t, 85 + (189 - 85) * t, 247 + (248 - 247) * t, ch[i])
-        }
-        print s "\033[0m"
-      }'
+  if [[ $named == named ]]; then
+    echo
+    # the wallpaper's purple to blue, across the word
+    printf '%s\n' '█▀▀ █▀█ █ █ █▀▀ █▀▄▀█ █▀▀ █▀█ ▄▀█ █' '██▄ █▀▀ █▀█ ██▄ █ ▀ █ ██▄ █▀▄ █▀█ █▄▄' |
+      LC_ALL=C.UTF-8 awk -v pad=8 '
+        {
+          n = split($0, ch, "")
+          s = sprintf("%" pad "s", "")
+          for (i = 1; i <= n; i++) {
+            t = (i - 1) / (n - 1)
+            s = s sprintf("\033[38;2;%d;%d;%dm%s", 168 + (56 - 168) * t, 85 + (189 - 85) * t, 247 + (248 - 247) * t, ch[i])
+          }
+          print s "\033[0m"
+        }'
+  fi
 } >"$out"

@@ -32,6 +32,12 @@ let
     "a username with capitals" = ok // {
       username = "Alice";
     };
+    "a hostname starting with a hyphen" = ok // {
+      hostname = "-laptop";
+    };
+    "a hostname with a dot" = ok // {
+      hostname = "my.laptop";
+    };
     "no username" = { };
     "a disk path with .." = ok // {
       diskDevice = "/dev/../etc/passwd";

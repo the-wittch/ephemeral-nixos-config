@@ -18,14 +18,7 @@ let
     unfree = app.unfree != [ ];
   }) config.ephemeral.apps;
 
-  # every command gets all of them; a function no command calls costs nothing
-  shellLib = map (name: ../../scripts/lib/${name}.sh) [
-    "core"
-    "flake"
-    "release"
-    "files"
-    "apps"
-  ];
+  prelude = import ./_prelude.nix { inherit lib; };
 
   toolsFor =
     pkgs:
@@ -71,6 +64,7 @@ in
           deps = [
             btrfs-progs
             coreutils
+            cryptsetup
             curl
             findutils
             gawk
@@ -100,6 +94,8 @@ in
             gum
             jq
             coreutils
+            cryptsetup
+            gawk
             gnugrep
             findutils
             gnused
@@ -202,7 +198,7 @@ in
           runtimeInputs = tool.deps;
           text =
             lib.concatStrings (lib.mapAttrsToList (k: v: "${k}=${lib.escapeShellArg v}\n") (tool.env or { }))
-            + lib.concatMapStrings builtins.readFile shellLib
+            + prelude
             + builtins.readFile ../../scripts/${name}.sh;
           meta.description = tool.description;
         };

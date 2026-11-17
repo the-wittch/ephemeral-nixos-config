@@ -63,13 +63,24 @@
 
       # OpenSnitch's queue rule always has the bypass flag (QueueBypass doesn't reach the rules from
       # system-fw.json), so a crashed daemon lets everything out. After a crash the guard holds new
-      # connections out until a new daemon is filtering. A clean stop leaves nothing behind, so
+      # connections out until a new daemon is filtering. A stop asked for leaves nothing behind, so
       # `systemctl stop opensnitchd` is still the way to get the network back by hand.
       systemd.services.opensnitchd.serviceConfig = {
         RestartSec = 2;
+        # The daemon can crash on its way out of a stop (1.8.0 closes its queue twice), which
+        # looks like any other crash by then. systemd runs ExecStop after a crash too, but with
+        # $MAINPID set only while the daemon is still there, that is, for a stop asked for.
+        ExecStop = pkgs.writeShellScript "opensnitch-stop-asked" ''
+          if [[ -n ''${MAINPID:-} ]]; then
+            : >/run/opensnitch-stop-asked
+          fi
+        '';
         ExecStopPost = pkgs.writeShellScript "opensnitch-guard-down" ''
-          if [[ $SERVICE_RESULT == success ]]; then
-            exec ${nft} destroy table inet opensnitch-down
+          if [[ $SERVICE_RESULT == success || -e /run/opensnitch-stop-asked ]]; then
+            ${pkgs.coreutils}/bin/rm -f /run/opensnitch-stop-asked
+            ${nft} destroy table inet opensnitch-down
+            # left behind when it crashed on the way out
+            exec ${nft} destroy table inet opensnitch
           fi
           ${nft} -f ${guard}
           exec ${nft} destroy table inet opensnitch

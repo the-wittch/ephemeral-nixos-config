@@ -1,3 +1,6 @@
+let
+  inherit (import ./settings/_rules.nix) controldResolver;
+in
 {
   flake.modules.nixos.controld = {
     services.resolved.enable = true;
@@ -51,7 +54,7 @@
           exit 1
         fi
         id=$(tr -d '[:space:]' < /persist/etc/controld-resolver)
-        if [[ ! $id =~ ^[A-Za-z0-9_-]+$ ]]; then
+        if [[ ! $id =~ ^${controldResolver}$ ]]; then
           echo "bad id in /persist/etc/controld-resolver" >&2
           exit 1
         fi

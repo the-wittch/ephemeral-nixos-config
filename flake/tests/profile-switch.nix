@@ -2,10 +2,10 @@
 # A live switch from the small install to the full system and back, as ephemeral-setup
 # does it. Booting each one can't show units failing on the switch, or new kept folders
 # not mounting until a reboot.
-{ config, lib, ... }:
+{ config, ... }:
 let
   nixos = config.ephemeral.aspects.nixos;
-  hostApps = import ./_host-apps.nix { inherit config lib; };
+  hostApps = import ./_host-apps.nix { inherit config; };
 
   settings = {
     hostname = "profileswitch";
@@ -61,6 +61,8 @@ in
     {
       checks.profile-switch = pkgs.testers.runNixOSTest {
         name = "profile-switch";
+        # it usually takes a minute
+        globalTimeout = 600;
         node.pkgsReadOnly = false;
 
         nodes.machine = {

@@ -36,8 +36,10 @@ get() { jq -r --arg k "$1" '.[$k] // empty' "$SETTINGS"; }
 gum style --bold --foreground 212 "Ephemeral Nix setup"
 echo
 
-profile=$(gum choose --header "Profile" --selected "$(get profile || true)" \
-  "full" "minimal") || exit 0
+# menu_profile, menu_encryptedDns, vault_re and custom_dns_re come from modules/settings, by way
+# of modules/packages/_prelude.nix
+# shellcheck disable=SC2154
+profile=$(pick_setting profile "Profile" "$(get profile || true)" "${menu_profile[@]}") || exit 0
 profile=${profile:-full}
 
 declare -A opt=(
@@ -75,34 +77,21 @@ fi
 vault=$(get passSshVault)
 if [[ ${on[usePassSshAgent]:-false} == true ]]; then
   vault=$(gum input --header "Proton Pass vault with your SSH keys" --value "${vault:-Personal}") || exit 0
-  case $vault in
-    "" | *[[:cntrl:]]* | *'"'* | *'$'* | *'`'* | *\\*)
-      die "the vault name can't be empty or have quotes, \$, backticks or backslashes"
-      ;;
-  esac
+  # shellcheck disable=SC2154
+  [[ $vault =~ ^${vault_re}$ ]] ||
+    die "the vault name can't be empty or have quotes, \$, backticks, backslashes or control characters"
 fi
 
-declare -A dns_label=(
-  [none]="The network's DNS (not encrypted)"
-  [cloudflare]="Cloudflare (no filtering)"
-  [quad9]="Quad9 (blocks malware)"
-  [adguard]="AdGuard (blocks ads and trackers)"
-  [controld]="Control D (your own resolver id)"
-  [custom]="Other: your own DNS over TLS servers"
-)
-dns_order=(none cloudflare quad9 adguard)
 dns=$(get encryptedDns)
-if [[ $profile == full ]]; then
-  dns_order+=(controld)
-  [[ $(get useControlD) == true ]] && dns=controld
-fi
-dns_order+=(custom)
-labels=()
-for k in "${dns_order[@]}"; do labels+=("${dns_label[$k]}"); done
-picked=$(printf '%s\n' "${labels[@]}" |
-  gum choose --header "DNS" --selected "${dns_label[${dns:-none}]}") || exit 0
-dns=none
-for k in "${dns_order[@]}"; do [[ $picked == "${dns_label[$k]}" ]] && dns=$k; done
+# Control D needs the full profile
+dns_order=()
+# shellcheck disable=SC2154
+for k in "${menu_encryptedDns[@]}"; do
+  [[ $k == controld && $profile != full ]] || dns_order+=("$k")
+done
+[[ $profile == full && $(get useControlD) == true ]] && dns=controld
+dns=$(pick_setting encryptedDns "DNS" "${dns:-none}" "${dns_order[@]}") || exit 0
+dns=${dns:-none}
 
 servers=
 if [[ $dns == custom ]]; then
@@ -112,14 +101,62 @@ if [[ $dns == custom ]]; then
   read -ra list <<<"$servers"
   for s in "${list[@]}"; do
     # the name is what the certificate is checked against, so it can't be left out
-    [[ $s =~ ^[0-9A-Fa-f.:]+#[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$ ]] ||
+    # shellcheck disable=SC2154
+    [[ $s =~ ^${custom_dns_re}$ ]] ||
       die "$s isn't address#name, such as 194.242.2.2#dns.mullvad.net"
   done
 fi
 
-args=(--arg profile "$profile" --arg dns "$dns" --arg servers "$servers")
+# The TPM key is bound to Secure Boot being on, with this machine's keys; without that, the PIN
+# alone would guard the disk.
+tpm=$(get tpmUnlock)
+tpm=${tpm:-false}
+tpm_action=
+if tpm_present && [[ $(get secureBoot) == true && $(efi_flag SecureBoot) == 1 ]]; then
+  unlock_pass="The passphrase"
+  unlock_tpm="A TPM PIN, with the passphrase as the fallback"
+  unlock_again="A TPM PIN, enrolled again after a firmware, key or revocation list change"
+  choices=("$unlock_pass" "$unlock_tpm")
+  current=$unlock_pass
+  if [[ $tpm == true ]]; then
+    choices+=("$unlock_again")
+    current=$unlock_tpm
+  fi
+  picked=$(printf '%s\n' "${choices[@]}" |
+    gum choose --header "Unlocking the disk at boot" --selected "$current") || exit 0
+  case $picked in
+    "$unlock_tpm")
+      [[ $tpm == true ]] || tpm_action=enroll
+      tpm=true
+      ;;
+    "$unlock_again")
+      tpm_action=enroll
+      tpm=true
+      ;;
+    *)
+      [[ $tpm == false ]] || tpm_action=remove
+      tpm=false
+      ;;
+  esac
+elif [[ $tpm == true ]]; then
+  echo "TPM unlock stays as it is; changing it needs a TPM and Secure Boot on. ephemeral-doctor says more."
+fi
+
+# before saving, so a failure here leaves the settings as they were
+if [[ -n $tpm_action ]]; then
+  luks=$(luks_device)
+  if [[ $tpm_action == enroll ]]; then
+    echo "systemd-cryptenroll asks for the disk passphrase, then the new PIN twice."
+    tpm_enroll "$luks" || die "the TPM wasn't enrolled; nothing changed"
+  else
+    echo "systemd-cryptenroll asks for the disk passphrase to remove the TPM slot."
+    tpm_remove "$luks" || die "the TPM slot wasn't removed; nothing changed"
+  fi
+fi
+
+args=(--arg profile "$profile" --arg dns "$dns" --arg servers "$servers" --argjson tpm "$tpm")
 # shellcheck disable=SC2016 # jq variables
-filter='.profile = $profile | .encryptedDns = (if $dns == "controld" then "none" else $dns end) | if $dns == "custom" then .customDns = ($servers | split(" ") | map(select(. != ""))) else . end'
+filter='.profile = $profile | .encryptedDns = (if $dns == "controld" then "none" else $dns end) | if $dns == "custom" then .customDns = ($servers | split(" ") | map(select(. != ""))) else . end | .tpmUnlock = $tpm'
 # only one of them can have the DNS; on the small install Control D is ignored, so it's left alone there
 if [[ $profile == full ]]; then
   # shellcheck disable=SC2016
@@ -160,4 +197,9 @@ if [[ $profile == full ]]; then
   if [[ $dns == controld ]]; then
     echo "- Run controld-setup if you haven't entered your Control D resolver id yet."
   fi
+fi
+if [[ $tpm_action == enroll ]]; then
+  echo "- At the next boot the disk asks for the TPM PIN. A wrong one is asked for again until the TPM stops taking guesses; then it asks for the passphrase."
+elif [[ $tpm_action == remove ]]; then
+  echo "- From the next boot the disk asks for the passphrase again."
 fi

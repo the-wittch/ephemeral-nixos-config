@@ -27,18 +27,6 @@ SETTINGS=$(settings_json "$REPO_ROOT")
 VAULT=${PASS_SETTINGS_VAULT:-$(jq -r '.passSettingsVault // "Personal"' "$SETTINGS")}
 ITEM=${PASS_SETTINGS_ITEM:-$(jq -r '.passSettingsItem // "nixos-settings"' "$SETTINGS")}
 
-STRING_KEYS=(
-  hostname
-  username
-  diskDevice
-  swapSize
-  timeZone
-  desktop
-)
-BOOL_KEYS=(
-  useFlakePassCli
-)
-
 need() {
   command -v "$1" >/dev/null || {
     echo "need $1 on PATH (rebuild so pass-cli is installed, then: pass-cli login)" >&2
@@ -65,7 +53,10 @@ echo
 obj={}
 found=0
 
-for key in "${STRING_KEYS[@]}"; do
+# pass_string_keys and pass_bool_keys come from modules/settings/_pass-keys.nix, by way of
+# modules/packages/_prelude.nix
+# shellcheck disable=SC2154
+for key in "${pass_string_keys[@]}"; do
   val=$(get_field "$key" || true)
   if [[ -n ${val:-} ]]; then
     obj=$(jq --arg k "$key" --arg v "$val" '.[$k] = $v' <<<"$obj")
@@ -76,7 +67,8 @@ for key in "${STRING_KEYS[@]}"; do
   fi
 done
 
-for key in "${BOOL_KEYS[@]}"; do
+# shellcheck disable=SC2154
+for key in "${pass_bool_keys[@]}"; do
   val=$(get_field "$key" || true)
   val=$(printf '%s' "${val:-}" | tr '[:upper:]' '[:lower:]')
   case $val in
@@ -96,7 +88,7 @@ done
 
 resolver=$(get_field controldResolver || true)
 if [[ -n ${resolver:-} ]]; then
-  if [[ ! $resolver =~ ^[A-Za-z0-9_-]+$ ]]; then
+  if ! valid_controld_id "$resolver"; then
     echo "  ! controldResolver has unexpected characters" >&2
     exit 1
   fi

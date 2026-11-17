@@ -14,6 +14,7 @@
   "laptop": false,
   "fingerprint": false,
   "secureBoot": false,
+  "tpmUnlock": false,
   "useControlD": false,
   "encryptedDns": "none",
   "customDns": [],

@@ -39,7 +39,9 @@ fail() {
 }
 
 tool() {
-  cat "$SCRIPTS"/lib/{core,flake,release,files,apps}.sh "$SCRIPTS/$1.sh" >"$work/$1"
+  {
+    cat "$PRELUDE" "$SCRIPTS/$1.sh"
+  } >"$work/$1"
   echo "$work/$1"
 }
 update=$(tool ephemeral-update)
@@ -244,6 +246,12 @@ doctor_sb
 if grep -qF "Secure Boot is on" "$work/out" && ! grep -qF "no list of revoked bootloaders" "$work/out"; then
   pass "doctor: a dbx with entries isn't reported"
 else fail "doctor: warned about a dbx that has entries"; fi
+: >"$sb/etc/ephemeral/tpm-unlock"
+printf '\x06\x00\x00\x00\x00' >"$vars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c"
+doctor_sb
+if grep -qF "unlock with the TPM, but Secure Boot is off" "$work/out"; then
+  pass "doctor: TPM unlock with Secure Boot off is reported"
+else fail "doctor: missed TPM unlock with Secure Boot off"; fi
 rm "$fakes/systemctl"
 
 pubs=$(tool ssh-pubs-from-pass)
@@ -261,10 +269,29 @@ if grep -q -- '--vault-name other ' "$calls"; then
   pass "ssh-pubs-from-pass: PASS_SSH_VAULT still wins"
 else fail "ssh-pubs-from-pass: PASS_SSH_VAULT"; fi
 
+frompass=$(tool settings-from-pass)
+fake pass-cli 'key=${3##*/}; case $key in useFlakePassCli) echo TRUE ;; controldResolver) exit 1 ;; *) echo "from-pass-$key" ;; esac'
+mkdir -p "$work/frompass"
+: >"$work/frompass/flake.nix"
+printf '{"username": "alice", "usePassSettings": true}\n' >"$work/frompass/settings.json"
+FLAKE_DIR=$work/frompass bash "$frompass" >"$work/out" 2>&1 || true
+want=$(bash -c "$(cat "$PRELUDE")"'; printf "%s\n" "${pass_string_keys[@]}" "${pass_bool_keys[@]}"' | sort)
+if [[ $(jq -r 'keys[]' "$work/frompass/settings.from-pass.json" 2>/dev/null | sort) == "$want" ]] &&
+  [[ $(jq -r '.hostname, .useFlakePassCli' "$work/frompass/settings.from-pass.json") == $'from-pass-hostname\ntrue' ]]; then
+  pass "settings-from-pass: copies every key the loader takes from the Pass item"
+else fail "settings-from-pass: wrote $(cat "$work/frompass/settings.from-pass.json" 2>/dev/null || cat "$work/out")"; fi
+
 # scripts/lib on its own: runs the code with every library loaded, as the commands get them
 lib() {
-  bash -c "set -euo pipefail; $(cat "$SCRIPTS"/lib/{core,flake,release,files,apps}.sh); $1" >"$work/out" 2>&1 </dev/null
+  bash -c "set -euo pipefail; $(cat "$PRELUDE"); $1" >"$work/out" 2>&1 </dev/null
 }
+
+fake gum 'cat >"$FAKE_MENU"; printf "%s\n" "$FAKE_PICK"'
+if FAKE_MENU=$work/menu lib 'export FAKE_PICK=${menu_label["encryptedDns/quad9"]}; [[ $(pick_setting encryptedDns DNS none none quad9) == quad9 ]]' &&
+  [[ $(wc -l <"$work/menu") == 2 ]]; then
+  pass "lib: pick_setting shows the values given by their names and prints the one picked"
+else fail "lib: pick_setting $(cat "$work/out")"; fi
+rm "$fakes/gum"
 
 flake_at v4.2.0
 if lib "[[ \$(pinned_release '$work/flake') == v4.2.0 ]]"; then
@@ -286,6 +313,30 @@ lib '! is_newer v4.9.0 v4.10.0 && ! is_newer v4.9.0 v4.9.0 && ! is_newer "v5.0.0
 if ((newer == 0)); then
   pass "lib: is_newer orders versions as numbers, and refuses anything that isn't vX.Y.Z"
 else fail "lib: is_newer"; fi
+
+fake systemd-cryptenroll 'echo "systemd-cryptenroll $*" >>"$CALLS"'
+: >"$calls"
+if lib 'tpm_enroll /dev/vda2' &&
+  grep -qxF "systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7 --tpm2-with-pin=yes --wipe-slot=tpm2 /dev/vda2" "$calls"; then
+  pass "lib: tpm_enroll binds to PCR 7 with a PIN, and replaces only an older TPM slot"
+else fail "lib: tpm_enroll"; fi
+: >"$calls"
+if lib 'tpm_remove /dev/vda2' && grep -qxF "systemd-cryptenroll --wipe-slot=tpm2 /dev/vda2" "$calls"; then
+  pass "lib: tpm_remove wipes the TPM slot and no other"
+else fail "lib: tpm_remove"; fi
+rm "$fakes/systemd-cryptenroll"
+tr=$work/tpmroot
+mkdir -p "$tr/dev" "$tr/sys/firmware/efi/efivars"
+absent=0
+EPHEMERAL_ROOT=$tr lib '! tpm_present && [[ -z $(efi_flag SecureBoot) ]]' || absent=1
+: >"$tr/dev/tpmrm0"
+printf '\x06\x00\x00\x00\x01' >"$tr/sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c"
+if ((absent == 0)) && EPHEMERAL_ROOT=$tr lib 'tpm_present && [[ $(efi_flag SecureBoot) == 1 ]]'; then
+  pass "lib: tpm_present and efi_flag see the TPM and the firmware's Secure Boot state, and their absence"
+else fail "lib: tpm_present or efi_flag"; fi
+if lib 'valid_controld_id abc-1_2 && ! valid_controld_id "a b" && ! valid_controld_id "x;y" && ! valid_controld_id ""'; then
+  pass "lib: valid_controld_id takes the rule from the settings rules"
+else fail "lib: valid_controld_id"; fi
 
 if lib 'ask "go on?"'; then fail "lib: ask said yes without a terminal"; else
   pass "lib: ask is a no without a terminal"

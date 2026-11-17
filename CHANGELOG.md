@@ -2,6 +2,33 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.11.0
+
+### Added
+
+- With Secure Boot on, the disk can be unlocked with the TPM and a short PIN. `ephemeral-setup` asks how to unlock it when the machine has a TPM 2.0 and Secure Boot is on, and enrolls the PIN; the passphrase stays, and the boot asks for it once the TPM won't unlock the disk, after enough wrong PINs to lock the TPM out among other things. The TPM is bound to the Secure Boot state (PCR 7), so it asks for the passphrase again after Secure Boot's keys or revocation list change; `ephemeral-setup` enrolls the PIN again. `"tpmUnlock"` in `settings.json` refuses to build without `"secureBoot"`. See [TPM unlock](docs/security.md#tpm-unlock).
+- The boot splash says "TPM PIN" when it asks for the PIN.
+- `ephemeral-doctor` reports TPM unlock that can't work: with Secure Boot off, or, run with sudo, without a TPM slot on the disk.
+- A test that unlocks a LUKS root with a software TPM and a PIN, and with the passphrase after wrong PINs have locked the TPM out.
+- Outputs for the installer, so it reads from the release it pins instead of keeping its own copies: `settings-contract`, a JSON file with what each setting may be, its default, which settings are on/off switches, and the menus (each desktop, NVIDIA driver, profile and DNS choice in order, with its name and description); `settings`, each machine's settings checked the way a rebuild checks them, without building the system; and the `wallpaper` and `welcome-logo` packages.
+- CI fails when `docs/settings.md` doesn't describe a setting, or a row leaves out a value its setting can have.
+- A test that runs `settings-from-pass` against a fake Proton Pass and checks it copies every key the settings loader takes from it.
+
+### Changed
+
+- What each setting may be is written once, in `modules/settings/_rules.nix`, and the menus once, in `_choices.nix`, which the allowed values come from. The schema, the Control D id check at boot, `controld-setup`, `settings-from-pass` and `ephemeral-setup`'s profile and DNS menus and its checks of DNS servers and the SSH vault name all take them from there.
+- What `settings-from-pass` copies from Proton Pass is listed once, in `modules/settings/_pass-keys.nix`, which the settings loader reads too.
+- The helper commands start with one prelude, `modules/packages/_prelude.nix`, which the script tests use too: the rules and menus as shell variables, then every file in `scripts/lib/`.
+- The fastfetch logo and the installer's welcome logo come from one script, `modules/branding/_logo.sh`.
+- The test machines for each desktop and profile follow from the menus, so a new desktop without them fails CI.
+- `hostname` in `settings.json` is checked with NixOS's own rule for `networking.hostName` when the settings are read. A name NixOS would refuse now stops the rebuild with an error that names the setting, instead of failing later in the build.
+- Every VM test and every CI step has a time limit of about three times how long it usually takes, so a test that hangs fails in minutes instead of running for up to an hour.
+
+### Fixed
+
+- The reset of `/` at boot deleted the old root before making the new one, so a failure in between left no root to boot. It makes the new one first now, and a failure at any step leaves a root that boots, with `ephemeral-doctor` reporting that it wasn't reset.
+- `systemctl stop opensnitchd` sometimes left the network blocked: OpenSnitch 1.8.0 can crash while it stops, and the guard took that for a crash and held new connections out. A stop asked for lets traffic through now however the daemon exits; a crash still holds them out until it's back.
+
 ## 4.10.0
 
 ### Added

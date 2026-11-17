@@ -1,7 +1,7 @@
 { lib, flakeRoot }:
 
 let
-  readData = import ./_read-data.nix { inherit lib; };
+  readData = import ./_read-data.nix;
 
   # a missing file must not become username nixuser
   fromSettings = readData (flakeRoot + "/settings") (throw ''
@@ -17,16 +17,11 @@ let
   # Only what settings-from-pass writes, so the file can't turn off OpenSnitch or the like. The
   # Proton Pass item is trusted for these, except that it can only turn Control D on: someone who
   # can edit the item shouldn't be able to send DNS back to the network unencrypted.
-  passKeys = lib.genAttrs [
-    "hostname"
-    "username"
-    "diskDevice"
-    "swapSize"
-    "timeZone"
-    "desktop"
-    "useFlakePassCli"
-    "useControlD"
-  ] (_: null);
+  passKeys =
+    let
+      pass = import ./_pass-keys.nix;
+    in
+    lib.genAttrs (pass.strings ++ pass.bools ++ [ "useControlD" ]) (_: null);
   fromPass =
     let
       read = builtins.intersectAttrs passKeys (readData (flakeRoot + "/settings.from-pass") { });

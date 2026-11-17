@@ -20,13 +20,18 @@
             exit 1
           fi
 
+          # The new root is ready before the old one goes, so a failure at any step still leaves a
+          # root to boot; root-reset-check then reports that it wasn't reset. -R also deletes the
+          # subvolumes nested inside, at any depth.
+          if [[ -e /btrfs_tmp/root-new ]]; then
+            btrfs subvolume delete -R /btrfs_tmp/root-new
+          fi
+          btrfs subvolume snapshot /btrfs_tmp/root-blank /btrfs_tmp/root-new
+          cat /proc/sys/kernel/random/boot_id > /btrfs_tmp/root-new/.root-reset
           if [[ -e /btrfs_tmp/root ]]; then
-            # -R also deletes the subvolumes nested inside, at any depth
             btrfs subvolume delete -R /btrfs_tmp/root
           fi
-
-          btrfs subvolume snapshot /btrfs_tmp/root-blank /btrfs_tmp/root
-          cat /proc/sys/kernel/random/boot_id > /btrfs_tmp/root/.root-reset
+          mv /btrfs_tmp/root-new /btrfs_tmp/root
         '';
       };
 

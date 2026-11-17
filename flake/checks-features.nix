@@ -17,7 +17,8 @@ let
       c.hardware.nvidia.open
       && c.services.tailscale.enable
       && c.fileSystems ? "/mnt/files"
-      && c.boot.loader.limine.secureBoot.enable;
+      && c.boot.loader.limine.secureBoot.enable
+      && lib.elem "tpm2-device=auto" c.boot.initrd.luks.devices.cryptroot.crypttabExtraOpts;
     feat-laptop =
       c:
       c.services.fprintd.enable
@@ -38,6 +39,13 @@ let
       && c.services.resolved.settings.Resolve.DNS == [ "194.242.2.2#dns.mullvad.net" ];
   };
   missing = lib.filter (name: !(expect.${name} (host name))) hosts;
+  # the TPM would give the key to anything booted with the PIN, so this has to stay refused
+  tpmWithoutSecureBoot =
+    (builtins.tryEval
+      (config.flake.nixosConfigurations.feat-all.extendModules {
+        modules = [ { ephemeral.settings.secureBoot = lib.mkForce false; } ];
+      }).config.system.build.toplevel.drvPath
+    ).success;
 in
 {
   ephemeral.hosts = lib.genAttrs hosts (name: {
@@ -51,6 +59,7 @@ in
         assert lib.assertMsg (
           missing == [ ]
         ) "these hosts don't have the feature they switch on: ${toString missing}";
+        assert lib.assertMsg (!tpmWithoutSecureBoot) "tpmUnlock without secureBoot was accepted";
         pkgs.writeText "features-eval" (
           builtins.unsafeDiscardStringContext (
             lib.concatMapStrings (name: (host name).system.build.toplevel.drvPath + "\n") hosts

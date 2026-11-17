@@ -171,6 +171,7 @@ def label(text, fill, name):
 
 
 label("disk passphrase", (154, 151, 179, 255), "label")
+label("TPM PIN", (154, 151, 179, 255), "pin")
 label("that didn't unlock it, try again", (240, 145, 155, 255), "wrong")
 
 bw, bh = int(380 * X), int(50 * X)
