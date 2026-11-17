@@ -94,8 +94,7 @@ in
                 machine.shutdown()
                 machine.start()
 
-            # logged when systemd gives up on the TPM and asks for the passphrase
-            fallback = "falling back to traditional unlocking"
+            # logged when the TPM stops taking PINs; the next question is then the passphrase
             lockout = "dictionary attack lock-out mode"
 
             machine.start()
@@ -128,7 +127,6 @@ in
                 assert machine.succeed("findmnt -no SOURCE /").strip() == "/dev/mapper/cryptroot"
                 console = machine.get_console_log()
                 assert "TPM2 PIN" in console or "token PIN" in console, "the first question wasn't the PIN"
-                assert fallback not in console, "the TPM didn't unlock it"
                 assert console.count("Starting password query on /dev/ttyS0") == 1, "it asked more than once"
 
             # The PIN is asked again until the TPM locks out, after 3 wrong ones in swtpm; only then
@@ -137,14 +135,13 @@ in
                 boot()
                 for _ in range(6):
                     query()
-                    # once systemd has given up on the TPM, this question is the passphrase
-                    if fallback in machine.get_console_log():
+                    # the notice that it falls back to the passphrase never reaches the console
+                    if lockout in machine.get_console_log():
                         break
                     machine.send_console("0000\n")
-                    machine.wait_for_console_text(r"Bad password|Bad PIN|falling back", timeout=timedelta(minutes=1))
+                    machine.wait_for_console_text(r"Bad password|Bad PIN|lock-out mode", timeout=timedelta(minutes=1))
                 else:
-                    raise AssertionError("never asked for the passphrase")
-                assert lockout in machine.get_console_log(), "it gave up on the TPM for another reason than the lockout"
+                    raise AssertionError("the TPM never locked out")
                 machine.send_console("${passphrase}\n")
                 machine.wait_for_unit("multi-user.target")
                 assert machine.succeed("findmnt -no SOURCE /").strip() == "/dev/mapper/cryptroot"
