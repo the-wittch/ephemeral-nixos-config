@@ -95,6 +95,20 @@ in
               filtering()
               assert not curl_gets_through(), "curl reached the server after OpenSnitch started again"
 
+          # SIGKILL as the stop signal stands in for the daemon crashing while it stops, which 1.8.0
+          # sometimes does
+          with subtest("a stop asked for lets traffic through even when OpenSnitch dies on the way out"):
+              dropin = "/run/systemd/system/opensnitchd.service.d/crash-on-stop.conf"
+              machine.succeed(f"mkdir -p $(dirname {dropin}) && printf '[Service]\\nKillSignal=SIGKILL\\n' >{dropin} && systemctl daemon-reload")
+              machine.succeed("systemctl stop opensnitchd.service")
+              assert unit("Result") != "success", f"the stop went cleanly ({unit('Result')}), so this tested nothing"
+              machine.fail("nft list table inet opensnitch-down")
+              assert curl_gets_through(), "curl couldn't connect after a stop asked for"
+              machine.succeed(f"rm {dropin} && systemctl daemon-reload && systemctl start opensnitchd.service")
+              filtering()
+              machine.fail("test -e /run/opensnitch-stop-asked")
+              assert not curl_gets_through(), "curl reached the server after OpenSnitch started again"
+
           # as at boot: the guard is up and the daemon isn't running yet
           with subtest("before OpenSnitch filters, the guard holds every new connection out"):
               machine.succeed("systemctl stop opensnitchd.service")

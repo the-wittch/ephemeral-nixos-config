@@ -21,6 +21,7 @@ Breaking changes are listed first in each release, with what to do about them. R
 ### Fixed
 
 - The reset of `/` at boot deleted the old root before making the new one, so a failure in between left no root to boot. It makes the new one first now, and a failure at any step leaves a root that boots, with `ephemeral-doctor` reporting that it wasn't reset.
+- `systemctl stop opensnitchd` sometimes left the network blocked: OpenSnitch 1.8.0 can crash while it stops, and the guard took that for a crash and held new connections out. A stop asked for lets traffic through now however the daemon exits; a crash still holds them out until it's back.
 
 ## 4.10.0
 
