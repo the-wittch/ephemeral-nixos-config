@@ -36,8 +36,10 @@ get() { jq -r --arg k "$1" '.[$k] // empty' "$SETTINGS"; }
 gum style --bold --foreground 212 "Ephemeral Nix setup"
 echo
 
-profile=$(gum choose --header "Profile" --selected "$(get profile || true)" \
-  "full" "minimal") || exit 0
+# menu_profile, menu_encryptedDns, vault_re and custom_dns_re come from modules/settings, by way
+# of modules/packages/_prelude.nix
+# shellcheck disable=SC2154
+profile=$(pick_setting profile "Profile" "$(get profile || true)" "${menu_profile[@]}") || exit 0
 profile=${profile:-full}
 
 declare -A opt=(
@@ -75,34 +77,21 @@ fi
 vault=$(get passSshVault)
 if [[ ${on[usePassSshAgent]:-false} == true ]]; then
   vault=$(gum input --header "Proton Pass vault with your SSH keys" --value "${vault:-Personal}") || exit 0
-  case $vault in
-    "" | *[[:cntrl:]]* | *'"'* | *'$'* | *'`'* | *\\*)
-      die "the vault name can't be empty or have quotes, \$, backticks or backslashes"
-      ;;
-  esac
+  # shellcheck disable=SC2154
+  [[ $vault =~ ^${vault_re}$ ]] ||
+    die "the vault name can't be empty or have quotes, \$, backticks, backslashes or control characters"
 fi
 
-declare -A dns_label=(
-  [none]="The network's DNS (not encrypted)"
-  [cloudflare]="Cloudflare (no filtering)"
-  [quad9]="Quad9 (blocks malware)"
-  [adguard]="AdGuard (blocks ads and trackers)"
-  [controld]="Control D (your own resolver id)"
-  [custom]="Other: your own DNS over TLS servers"
-)
-dns_order=(none cloudflare quad9 adguard)
 dns=$(get encryptedDns)
-if [[ $profile == full ]]; then
-  dns_order+=(controld)
-  [[ $(get useControlD) == true ]] && dns=controld
-fi
-dns_order+=(custom)
-labels=()
-for k in "${dns_order[@]}"; do labels+=("${dns_label[$k]}"); done
-picked=$(printf '%s\n' "${labels[@]}" |
-  gum choose --header "DNS" --selected "${dns_label[${dns:-none}]}") || exit 0
-dns=none
-for k in "${dns_order[@]}"; do [[ $picked == "${dns_label[$k]}" ]] && dns=$k; done
+# Control D needs the full profile
+dns_order=()
+# shellcheck disable=SC2154
+for k in "${menu_encryptedDns[@]}"; do
+  [[ $k == controld && $profile != full ]] || dns_order+=("$k")
+done
+[[ $profile == full && $(get useControlD) == true ]] && dns=controld
+dns=$(pick_setting encryptedDns "DNS" "${dns:-none}" "${dns_order[@]}") || exit 0
+dns=${dns:-none}
 
 servers=
 if [[ $dns == custom ]]; then
@@ -112,7 +101,8 @@ if [[ $dns == custom ]]; then
   read -ra list <<<"$servers"
   for s in "${list[@]}"; do
     # the name is what the certificate is checked against, so it can't be left out
-    [[ $s =~ ^[0-9A-Fa-f.:]+#[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$ ]] ||
+    # shellcheck disable=SC2154
+    [[ $s =~ ^${custom_dns_re}$ ]] ||
       die "$s isn't address#name, such as 194.242.2.2#dns.mullvad.net"
   done
 fi

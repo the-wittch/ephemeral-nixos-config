@@ -15,9 +15,13 @@ concurrency:
 permissions:
   contents: read
 
+# Each step's time limit is about three times its usual time, building included, so a test that
+# hangs fails within minutes; a job's limit covers its steps and setup. The VM tests also stop
+# themselves, with globalTimeout.
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -56,10 +60,10 @@ jobs:
           nix run --inputs-from path:. nixpkgs#zizmor -- --offline .github/workflows/
       - name: shellcheck
         if: steps.changes.outputs.code == 'true'
-        run: nix run --inputs-from path:. nixpkgs#shellcheck -- -x -P SCRIPTDIR scripts/*.sh scripts/lib/*.sh .github/*.sh .githooks/* flake/tests/_scripts.sh
+        run: git ls-files -z "*.sh" ".githooks/*" | xargs -0 nix run --inputs-from path:. nixpkgs#shellcheck -- -x -P SCRIPTDIR
       - name: shfmt
         if: steps.changes.outputs.code == 'true'
-        run: nix run --inputs-from path:. nixpkgs#shfmt -- -i 2 -ci -d scripts .github/*.sh .githooks/* flake/tests/_scripts.sh
+        run: git ls-files -z "*.sh" ".githooks/*" | xargs -0 nix run --inputs-from path:. nixpkgs#shfmt -- -i 2 -ci -d
       - name: nixfmt
         if: steps.changes.outputs.code == 'true'
         run: git ls-files -z '*.nix' | xargs -0 nix run --inputs-from path:. nixpkgs#nixfmt -- --check
@@ -70,10 +74,12 @@ jobs:
           cp hardware-configuration.example.nix hardware-configuration.nix
       - name: flake check
         if: steps.changes.outputs.code == 'true'
+        timeout-minutes: 20
         run: .github/eval-checks.sh
       # the installer pins a release of this repo; a change that would break it shows here, not on Tuesday
       - name: installer still evaluates
         if: steps.changes.outputs.code == 'true'
+        timeout-minutes: 10
         run: |
           git clone -q --depth 1 https://github.com/the-wittch/ephemeral-nixos.git "$RUNNER_TEMP/installer"
           cd "$RUNNER_TEMP/installer"
@@ -92,7 +98,7 @@ jobs:
       github.event_name == 'workflow_dispatch'
       || (github.event.action != 'opened' && contains(github.event.pull_request.labels.*.name, 'boot-test'))
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -125,6 +131,7 @@ jobs:
           cp hardware-configuration.example.nix hardware-configuration.nix
       - name: boot
         if: steps.changes.outputs.code == 'true'
+        timeout-minutes: 25
         # one at a time, so only one test's evaluation is in memory
         run: |
           for check in boot boot-minimal upgrade; do
@@ -133,9 +140,11 @@ jobs:
       # on its own: a fourth VM at the same time slows the others past their timeouts
       - name: disk
         if: steps.changes.outputs.code == 'true'
+        timeout-minutes: 20
         run: nix build path:.#checks.x86_64-linux.disk -L --no-link
       - name: turn Secure Boot on after updating from the previous release
         if: steps.changes.outputs.code == 'true'
+        timeout-minutes: 20
         run: nix build path:.#checks.x86_64-linux.secure-boot -L --no-link
 
   # The boot tests only build GNOME. This builds every desktop and most feature hosts, so a config
@@ -147,7 +156,7 @@ jobs:
       github.event_name == 'workflow_dispatch'
       || (github.event.action != 'opened' && contains(github.event.pull_request.labels.*.name, 'boot-test'))
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -173,6 +182,7 @@ jobs:
           cp hardware-configuration.example.nix hardware-configuration.nix
       - name: build each desktop
         if: steps.changes.outputs.code == 'true'
+        timeout-minutes: 40
         run: |
           set -euo pipefail
           for group in "gnome-full gnome-minimal feat-network" "plasma-full plasma-minimal feat-pass" \
@@ -227,19 +237,24 @@ jobs:
           cp hardware-configuration.example.nix hardware-configuration.nix
       - name: desktops
         if: steps.changes.outputs.code == 'true'
+        timeout-minutes: 25
         run: |
           for desktop in plasma niri umbriel; do
             nix build "path:.#checks.x86_64-linux.desktop-boot-$desktop" -L --no-link
           done
       - name: boot this code on the previous release's /persist
         if: steps.changes.outputs.code == 'true'
+        timeout-minutes: 15
         run: nix build path:.#checks.x86_64-linux.upgrade-boot -L --no-link
       - name: switch from the small install to the full system and back
         if: steps.changes.outputs.code == 'true'
+        timeout-minutes: 15
         run: nix build path:.#checks.x86_64-linux.profile-switch -L --no-link
       - name: OpenSnitch against a second machine
         if: steps.changes.outputs.code == 'true'
+        timeout-minutes: 15
         run: nix build path:.#checks.x86_64-linux.network-filter -L --no-link
       - name: unlock the disk with the TPM and a PIN
         if: steps.changes.outputs.code == 'true'
+        timeout-minutes: 15
         run: nix build path:.#checks.x86_64-linux.tpm-unlock -L --no-link

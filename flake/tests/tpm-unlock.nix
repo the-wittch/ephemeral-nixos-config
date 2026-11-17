@@ -15,6 +15,8 @@ in
     {
       checks.tpm-unlock = pkgs.testers.runNixOSTest {
         name = "tpm-unlock";
+        # it usually takes a few minutes
+        globalTimeout = 600;
         node.pkgsReadOnly = false;
 
         nodes.machine =
@@ -76,14 +78,16 @@ in
             onLuks = nodes.machine.specialisation.on-luks.configuration.system.build.toplevel;
           in
           ''
+            import time
             from datetime import timedelta
 
             # The prompts end without a newline, and the driver only sees whole lines, so these
             # wait for the lines systemd logs around them.
             def query():
                 machine.wait_for_console_text(r"Starting password query on /dev/ttyS0", timeout=timedelta(minutes=3))
-                # it logs that just before it writes the prompt and reads the answer
-                machine.sleep(timedelta(seconds=2))
+                # it logs that just before it writes the prompt and reads the answer; machine.sleep
+                # would run in the VM, which has no shell until the disk is open
+                time.sleep(2)
 
             # each start begins a new console log
             def boot():
@@ -133,13 +137,14 @@ in
                 boot()
                 for _ in range(6):
                     query()
-                    # systemd asks for the passphrase right after the TPM refuses to try
-                    if lockout in machine.get_console_log():
+                    # once systemd has given up on the TPM, this question is the passphrase
+                    if fallback in machine.get_console_log():
                         break
                     machine.send_console("0000\n")
-                    machine.wait_for_console_text(r"Bad password|Bad PIN|lock-out mode", timeout=timedelta(minutes=1))
+                    machine.wait_for_console_text(r"Bad password|Bad PIN|falling back", timeout=timedelta(minutes=1))
                 else:
-                    raise AssertionError("the TPM never locked out")
+                    raise AssertionError("never asked for the passphrase")
+                assert lockout in machine.get_console_log(), "it gave up on the TPM for another reason than the lockout"
                 machine.send_console("${passphrase}\n")
                 machine.wait_for_unit("multi-user.target")
                 assert machine.succeed("findmnt -no SOURCE /").strip() == "/dev/mapper/cryptroot"

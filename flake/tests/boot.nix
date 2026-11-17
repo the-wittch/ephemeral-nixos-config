@@ -10,6 +10,8 @@ in
     {
       checks.boot = pkgs.testers.runNixOSTest {
         name = "boot";
+        # it usually takes 2.5 minutes
+        globalTimeout = 600;
 
         # the unfree allowlist sets nixpkgs.config
         node.pkgsReadOnly = false;

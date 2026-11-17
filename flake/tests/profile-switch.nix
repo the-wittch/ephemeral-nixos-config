@@ -61,6 +61,8 @@ in
     {
       checks.profile-switch = pkgs.testers.runNixOSTest {
         name = "profile-switch";
+        # it usually takes a minute
+        globalTimeout = 600;
         node.pkgsReadOnly = false;
 
         nodes.machine = {

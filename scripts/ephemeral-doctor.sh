@@ -271,7 +271,7 @@ fi
 if [[ -e ${EPHEMERAL_ROOT:-}/etc/ephemeral/tpm-unlock ]]; then
   if [[ $(efi_flag SecureBoot) != 1 ]]; then
     # the TPM key is bound to Secure Boot being on, so it can't match
-    bad "the disk is set to unlock with the TPM, but Secure Boot is off, so every boot asks for the passphrase" \
+    bad "the disk is set to unlock with the TPM, but Secure Boot is off, so the PIN can't unlock it and every boot asks for the passphrase after it" \
       "turn Secure Boot on in the firmware (docs/security.md)"
   elif [[ $EUID -ne 0 ]]; then
     ok "the disk unlocks with the TPM and a PIN (sudo ephemeral-doctor checks the disk's TPM slot)"

@@ -21,11 +21,11 @@
 
 The installer adds no modules to the machines it installs: its `flake.nix` is the machine flake from the [README](../README.md#rebuild-and-update), pinned to a release of this repo. A change here reaches new installs once the installer pins a release with it.
 
-Each helper command is a Bash script. `modules/packages/packages.nix` builds it with `writeShellApplication`, with the files in `scripts/lib/` in front of it, so the commands share one way of finding the flake, reading settings, writing files, checking release tags and asking questions:
+Each helper command is a Bash script. `modules/packages/packages.nix` builds it with `writeShellApplication`, with `modules/packages/_prelude.nix` in front of it: the settings rules and menus the scripts need, as shell variables, then every file in `scripts/lib/`. The script tests run the scripts with the same prelude. So the commands share one way of finding the flake, reading settings, writing files, checking release tags and asking questions:
 
 | file | what |
 |------|------|
-| `core.sh` | `die`, `usage_error` (exit 2), `require_tty`, and `ask`, which is a no without a terminal |
+| `core.sh` | `die`, `usage_error` (exit 2), `require_tty`, `ask`, which is a no without a terminal, and `pick_setting`, a menu of a setting's values with their names from `_choices.nix` |
 | `flake.sh` | the flake folder, `settings.json`, writing into the flake atomically, and the secret check |
 | `release.sh` | the release a flake pins, the newest one, and comparing them |
 | `files.sh` | writing a root-only file from a pipe, and checking a backup goes somewhere that outlives this disk |
@@ -59,7 +59,7 @@ When only docs changed (Markdown, `docs/`, the license, issue templates), the se
 - `disk` formats a VM disk with the real layout (LUKS, btrfs, the rollback the other tests switch off), checks the wipe and what survives it, then deletes `root-blank` and brings it back with the steps `ephemeral-doctor --fix-root-reset` runs.
 - `secure-boot` turns `secureBoot` on after an update from the previous release, boots with Secure Boot enforced, also from the fallback path alone, and checks Limine refuses a changed kernel.
 
-Beside them, `desktop-build` builds every desktop and most feature hosts, `desktop-boot-plasma`, `-niri` and `-umbriel` boot those desktops to their login screen, `upgrade-boot` boots the current code on the `/persist` a VM of the previous release wrote, `profile-switch` switches a running small install to the full system, as `ephemeral-setup` does, then back, `network-filter` checks OpenSnitch against a second machine: what it blocks, what the guard holds back at boot and after a crash, and that a clean stop lets traffic through, and `tpm-unlock` unlocks a LUKS root with a software TPM and a PIN, then falls back to the passphrase after a wrong one.
+Beside them, `desktop-build` builds every desktop and most feature hosts, `desktop-boot-plasma`, `-niri` and `-umbriel` boot those desktops to their login screen, `upgrade-boot` boots the current code on the `/persist` a VM of the previous release wrote, `profile-switch` switches a running small install to the full system, as `ephemeral-setup` does, then back, `network-filter` checks OpenSnitch against a second machine: what it blocks, what the guard holds back at boot and after a crash, and that a stop asked for lets traffic through, even when the daemon dies on the way out, and `tpm-unlock` unlocks a LUKS root with a software TPM and a PIN, then with the passphrase once wrong PINs have locked the TPM out.
 
 To run the checks locally, use the same script as CI:
 
@@ -78,6 +78,8 @@ for t in boot boot-minimal upgrade disk secure-boot desktop-boot-umbriel upgrade
   nix build "path:.#checks.x86_64-linux.$t" -L --no-link
 done
 ```
+
+Building `checks.x86_64-linux.<test>.driver` instead type-checks a test's script the way CI does, without starting a VM. A new VM test gets a `globalTimeout` of about three times what it usually takes, 10 minutes at least, and its CI step a `timeout-minutes` the same way, building included, so a test that hangs fails in minutes.
 
 `desktop-parity` checks that each desktop's full and minimal variants agree on the login manager, keyring, wallet, first-login wizard and persisted folders. A difference has to be fixed or listed in `allowedDrift` in `flake/checks.nix` with its reason, and a listed difference that's gone fails the check too.
 

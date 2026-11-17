@@ -9,6 +9,8 @@ in
     {
       checks.boot-minimal = pkgs.testers.runNixOSTest {
         name = "boot-minimal";
+        # it usually takes under 2 minutes
+        globalTimeout = 600;
         enableOCR = true;
 
         node.pkgsReadOnly = false;

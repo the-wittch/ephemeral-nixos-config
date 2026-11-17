@@ -1,8 +1,11 @@
 # What each value in settings.json may be: a POSIX extended regular expression matched against
-# the whole value, or the list of values allowed. _schema.nix builds its types from these, the
-# helper commands get controldResolver from packages.nix, and the installer checks its answers
-# against all of them through the settings-contract package of the release it pins.
+# the whole value, or the list of values allowed, which comes from the menus in _choices.nix.
+# _schema.nix builds its types from these, the helper commands get some through
+# modules/packages/_prelude.nix, and the installer checks its answers against all of them
+# through the settings-contract package of the release it pins.
 let
+  choices = import ./_choices.nix;
+  values = key: map (c: c.value) (builtins.filter (c: !(c.useControlD or false)) choices.${key});
   # these end up in shell scripts, such as the login environment
   vault = "[^\"$`\\\\[:cntrl:]]+";
 in
@@ -16,28 +19,10 @@ in
   keyboardVariant = "[a-z0-9_-]*(,[a-z0-9_-]*)*";
   diskDevice = "/dev/[A-Za-z0-9/_.:+-]+";
   swapSize = "[0-9]+[KMGT]?";
-  desktop = [
-    "plasma"
-    "gnome"
-    "niri"
-    "umbriel"
-  ];
-  profile = [
-    "minimal"
-    "full"
-  ];
-  nvidia = [
-    "none"
-    "open"
-    "legacy"
-  ];
-  encryptedDns = [
-    "none"
-    "cloudflare"
-    "quad9"
-    "adguard"
-    "custom"
-  ];
+  desktop = values "desktop";
+  profile = values "profile";
+  nvidia = values "nvidia";
+  encryptedDns = values "encryptedDns";
   # each entry, address#name: resolved checks the server's certificate against the name
   customDns = "[0-9A-Fa-f.:]+#[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?";
   passSettingsVault = vault;

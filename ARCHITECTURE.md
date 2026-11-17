@@ -25,20 +25,23 @@ Every fact the two repos share has one owner. The other side reads it from a rel
 
 | what | owner | read by |
 |---|---|---|
-| the settings: names, rules, allowed values, defaults | `modules/settings/_rules.nix` and `_schema.nix` | the rebuild; `controld.nix` and the helper commands, through `packages.nix`; exported for the installer as the `settings-contract` package and the `settings` output |
+| the settings: names, rules, defaults | `modules/settings/_rules.nix` and `_schema.nix` | the rebuild; `controld.nix` and the helper commands, through `modules/packages/_prelude.nix`; exported for the installer as the `settings-contract` package and the `settings` output |
+| the menus: each value a desktop, driver, profile or DNS setting can have, in order, with its name and line | `modules/settings/_choices.nix`, which `_rules.nix` takes the allowed values from | `ephemeral-setup`, through the prelude; the installer's screens and plain prompts, through `settings-contract` |
+| what `settings-from-pass` copies from Proton Pass | `modules/settings/_pass-keys.nix` | the settings loader, which takes nothing else from that file, and `settings-from-pass`, through the prelude |
+| the wallpaper and the snowflake logo | `assets/wallpaper.svg` and `modules/branding/_logo.sh` | the desktops, the splash, fastfetch, and the installer, through the `wallpaper` and `welcome-logo` packages |
 | the app catalog: ids, labels, categories, defaults, desktops | `ephemeral.apps`, one file per category in `modules/apps/` | `ephemeral-apps`, `host-builder.nix`, and the installer, through the `app-catalog` package |
 | the disk layout | `modules/_disko-layout.nix` | disko when installing, the rebuild, and the disk test |
 | what's kept across reboots | the feature that needs it, in `environment.persistence."/persist"` | impermanence, `ephemeral-doctor kept` and `audit`, and the boot test, which reads the same list |
 | the version | the newest heading in `CHANGELOG.md` | `modules/release.nix`, `ephemeral-update --list`, and the release scripts |
-| the installer's wording, screens, disk checks and install steps | the installer | nothing here |
+| the installer's screens, their wording apart from the menus, disk checks and install steps | the installer | nothing here |
 
-`settings-contract` and `settings` are a public interface, like the aspect names: renaming or removing what they hold is a breaking change for the installer.
+`settings-contract`, `settings`, `wallpaper` and `welcome-logo` are a public interface, like the aspect names: renaming or removing what they hold is a breaking change for the installer.
 
 Where things go:
 
-- **A setting**: its rule in `_rules.nix` if it has one, its option in `_schema.nix`, a row in `docs/settings.md`, its default in `settings.example.json`, and the aspect it switches in `host-builder.nix`. CI fails on a missing row or default. The contract carries the rule to the installer; asking about the setting on its screens is the installer's job.
+- **A setting**: its rule in `_rules.nix` if it has one, its option in `_schema.nix`, a row in `docs/settings.md`, its default in `settings.example.json`, and the aspect it switches in `host-builder.nix`. CI fails on a missing row or default, or a row that leaves out a value the setting can have. A setting picked from a menu has its values in `_choices.nix` instead. The contract carries the rule to the installer; asking about the setting on its screens is the installer's job.
 - **An app**: one entry in `ephemeral.apps`. The installer and `ephemeral-apps` both list it from there.
-- **A desktop**: its value in `_rules.nix`, its aspects in `modules/desktop/`, and its full and minimal variants agreeing as `desktop-parity` checks. The installer needs its own label and description for it before offering it.
+- **A desktop**: its entry in `_choices.nix`, its aspects in `modules/desktop/`, a test machine in `tests/<desktop>-full` and `tests/<desktop>-minimal`, and its full and minimal variants agreeing as `desktop-parity` checks. The installer offers it once it pins a release with it.
 - **Anything else a machine does**: a file in `modules/`, as the module rules below say.
 
 ## Layout
@@ -105,7 +108,7 @@ What checks each one:
 | 6 | `sandbox-eval`, which finds the services from where they're defined |
 | 7, 8 | `settings-reject`, the installer's validation cases (shared by its Go and shell tests), and the script tests |
 | 9 | `boot`: the sysctls, kernel command line and blocked modules are in effect |
-| 10 | `features-eval`: `tpmUnlock` without `secureBoot` doesn't build; `scripts-behaviour`: enrolling binds to PCR 7 with a PIN and wipes only TPM slots; `tpm-unlock`: the PIN unlocks the disk, and the passphrase still does after a wrong one |
+| 10 | `features-eval`: `tpmUnlock` without `secureBoot` doesn't build; `scripts-behaviour`: enrolling binds to PCR 7 with a PIN and wipes only TPM slots; `tpm-unlock`: the PIN unlocks the disk, and the passphrase still does once wrong PINs have locked the TPM out |
 
 Encrypted DNS and Control D have no plaintext fallback: `boot` checks it with Control D, `features-eval` with a provider.
 

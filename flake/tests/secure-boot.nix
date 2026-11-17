@@ -59,6 +59,8 @@ in
     {
       checks.secure-boot = previous.inputs.nixpkgs.legacyPackages.${system}.testers.runNixOSTest {
         name = "secure-boot";
+        # it usually takes 4 minutes
+        globalTimeout = 900;
         node.pkgsReadOnly = false;
 
         nodes.machine = {

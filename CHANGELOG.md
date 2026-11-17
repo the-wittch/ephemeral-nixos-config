@@ -10,13 +10,19 @@ Breaking changes are listed first in each release, with what to do about them. R
 - The boot splash says "TPM PIN" when it asks for the PIN.
 - `ephemeral-doctor` reports TPM unlock that can't work: with Secure Boot off, or, run with sudo, without a TPM slot on the disk.
 - A test that unlocks a LUKS root with a software TPM and a PIN, and with the passphrase after wrong PINs have locked the TPM out.
-- Two outputs for the installer, so it can read the settings rules from the release it pins instead of keeping its own copies: `settings-contract`, a JSON file with what each setting may be, its default and which settings are on/off switches; and `settings`, each machine's settings checked the way a rebuild checks them, without building the system.
-- CI fails when `docs/settings.md` doesn't describe a setting.
+- Outputs for the installer, so it reads from the release it pins instead of keeping its own copies: `settings-contract`, a JSON file with what each setting may be, its default, which settings are on/off switches, and the menus (each desktop, NVIDIA driver, profile and DNS choice in order, with its name and description); `settings`, each machine's settings checked the way a rebuild checks them, without building the system; and the `wallpaper` and `welcome-logo` packages.
+- CI fails when `docs/settings.md` doesn't describe a setting, or a row leaves out a value its setting can have.
+- A test that runs `settings-from-pass` against a fake Proton Pass and checks it copies every key the settings loader takes from it.
 
 ### Changed
 
-- What each setting may be is written once, in `modules/settings/_rules.nix`. The schema, the Control D id check at boot, `controld-setup` and `settings-from-pass` all take it from there.
+- What each setting may be is written once, in `modules/settings/_rules.nix`, and the menus once, in `_choices.nix`, which the allowed values come from. The schema, the Control D id check at boot, `controld-setup`, `settings-from-pass` and `ephemeral-setup`'s profile and DNS menus and its checks of DNS servers and the SSH vault name all take them from there.
+- What `settings-from-pass` copies from Proton Pass is listed once, in `modules/settings/_pass-keys.nix`, which the settings loader reads too.
+- The helper commands start with one prelude, `modules/packages/_prelude.nix`, which the script tests use too: the rules and menus as shell variables, then every file in `scripts/lib/`.
+- The fastfetch logo and the installer's welcome logo come from one script, `modules/branding/_logo.sh`.
+- The test machines for each desktop and profile follow from the menus, so a new desktop without them fails CI.
 - `hostname` in `settings.json` is checked with NixOS's own rule for `networking.hostName` when the settings are read. A name NixOS would refuse now stops the rebuild with an error that names the setting, instead of failing later in the build.
+- Every VM test and every CI step has a time limit of about three times how long it usually takes, so a test that hangs fails in minutes instead of running for up to an hour.
 
 ### Fixed
 

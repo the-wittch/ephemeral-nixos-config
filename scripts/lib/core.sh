@@ -29,8 +29,23 @@ ask() {
   [[ ${answer:-n} =~ ^[Yy] ]]
 }
 
-# controld_id_re comes from modules/settings/_rules.nix; packages.nix puts it in front of each command
+# controld_id_re comes from modules/settings/_rules.nix, by way of modules/packages/_prelude.nix
 # shellcheck disable=SC2154,SC2329
 valid_controld_id() {
   [[ $1 =~ ^${controld_id_re}$ ]]
+}
+
+# A gum menu of the values given for a setting, shown as they're named in
+# modules/settings/_choices.nix; prints the value picked. Args: setting, header, current value,
+# then the values in order.
+# shellcheck disable=SC2154,SC2329
+pick_setting() {
+  local key=$1 header=$2 current=$3 v picked
+  shift 3
+  picked=$(for v in "$@"; do printf '%s\n' "${menu_label["$key/$v"]}"; done |
+    gum choose --header "$header" --selected "${menu_label["$key/$current"]:-}") || return 1
+  for v in "$@"; do
+    [[ $picked == "${menu_label["$key/$v"]}" ]] && printf '%s\n' "$v"
+  done
+  return 0
 }

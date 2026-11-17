@@ -48,20 +48,25 @@ let
   );
   example = lib.importJSON ../settings.example.json;
   differ = lib.filter (name: example.${name} or null != defaults.${name}) (lib.attrNames defaults);
-  # docs/settings.md names each one in backticks, in its table
-  undocumented = lib.filter (
-    name: !lib.hasInfix "`${name}`" (builtins.readFile ../docs/settings.md)
-  ) options;
-  hostsUnderTest = [
-    "gnome-full"
-    "gnome-minimal"
-    "niri-full"
-    "niri-minimal"
-    "plasma-full"
-    "plasma-minimal"
-    "umbriel-full"
-    "umbriel-minimal"
-  ];
+  rules = import ../modules/settings/_rules.nix;
+  settingsDoc = builtins.readFile ../docs/settings.md;
+  # docs/settings.md names each one in backticks, in its table, and in a setting's own row every
+  # value it can be
+  undocumented =
+    lib.filter (name: !lib.hasInfix "`${name}`" settingsDoc) options
+    ++ lib.concatLists (
+      lib.mapAttrsToList (
+        name: allowed:
+        let
+          row = lib.findFirst (lib.hasPrefix "| `${name}` |") "" (lib.splitString "\n" settingsDoc);
+        in
+        map (value: "${name} = ${value}") (lib.filter (value: !lib.hasInfix "`${value}`" row) allowed)
+      ) (lib.filterAttrs (_: builtins.isList) rules)
+    );
+  # each desktop in each profile; tests/<desktop>-<profile> has its settings
+  hostsUnderTest = lib.concatMap (
+    desktop: map (profile: "${desktop}-${profile}") rules.profile
+  ) rules.desktop;
   warningsOf = name: lib.concatStrings config.flake.nixosConfigurations.${name}.config.warnings;
   minimalWarns = warningsOf "plasma-minimal";
   hostDrvs = lib.concatMapStrings (

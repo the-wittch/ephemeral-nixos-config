@@ -1,4 +1,5 @@
 # nix build path:.#checks.x86_64-linux.scripts-behaviour -L
+{ lib, ... }:
 {
   perSystem =
     { pkgs, ... }:
@@ -18,8 +19,8 @@
               util-linux
             ];
             SCRIPTS = ../../scripts;
-            # packages.nix puts it in front of every command
-            CONTROLD_ID_RE = (import ../../modules/settings/_rules.nix).controldResolver;
+            # what packages.nix puts in front of every command
+            PRELUDE = pkgs.writeText "prelude.sh" (import ../../modules/packages/_prelude.nix { inherit lib; });
           }
           ''
             bash ${./_scripts.sh}

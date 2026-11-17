@@ -7,6 +7,8 @@ let
     pkgs: desktop:
     pkgs.testers.runNixOSTest {
       name = "desktop-boot-${desktop}";
+      # it usually takes a minute
+      globalTimeout = 600;
       node.pkgsReadOnly = false;
 
       nodes.machine =

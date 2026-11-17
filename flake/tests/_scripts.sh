@@ -40,8 +40,7 @@ fail() {
 
 tool() {
   {
-    printf 'controld_id_re=%q\n' "$CONTROLD_ID_RE"
-    cat "$SCRIPTS"/lib/{core,flake,release,files,apps,tpm}.sh "$SCRIPTS/$1.sh"
+    cat "$PRELUDE" "$SCRIPTS/$1.sh"
   } >"$work/$1"
   echo "$work/$1"
 }
@@ -270,10 +269,29 @@ if grep -q -- '--vault-name other ' "$calls"; then
   pass "ssh-pubs-from-pass: PASS_SSH_VAULT still wins"
 else fail "ssh-pubs-from-pass: PASS_SSH_VAULT"; fi
 
+frompass=$(tool settings-from-pass)
+fake pass-cli 'key=${3##*/}; case $key in useFlakePassCli) echo TRUE ;; controldResolver) exit 1 ;; *) echo "from-pass-$key" ;; esac'
+mkdir -p "$work/frompass"
+: >"$work/frompass/flake.nix"
+printf '{"username": "alice", "usePassSettings": true}\n' >"$work/frompass/settings.json"
+FLAKE_DIR=$work/frompass bash "$frompass" >"$work/out" 2>&1 || true
+want=$(bash -c "$(cat "$PRELUDE")"'; printf "%s\n" "${pass_string_keys[@]}" "${pass_bool_keys[@]}"' | sort)
+if [[ $(jq -r 'keys[]' "$work/frompass/settings.from-pass.json" 2>/dev/null | sort) == "$want" ]] &&
+  [[ $(jq -r '.hostname, .useFlakePassCli' "$work/frompass/settings.from-pass.json") == $'from-pass-hostname\ntrue' ]]; then
+  pass "settings-from-pass: copies every key the loader takes from the Pass item"
+else fail "settings-from-pass: wrote $(cat "$work/frompass/settings.from-pass.json" 2>/dev/null || cat "$work/out")"; fi
+
 # scripts/lib on its own: runs the code with every library loaded, as the commands get them
 lib() {
-  bash -c "set -euo pipefail; controld_id_re=$(printf %q "$CONTROLD_ID_RE"); $(cat "$SCRIPTS"/lib/{core,flake,release,files,apps,tpm}.sh); $1" >"$work/out" 2>&1 </dev/null
+  bash -c "set -euo pipefail; $(cat "$PRELUDE"); $1" >"$work/out" 2>&1 </dev/null
 }
+
+fake gum 'cat >"$FAKE_MENU"; printf "%s\n" "$FAKE_PICK"'
+if FAKE_MENU=$work/menu lib 'export FAKE_PICK=${menu_label["encryptedDns/quad9"]}; [[ $(pick_setting encryptedDns DNS none none quad9) == quad9 ]]' &&
+  [[ $(wc -l <"$work/menu") == 2 ]]; then
+  pass "lib: pick_setting shows the values given by their names and prints the one picked"
+else fail "lib: pick_setting $(cat "$work/out")"; fi
+rm "$fakes/gum"
 
 flake_at v4.2.0
 if lib "[[ \$(pinned_release '$work/flake') == v4.2.0 ]]"; then

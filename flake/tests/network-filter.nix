@@ -12,6 +12,8 @@ in
     {
       checks.network-filter = pkgs.testers.runNixOSTest {
         name = "network-filter";
+        # it usually takes under 2 minutes
+        globalTimeout = 600;
         node.pkgsReadOnly = false;
 
         nodes.server = {

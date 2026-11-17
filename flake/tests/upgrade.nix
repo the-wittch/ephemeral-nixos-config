@@ -57,6 +57,8 @@ in
       # previous release left
       checks.upgrade-boot = pkgs.testers.runNixOSTest {
         name = "upgrade-boot";
+        # it usually takes under 2 minutes
+        globalTimeout = 600;
         node.pkgsReadOnly = false;
         nodes.machine = machine config.ephemeral.aspects.nixos;
 
@@ -97,6 +99,8 @@ in
 
       checks.upgrade = previous.inputs.nixpkgs.legacyPackages.${system}.testers.runNixOSTest {
         name = "upgrade";
+        # it usually takes a minute
+        globalTimeout = 600;
         node.pkgsReadOnly = false;
 
         nodes.machine = {
