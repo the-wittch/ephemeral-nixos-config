@@ -122,10 +122,10 @@ in
                 machine.send_console("${pin}\n")
                 machine.wait_for_unit("multi-user.target")
                 assert machine.succeed("findmnt -no SOURCE /").strip() == "/dev/mapper/cryptroot"
-                log = machine.get_console_log()
-                assert "TPM2 PIN" in log or "token PIN" in log, "the first question wasn't the PIN"
-                assert fallback not in log, "the TPM didn't unlock it"
-                assert log.count("Starting password query on /dev/ttyS0") == 1, "it asked more than once"
+                console = machine.get_console_log()
+                assert "TPM2 PIN" in console or "token PIN" in console, "the first question wasn't the PIN"
+                assert fallback not in console, "the TPM didn't unlock it"
+                assert console.count("Starting password query on /dev/ttyS0") == 1, "it asked more than once"
 
             # The PIN is asked again until the TPM locks out, after 3 wrong ones in swtpm; only then
             # does systemd ask for the passphrase.
