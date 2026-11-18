@@ -2,6 +2,13 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.11.2
+
+### Fixed
+
+- Turning on `secureBoot` failed with "File is immutable" when the firmware kept its KEK or db after the PK was deleted, as the Secure Boot steps say to do. Linux marks those variables immutable, and sbctl won't write over them; the rebuild now clears that mark just before it enrolls the keys.
+- With `secureBoot` on, `ephemeral-update` now says why it didn't put the keys into the firmware, instead of skipping that without a word: the firmware isn't in Setup Mode, or doesn't report Secure Boot at all. `ephemeral-doctor` tells the second case apart too. On Framework laptops, "Erase all Secure Boot Settings" causes it; [troubleshooting](docs/troubleshooting.md) has the fix.
+
 ## 4.11.1
 
 ### Fixed
