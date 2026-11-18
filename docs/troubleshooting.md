@@ -32,6 +32,19 @@ Your own config in `/persist/etc/nixos` is untouched, so a plain `ephemeral-upda
 
 **The disk keeps asking for the TPM PIN.** The PIN was wrong. Once the TPM has had enough wrong ones it stops taking them, and the boot asks for the passphrase. See [TPM unlock](security.md#tpm-unlock).
 
+**The right password doesn't log you in.** The login password is the hash in `/persist/passwords/<user>`, so a missing or broken file locks you out. Boot the installer USB, unlock the disk, and write the hash again, with your own username in place of `nixuser`:
+
+```bash
+sudo cryptsetup open /dev/disk/by-partlabel/disk-main-luks cryptroot
+sudo mount -o subvolid=5 /dev/mapper/cryptroot /mnt
+mkpasswd -m yescrypt | sudo tee /mnt/persist/passwords/nixuser
+sudo chmod 600 /mnt/persist/passwords/nixuser
+sudo umount /mnt
+sudo cryptsetup close cryptroot
+```
+
+If the USB has no `mkpasswd`, run `nix --extra-experimental-features 'nix-command flakes' shell nixpkgs#mkpasswd` first. To change a password you still know, use `ephemeral-passwd` instead.
+
 **The disk won't unlock with the right passphrase.** The LUKS header may be damaged. Boot the NixOS installer USB and restore the copy you made with [`luks-header-backup`](features.md#luks-header-backup):
 
 ```bash
@@ -85,4 +98,4 @@ Run `ephemeral-report`, read it, and paste it into a [new issue](https://github.
 
 ## What's tested
 
-This is a personal project shared as-is. x86_64 machines with UEFI are supported. Every change is evaluated on GNOME, Plasma, niri and Umbriel with both profiles, with each optional feature, and with every app in the picker. Each release builds every desktop, boots each of them in a VM, and moves a machine from the previous release to the new one, both by switching and by booting. A small install is also switched to the full system and back, as `ephemeral-setup` does it. NVIDIA is only evaluated, not run. Secure Boot is tested on the VM's firmware, not on real hardware.
+This is a personal project shared as-is. x86_64 machines with UEFI are supported. Every change is evaluated on GNOME, Plasma, niri and Umbriel with both profiles, with each optional feature, and with every app in the picker. Each release builds every desktop, boots each of them in a VM, and moves a machine from the previous release to the new one, both by switching and by booting. A small install is also switched to the full system and back, as `ephemeral-setup` does it. NVIDIA is only evaluated, not run. Secure Boot and TPM unlock are tested on the VM's firmware every release, and have been run by hand on one Framework laptop.

@@ -31,6 +31,12 @@ jobs:
         run: |
           ./scripts/check-no-secrets.sh
           ./scripts/check-no-secrets.sh --range HEAD
+      # before the docs-only cut-off, since a docs change is what breaks links
+      - name: links between the docs
+        timeout-minutes: 2
+        env:
+          REPO: ${{ github.repository }}
+        run: python3 scripts/check-links.py "$REPO"
       # the weekly release picks its version when it starts, so another release can overtake it
       - name: a release is newer than the last one
         if: startsWith(github.head_ref, 'release/v')

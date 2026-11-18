@@ -42,16 +42,17 @@ git config core.hooksPath .githooks
 
 They refuse machine files (`settings.json`, `smb-shares.json`, `hardware-configuration.nix`), `modules/local/`, credentials, private keys and API tokens. pre-push checks every commit you're pushing, so a secret that was added and later deleted is still caught, and CI scans the whole history. `SKIP_SECRET_CHECK=1` skips them on purpose.
 
-On every pull request, CI runs the secret scan, actionlint and zizmor on the workflows, shellcheck, shfmt (`-i 2 -ci`) and nixfmt. Then `.github/eval-checks.sh` evaluates every check and builds the ones that don't boot a VM, which takes a few minutes. Among them:
+On every pull request, CI runs the secret scan, the link check (`scripts/check-links.py`), actionlint and zizmor on the workflows, shellcheck, shfmt (`-i 2 -ci`) and nixfmt. Then `.github/eval-checks.sh` evaluates every check and builds the ones that don't boot a VM, which takes a few minutes. Among them:
 
 - `features-eval` evaluates a machine with each optional feature on by itself, and one with all of them, and checks each really is on.
 - `exposure-eval` checks every desktop and profile for an open port, SSH, a root password, users that can change outside the config, and OpenSnitch turned off where it should be on.
 - `sandbox-eval` finds each root service a file in `modules/` defines, and fails on one without the sandbox unless `flake/checks-security.nix` says why.
 - `settings-reject` checks that bad `settings.json` values stay refused: an unknown desktop, a disk path with `..`, a vault name with `$`, an old `settings.nix`.
-- `scripts-behaviour` runs `ephemeral-update`, `ephemeral-passwd`, `ephemeral-doctor audit` and `ssh-pubs-from-pass` against fake `curl`, `nh`, `sudo` and `systemctl`: what gets offered, what gets refused, which secrets stop a rebuild, that a bad password never replaces the old one, and what the audit reports. It also tests the `scripts/lib/` functions on their own, and every command's `--help`, its refusal of an unknown option (exit 2, nothing run), and that the ones with questions stop without a terminal.
+- `docs-examples` loads every `nix` block in `docs/` into a GNOME machine on the full profile and evaluates it. So each block has to be a whole module for `modules/`, and they can't contradict each other; show a fragment in a `text` block instead.
+- `scripts-behaviour` runs `ephemeral-update`, `ephemeral-passwd`, `ephemeral-doctor` and `ssh-pubs-from-pass` against fake `curl`, `nh`, `sudo`, `systemctl` and `fwupdmgr`: what gets offered, what gets refused, which secrets stop a rebuild, that a bad password never replaces the old one, what the audit reports, and what the doctor says about Secure Boot, the TPM and firmware updates. It also tests the `scripts/lib/` functions on their own, and every command's `--help`, its refusal of an unknown option (exit 2, nothing run), and that the ones with questions stop without a terminal.
 - the installer still evaluates against this code, so a change that would break it shows before the installer moves to the release.
 
-When only docs changed (Markdown, `docs/`, the license, issue templates), the secret scan is all that runs; `.github/changed.sh` decides. The boot tests run on manual runs, and on a pull request once you add the `boot-test` label. Release pull requests always get the label, so every release is boot-tested before it's merged:
+When only docs changed (Markdown, `docs/`, the license, issue templates), the secret scan and the link check are all that run; `.github/changed.sh` decides, and counts a change inside a `nix` block in `docs/` as code, since `docs-examples` evaluates it. The boot tests run on manual runs, and on a pull request once you add the `boot-test` label. Release pull requests always get the label, so every release is boot-tested before it's merged:
 
 - `boot` boots the full profile three times with a wiped root and checks services, persistence, snapshots, theming and the LUKS header backup.
 - `boot-minimal` boots the first-boot system twice and checks the wipe, the login screen, that nothing failed, and that the boot splash draws its passphrase prompt.
@@ -74,7 +75,7 @@ cp hardware-configuration.example.nix hardware-configuration.nix
 Build the VM tests one at a time:
 
 ```bash
-for t in boot boot-minimal upgrade disk secure-boot desktop-boot-umbriel upgrade-boot profile-switch network-filter tpm-unlock; do
+for t in boot boot-minimal upgrade disk secure-boot desktop-boot-plasma desktop-boot-niri desktop-boot-umbriel upgrade-boot profile-switch network-filter tpm-unlock; do
   nix build "path:.#checks.x86_64-linux.$t" -L --no-link
 done
 ```

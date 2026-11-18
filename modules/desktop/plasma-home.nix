@@ -150,6 +150,16 @@
           windowTitle = font fonts.sansSerif fonts.sizes.desktop;
         };
 
+        # Krohnkite asks for Meta+L as well, and which one got it depended on which asked first.
+        # KWin's own Meta+Alt+Right moves the focus right.
+        shortcuts = {
+          ksmserver."Lock Session" = [
+            "Meta+L"
+            "Screensaver"
+          ];
+          kwin.KrohnkiteFocusRight = [ ];
+        };
+
         configFile = {
           # KDE would copy its settings over the GTK files Home Manager manages
           kded5rc."Module-gtkconfig".autoload = false;
