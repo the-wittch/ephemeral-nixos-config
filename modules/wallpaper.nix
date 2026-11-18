@@ -54,10 +54,17 @@ in
               mkdir -p $out/share/backgrounds/ephemeral
               rsvg-convert -w 3840 -h 2160 ${../assets/wallpaper.svg} \
                 -o $out/share/backgrounds/ephemeral/wallpaper.png
+              # the boot menu's, without the words; each <text> element is on a line of its own
+              grep -v '<text ' ${../assets/wallpaper.svg} >plain.svg
+              rsvg-convert -w 3840 -h 2160 plain.svg \
+                -o $out/share/backgrounds/ephemeral/wallpaper-plain.png
             '';
       };
 
       config = {
+        boot.loader.limine.style.wallpapers = lib.mkForce [
+          "${config.ephemeral.wallpaper}/share/backgrounds/ephemeral/wallpaper-plain.png"
+        ];
         environment.systemPackages = [ config.ephemeral.wallpaper ];
         environment.pathsToLink = [ "/share/backgrounds" ];
       };
