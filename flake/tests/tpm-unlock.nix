@@ -78,15 +78,32 @@ in
             onLuks = nodes.machine.specialisation.on-luks.configuration.system.build.toplevel;
           in
           ''
+            import re
             import time
             from datetime import timedelta
 
-            # The prompts end without a newline, and the driver only sees whole lines, so these
-            # wait for the lines systemd logs around them.
-            def query():
-                machine.wait_for_console_text(r"Starting password query on /dev/ttyS0", timeout=timedelta(minutes=3))
-                # it logs that just before it writes the prompt and reads the answer; machine.sleep
-                # would run in the VM, which has no shell until the disk is open
+            # Kernel messages share the serial port and can land in the middle of a line, as in
+            # "Starting password query on /[   14.70] usb ..." with "dev/ttyS0." on the next line.
+            # So these search the whole log, letting such lines fall anywhere in the text.
+            def pattern(*texts):
+                gap = r"(?:\[ *\d+\.\d+\][^\n]*\n)*"
+                return re.compile("|".join(gap.join(re.escape(c) for c in t) for t in texts))
+
+            def seen(p):
+                return len(p.findall(machine.get_console_log()))
+
+            def wait_for(p, n, minutes):
+                retry(lambda _: seen(p) >= n, timeout=timedelta(minutes=minutes))
+
+            # The prompts end without a newline, so the driver doesn't see them; this is logged just
+            # before each one.
+            asked = pattern("Starting password query on /dev/ttyS0")
+            refused = pattern("Bad password", "Bad PIN", "lock-out mode")
+
+            # waits for the nth question since the start; machine.sleep would run in the VM, which
+            # has no shell until the disk is open
+            def query(n):
+                wait_for(asked, n, 3)
                 time.sleep(2)
 
             # each start begins a new console log
@@ -94,8 +111,8 @@ in
                 machine.shutdown()
                 machine.start()
             # logged when systemd gives up on the TPM; the next question is then the passphrase
-            fallback = "falling back to traditional unlocking"
-            lockout = "dictionary attack lock-out mode"
+            fallback = pattern("falling back to traditional unlocking")
+            lockout = pattern("dictionary attack lock-out mode")
 
             machine.start()
             machine.wait_for_unit("multi-user.target")
@@ -121,28 +138,27 @@ in
 
             with subtest("the PIN unlocks the disk, without the passphrase"):
                 boot()
-                query()
+                query(1)
                 machine.send_console("${pin}\n")
                 machine.wait_for_unit("multi-user.target")
                 assert machine.succeed("findmnt -no SOURCE /").strip() == "/dev/mapper/cryptroot"
-                console = machine.get_console_log()
-                assert "TPM2 PIN" in console or "token PIN" in console, "the first question wasn't the PIN"
-                assert console.count("Starting password query on /dev/ttyS0") == 1, "it asked more than once"
+                assert seen(pattern("TPM2 PIN", "token PIN")) > 0, "the first question wasn't the PIN"
+                assert seen(asked) == 1, "it asked more than once"
 
             # The PIN is asked again until the TPM locks out, after 3 wrong ones in swtpm. systemd then
             # asks for the PIN once more, through its older code path, and only after that for the
             # passphrase.
             with subtest("after wrong PINs lock the TPM out, the passphrase still unlocks it"):
                 boot()
-                for _ in range(8):
-                    query()
-                    if fallback in machine.get_console_log():
+                for n in range(1, 9):
+                    query(n)
+                    if seen(fallback):
                         break
                     machine.send_console("0000\n")
-                    machine.wait_for_console_text(r"Bad password|Bad PIN|lock-out mode", timeout=timedelta(minutes=1))
+                    wait_for(refused, n, 1)
                 else:
                     raise AssertionError("never asked for the passphrase")
-                assert lockout in machine.get_console_log(), "it gave up on the TPM without a lockout"
+                assert seen(lockout), "it gave up on the TPM without a lockout"
                 machine.send_console("${passphrase}\n")
                 machine.wait_for_unit("multi-user.target")
                 assert machine.succeed("findmnt -no SOURCE /").strip() == "/dev/mapper/cryptroot"

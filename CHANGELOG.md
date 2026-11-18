@@ -2,6 +2,12 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.13.1
+
+### Fixed
+
+- Some firmware hides most of its variables from Linux, Secure Boot's included, and then `ephemeral-doctor` said Secure Boot wasn't reported, `ephemeral-setup` didn't offer the TPM PIN, and `ephemeral-update` said the keys couldn't be enrolled, all while Secure Boot was on. They now read what the firmware told the kernel at boot when the variables are missing. `ephemeral-doctor` says the revocation list can't be checked then, instead of calling it missing.
+
 ## 4.13.0
 
 ### Added

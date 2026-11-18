@@ -252,10 +252,13 @@ else
 fi
 
 if [[ -e ${EPHEMERAL_ROOT:-}/etc/ephemeral/secure-boot ]]; then
-  if [[ $(efi_flag SecureBoot) == 1 ]]; then
+  if secure_boot_on; then
     # only this machine's key signs Limine, so a boot with it on means that key is trusted
     ok "Secure Boot is on, with this machine's keys"
-    if dbx_empty; then
+    if [[ -z $(efi_flag SecureBoot) ]]; then
+      warn "the firmware hides its Secure Boot variables from Linux at this boot, so the revocation list (dbx) can't be checked" \
+        "nothing to fix for Secure Boot itself; bootctl says \"unsupported\" for the same reason (docs/troubleshooting.md)"
+    elif dbx_empty; then
       warn "the firmware has no list of revoked bootloaders (dbx), so ones Microsoft has revoked still start" \
         "fwupdmgr refresh && fwupdmgr update"
     fi
@@ -272,7 +275,7 @@ if [[ -e ${EPHEMERAL_ROOT:-}/etc/ephemeral/secure-boot ]]; then
 fi
 
 if [[ -e ${EPHEMERAL_ROOT:-}/etc/ephemeral/tpm-unlock ]]; then
-  if [[ $(efi_flag SecureBoot) != 1 ]]; then
+  if ! secure_boot_on; then
     # the TPM key is bound to Secure Boot being on, so it can't match
     bad "the disk is set to unlock with the TPM, but Secure Boot is off, so the PIN can't unlock it and every boot asks for the passphrase after it" \
       "turn Secure Boot on in the firmware (docs/security.md)"
