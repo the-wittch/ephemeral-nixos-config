@@ -87,7 +87,7 @@ It rebuilds from `/persist/etc/nixos` and switches to the result, with readable 
 | `ephemeral-update --list` | the systems you can go back to, with their dates and config releases |
 | `ephemeral-update --as-installed` | the system exactly as it was installed; your files stay |
 
-`ephemeral-doctor` checks the machine: that `/` was wiped, what failed, free space, snapshots, whether a newer release is out, and each problem with the command that fixes it.
+`ephemeral-doctor` checks the machine: that `/` was wiped, what failed, free space, snapshots, whether a newer release or firmware update is out, and each problem with the command that fixes it.
 
 `flake.nix` pins a release of this repo:
 

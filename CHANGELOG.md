@@ -2,6 +2,12 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.13.0
+
+### Added
+
+- `ephemeral-doctor` lists firmware updates that are waiting, with how to install them. With TPM unlock on, it also says that after a system firmware or dbx update, the boot may ask for the passphrase until the PIN is enrolled again. It only reads the list fwupd already downloads; nothing installs on its own, since a firmware update mustn't be cut off.
+
 ## 4.12.0
 
 ### Changed
