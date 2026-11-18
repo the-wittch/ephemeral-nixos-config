@@ -32,7 +32,13 @@ in
       services.desktopManager.gnome.extraGSettingsOverrides = ''
         [org.gnome.shell]
         enabled-extensions=['appindicatorsupport@rgcjonas.gmail.com', 'caffeine@patapon.info']
+
+        # niri and Umbriel lock with Super+Alt+L; GNOME's own Super+L stays
+        [org.gnome.settings-daemon.plugins.media-keys]
+        screensaver=['<Super>l', '<Super><Alt>l']
       '';
+      # an override for a schema that isn't compiled with them is dropped without a word
+      services.desktopManager.gnome.extraGSettingsOverridePackages = [ pkgs.gnome-settings-daemon ];
 
       environment.systemPackages = with pkgs; [
         gnomeExtensions.appindicator
