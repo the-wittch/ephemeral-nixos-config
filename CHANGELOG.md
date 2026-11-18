@@ -2,6 +2,12 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.14.3
+
+### Changed
+
+- The boot menu shows the wallpaper without its words, just the snowflake and the background, and drops the "EPHEMERAL NIX" title; Limine's version line is back in its place. The desktop wallpaper is unchanged.
+
 ## 4.14.2
 
 ### Changed
