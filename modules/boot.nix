@@ -24,6 +24,21 @@
             ${pkgs.coreutils}/bin/mv ${esp}/efi/boot/BOOTX64.EFI.tmp ${esp}/efi/boot/BOOTX64.EFI
           '';
         };
+        # The menu over the wallpaper: a mostly see-through box well in from the edges, so the
+        # snowflake shows, in the wallpaper's neon. Limine draws no borders; the margin's edge
+        # fades into the wallpaper instead. The background's first byte is its transparency.
+        loader.limine.style = {
+          graphicalTerminal = {
+            background = lib.mkForce "8c0d0b26";
+            margin = 240;
+            marginGradient = 32;
+          };
+          interface = {
+            branding = "EPHEMERAL NIX";
+            brandingColor = "c084fc";
+            helpColor = "38bdf8";
+          };
+        };
         loader.efi.canTouchEfiVariables = true;
         loader.timeout = 3;
 
