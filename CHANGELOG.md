@@ -2,6 +2,12 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.14.2
+
+### Changed
+
+- The boot menu lets the wallpaper show through: its box is mostly transparent and further in from the screen's edges, with soft edges, and its title and key help are in the wallpaper's neon. [Dotfiles and appearance](docs/appearance.md#boot-menu) says how to change it.
+
 ## 4.14.1
 
 ### Changed

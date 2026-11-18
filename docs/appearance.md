@@ -65,6 +65,10 @@ nixpkgs has a pack of about 80 themes, `adi1090x-plymouth-themes`:
 
 Some themes don't show the passphrase dots clearly. `nix run path:/persist/etc/nixos#vm` shows a theme's animation, but not its passphrase prompt, since the VM's disk isn't encrypted.
 
+## Boot menu
+
+The Limine menu, which shows for 3 seconds at start-up, sits over the wallpaper in a mostly see-through box, with its title and key help in the wallpaper's neon. To change it, set `boot.loader.limine.style` in a module of your own; the transparency is the first byte of `graphicalTerminal.background`, and the box's distance from the screen's edges is `graphicalTerminal.margin`, in pixels.
+
 ## User picture
 
 The snowflake from the wallpaper is the default user picture on the login screen and in the desktop's user settings. It's only filled in when there's no picture yet, so one you pick yourself stays.
