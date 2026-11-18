@@ -6,6 +6,20 @@ efi_flag() {
   od -An -tu1 -j4 -N1 "${EPHEMERAL_ROOT:-}/sys/firmware/efi/efivars/$1-8be4df61-93ca-11d2-aa0d-00e098032b8c" 2>/dev/null | tr -d ' ' || true
 }
 
+# Some firmware hides most of its variables from Linux, SecureBoot included (seen on a Framework
+# after a firmware update). The kernel keeps what the firmware told it at boot, readable by
+# anyone: offset 0x1ec of boot_params, 3 for enabled.
+# shellcheck disable=SC2329
+secure_boot_on() {
+  local flag
+  flag=$(efi_flag SecureBoot)
+  if [[ -n $flag ]]; then
+    [[ $flag == 1 ]]
+  else
+    [[ $(od -An -tu1 -j492 -N1 "${EPHEMERAL_ROOT:-}/sys/kernel/boot_params/data" 2>/dev/null | tr -d ' ') == 3 ]]
+  fi
+}
+
 # shellcheck disable=SC2329
 tpm_present() {
   [[ -e ${EPHEMERAL_ROOT:-}/dev/tpmrm0 ]]

@@ -73,7 +73,9 @@
         if [[ $cert != ${dir}/* ]]; then
           echo "secureBoot: the keys aren't on /persist yet, so they aren't enrolled this time." >&2
           echo "Once this rebuild has finished, run ephemeral-update once more to enroll them." >&2
-        elif [[ -z $setup ]]; then
+        # the variables can be hidden from Linux while Secure Boot is on; the kernel's copy of
+        # what the firmware told it at boot (3 for enabled) still says so
+        elif [[ -z $setup && $(${pkgs.coreutils}/bin/od -An -tu1 -j492 -N1 /sys/kernel/boot_params/data 2>/dev/null | ${pkgs.coreutils}/bin/tr -d ' ') != 3 ]]; then
           echo "secureBoot: the firmware doesn't say whether it's in Setup Mode, so the keys aren't enrolled." >&2
           echo "Look in its Secure Boot settings for Secure Boot being turned off or hidden altogether (docs/troubleshooting.md)." >&2
         elif [[ $setup == 0 && $(flag SecureBoot) != 1 ]]; then

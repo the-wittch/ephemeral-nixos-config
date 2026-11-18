@@ -344,6 +344,27 @@ printf '\x06\x00\x00\x00\x01' >"$tr/sys/firmware/efi/efivars/SecureBoot-8be4df61
 if ((absent == 0)) && EPHEMERAL_ROOT=$tr lib 'tpm_present && [[ $(efi_flag SecureBoot) == 1 ]]'; then
   pass "lib: tpm_present and efi_flag see the TPM and the firmware's Secure Boot state, and their absence"
 else fail "lib: tpm_present or efi_flag"; fi
+hidden=$work/hidden
+mkdir -p "$hidden/sys/kernel/boot_params" "$hidden/sys/firmware/efi/efivars"
+boot_params() { {
+  head -c 492 /dev/zero
+  printf '%b' "$1"
+  head -c 100 /dev/zero
+} >"$hidden/sys/kernel/boot_params/data"; }
+boot_params '\x03'
+if EPHEMERAL_ROOT=$hidden lib 'secure_boot_on' && boot_params '\x02' && ! EPHEMERAL_ROOT=$hidden lib 'secure_boot_on' &&
+  EPHEMERAL_ROOT=$tr lib 'secure_boot_on'; then
+  pass "lib: secure_boot_on reads the firmware, and the kernel's record when the firmware hides its variables"
+else fail "lib: secure_boot_on"; fi
+boot_params '\x03'
+mkdir -p "$hidden/etc/ephemeral"
+: >"$hidden/etc/ephemeral/secure-boot"
+fake systemctl '[[ $1 == is-active ]] && exit 1; exit 0'
+USER=alice EPHEMERAL_ROOT=$hidden FLAKE_DIR=$work/flake FAKE_OFFLINE=1 bash "$doctor" >"$work/out" 2>&1 || true
+rm "$fakes/systemctl"
+if grep -qF "Secure Boot is on" "$work/out" && grep -qF "can't be checked" "$work/out" && ! grep -qF "no list of revoked" "$work/out"; then
+  pass "doctor: Secure Boot hidden from Linux but on is reported as on, and the dbx as unknown, not missing"
+else fail "doctor: Secure Boot with hidden variables"; fi
 if lib 'valid_controld_id abc-1_2 && ! valid_controld_id "a b" && ! valid_controld_id "x;y" && ! valid_controld_id ""'; then
   pass "lib: valid_controld_id takes the rule from the settings rules"
 else fail "lib: valid_controld_id"; fi

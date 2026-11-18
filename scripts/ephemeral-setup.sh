@@ -112,7 +112,7 @@ fi
 tpm=$(get tpmUnlock)
 tpm=${tpm:-false}
 tpm_action=
-if tpm_present && [[ $(get secureBoot) == true && $(efi_flag SecureBoot) == 1 ]]; then
+if tpm_present && [[ $(get secureBoot) == true ]] && secure_boot_on; then
   unlock_pass="The passphrase"
   unlock_tpm="A TPM PIN, with the passphrase as the fallback"
   unlock_again="A TPM PIN, enrolled again after a firmware, key or revocation list change"
