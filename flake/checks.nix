@@ -15,6 +15,47 @@ let
       };
       root = ../tests/machine;
     }).nixosConfigurations.nixos;
+  # Each ```nix block in docs/ is a module for a machine's modules/ folder. They're loaded together
+  # into a GNOME machine on the full profile, so one that uses an option that doesn't exist, or
+  # one that's gone, fails here before a reader copies it.
+  docExamples =
+    let
+      blocks =
+        file:
+        (builtins.foldl'
+          (
+            acc: line:
+            if acc.open == null then
+              acc // { open = if line == "```nix" then [ ] else null; }
+            else if line == "```" then
+              {
+                open = null;
+                done = acc.done ++ [ (lib.concatStringsSep "\n" acc.open) ];
+              }
+            else
+              acc // { open = acc.open ++ [ line ]; }
+          )
+          {
+            open = null;
+            done = [ ];
+          }
+          (lib.splitString "\n" (builtins.readFile (../docs + "/${file}")))
+        ).done;
+      pages = lib.filter (lib.hasSuffix ".md") (lib.attrNames (builtins.readDir ../docs));
+    in
+    lib.concatMap (
+      page:
+      lib.imap1 (i: builtins.toFile "${lib.removeSuffix ".md" page}-${toString i}.nix") (blocks page)
+    ) pages;
+  withDocExamples =
+    (config.flake.lib.mkFlake {
+      inputs.self = {
+        outPath = ../tests/gnome-full;
+        inputs = { };
+      };
+      root = ../tests/gnome-full;
+      modules = docExamples;
+    }).nixosConfigurations.nixos;
   withPassSshAgent = nixos.extendModules {
     modules = [ config.ephemeral.aspects.nixos.passSshAgent ];
   };
@@ -186,6 +227,13 @@ in
             builtins.unsafeDiscardStringContext (
               machine.config.system.build.toplevel.drvPath + "\n" + machine.config.system.build.vm.drvPath
             )
+          );
+        docs-examples =
+          assert lib.assertMsg (
+            lib.length docExamples >= 10
+          ) "found ${toString (lib.length docExamples)} nix blocks in docs/; the extraction has broken";
+          pkgs.writeText "docs-examples" (
+            builtins.unsafeDiscardStringContext withDocExamples.config.system.build.toplevel.drvPath
           );
         desktops-eval =
           assert lib.assertMsg (lib.hasInfix "extras, usePassSshAgent: only on the full profile" minimalWarns)

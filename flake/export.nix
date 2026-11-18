@@ -11,8 +11,13 @@ let
   };
 
   mkFlake =
-    # root is ./. from the machine's flake.nix; reading it off self would recurse
-    { inputs, root }:
+    # root is ./. from the machine's flake.nix; reading it off self would recurse. modules adds
+    # flake-parts modules to the ones in root/modules.
+    {
+      inputs,
+      root,
+      modules ? [ ],
+    }:
     let
       own = root + "/modules";
       # the machine's own inputs win, so it can override nixpkgs or add more
@@ -28,7 +33,11 @@ let
         };
       }
       {
-        imports = [ default ] ++ lib.optional (builtins.pathExists own) (template.import-tree own);
+        imports = [
+          default
+        ]
+        ++ lib.optional (builtins.pathExists own) (template.import-tree own)
+        ++ modules;
         systems = [ "x86_64-linux" ];
         ephemeral.hosts.nixos.root = root;
       };

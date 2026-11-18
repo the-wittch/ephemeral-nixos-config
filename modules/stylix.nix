@@ -94,7 +94,7 @@ in
       imports = [ nixos.stylix ];
       # the gnome platform theme (qgnomeplatform) breaks qt tray icons on wayland
       stylix.targets.qt.platform = lib.mkForce "qtct";
-      # stylix removes them
+      # Stylix leaves GNOME's own wallpapers out (excludePackages); they stay there to pick
       environment.systemPackages = [ pkgs.gnome-backgrounds ];
     };
 

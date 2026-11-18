@@ -253,6 +253,11 @@ in
           ];
           text = builtins.readFile ../../scripts/check-no-secrets.sh;
         };
+
+        # the installer runs it too, from the config release it pins
+        check-links = pkgs.writers.writePython3Bin "check-links" {
+          flakeIgnore = [ "E501" ];
+        } (builtins.readFile ../../scripts/check-links.py);
       };
     };
 }

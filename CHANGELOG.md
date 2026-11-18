@@ -2,6 +2,23 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.14.1
+
+### Changed
+
+- On Plasma, `Meta+L` always locks the screen. Krohnkite asked for it too, to move the focus right, and which one got it depended on which asked first. KWin's own `Meta+Alt+Right` moves the focus right.
+
+### Added
+
+- `checks.docs-examples` loads every `nix` example in `docs/` into a GNOME machine on the full profile, so an example that uses a missing or renamed option fails CI.
+- `check-links` checks the links between the docs, headings included; CI runs it on every change, docs-only ones too, and the installer runs it from the release it pins.
+- `lib.mkFlake` takes `modules`, flake-parts modules to load besides the machine's `modules/` folder.
+
+### Fixed
+
+- [When something breaks](docs/troubleshooting.md) has the steps for a login that fails with the right password: writing the password hash again from the installer USB. The installer's troubleshooting pointed to steps that didn't exist.
+- The security notes name OpenSnitch's boot guard among the services that run with most of the sandbox, and say which desktops lock with Super+Alt+L in one place.
+
 ## 4.14.0
 
 ### Changed

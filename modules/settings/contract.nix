@@ -1,7 +1,7 @@
 # The settings contract for the installer, which reads it from the release it pins: what each
 # setting may be (from _rules.nix), its default, which settings are on/off switches, and the
-# menus (from _choices.nix). Built
-# from the schema itself, so it can't say anything the rebuild wouldn't accept.
+# menus (from _choices.nix). Built from the schema itself, so it can't say anything the rebuild
+# wouldn't accept.
 { lib, ... }:
 let
   options =
