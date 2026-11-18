@@ -252,7 +252,17 @@ doctor_sb
 if grep -qF "unlock with the TPM, but Secure Boot is off" "$work/out"; then
   pass "doctor: TPM unlock with Secure Boot off is reported"
 else fail "doctor: missed TPM unlock with Secure Boot off"; fi
-rm "$fakes/systemctl"
+fake fwupdmgr '[[ -n ${FAKE_FW:-} ]] || exit 2; printf "%s\n" "$FAKE_FW"'
+FAKE_FW='{"Devices": [{"Name": "System Firmware", "Plugin": "uefi_capsule", "Version": "2.16.0", "Releases": [{"Version": "2.19.0"}, {"Version": "2.18.0"}]}]}' doctor_sb
+if grep -qF "firmware updates are waiting" "$work/out" && grep -qF "System Firmware 2.16.0 → 2.19.0" "$work/out" &&
+  grep -qF "fwupdmgr update" "$work/out" && grep -qF "enroll the PIN again" "$work/out"; then
+  pass "doctor: a waiting firmware update is listed with how to install it, and what it means for the TPM PIN"
+else fail "doctor: a waiting firmware update"; fi
+doctor_sb
+if grep -qF "no firmware updates waiting" "$work/out" && ! grep -qF "firmware updates are waiting" "$work/out"; then
+  pass "doctor: no firmware updates is said so"
+else fail "doctor: no firmware updates"; fi
+rm "$fakes/fwupdmgr" "$fakes/systemctl"
 
 pubs=$(tool ssh-pubs-from-pass)
 fake pass-cli 'echo "pass-cli $*" >>"$CALLS"; echo "[]"'

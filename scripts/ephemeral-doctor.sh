@@ -287,6 +287,29 @@ if [[ -e ${EPHEMERAL_ROOT:-}/etc/ephemeral/tpm-unlock ]]; then
   fi
 fi
 
+# only reads the list fwupd-refresh.timer downloads; installing stays a choice, since a firmware
+# update must not be cut off, and can change what the TPM PIN is bound to
+if command -v fwupdmgr >/dev/null; then
+  status=0
+  updates=$(timeout 30 fwupdmgr get-updates --json --no-unreported-check --no-metadata-check 2>/dev/null) || status=$?
+  if ((status == 2)); then
+    ok "no firmware updates waiting"
+  elif ((status == 0)); then
+    pending=$(jq -r '.Devices[]? | select((.Releases // []) != []) | "\(.Name) \(.Version) → \(.Releases[0].Version)"' <<<"$updates" 2>/dev/null || true)
+    if [[ -n $pending ]]; then
+      warn "firmware updates are waiting:"
+      printf '%s\n' "$pending" | sed 's/^/      /'
+      printf '    %s\n' "fwupdmgr update, with the charger in and your work saved; most install while the machine restarts"
+      if [[ -e ${EPHEMERAL_ROOT:-}/etc/ephemeral/tpm-unlock ]] &&
+        jq -e '[.Devices[]? | select(.Plugin == "uefi_capsule" or .Plugin == "uefi_dbx")] != []' <<<"$updates" >/dev/null 2>&1; then
+        printf '    %s\n' "after the system firmware or dbx update, the boot may ask for the passphrase instead of the PIN; then run ephemeral-setup to enroll the PIN again"
+      fi
+    else
+      ok "no firmware updates waiting"
+    fi
+  fi
+fi
+
 if systemctl is-active --quiet opensnitchd.service 2>/dev/null; then
   ok "OpenSnitch is on: a program has to be allowed before it connects out"
 fi
