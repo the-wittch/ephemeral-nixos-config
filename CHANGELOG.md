@@ -2,6 +2,12 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.14.0
+
+### Changed
+
+- The lock key on niri and Umbriel is Super+Alt+L, niri's own, and Super+L moves focus right again, as both desktops have it. GNOME takes Super+Alt+L too, beside its own Super+L. Plasma keeps Super+L only; there, Super+Alt+L switches the keyboard layout.
+
 ## 4.13.1
 
 ### Fixed

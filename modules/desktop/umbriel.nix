@@ -34,8 +34,8 @@ let
         [keybinds]
         "Mod+Return" = { action = "spawn:ghostty", repeat = false }
         "Mod+slash" = { action = "cheatsheet-toggle", repeat = false }
-        # took the place of focus right, which Mod+Right still does
-        "Mod+L" = { action = "spawn:noctalia msg session lock", repeat = false }
+        # the lock key niri has; Mod+L stays focus right
+        "Mod+Alt+L" = { action = "spawn:noctalia msg session lock", repeat = false }
       '';
     in
     {
