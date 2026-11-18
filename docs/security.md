@@ -18,7 +18,7 @@ Found a security problem? Report it privately, as described in [SECURITY.md](../
 - The firewall, OpenSnitch and the sandbox do different jobs. The firewall refuses connections coming in, OpenSnitch asks about programs connecting out, and the sandbox limits what a service can touch if it's broken into. None of them replaces another.
 - The Proton Pass session is in your home folder, so anything running as you can reach it; see [SSH agent](features.md#ssh-agent).
 - Docker and virt-manager in `ephemeral-apps` add you to the `docker` or `libvirtd` group, and either one lets anything running as you become root without your password.
-- On niri and Umbriel, Noctalia locks the screen after 10 idle minutes and before the laptop sleeps. Plasma and GNOME use their own lock settings.
+- On niri and Umbriel, Noctalia locks the screen after 10 idle minutes and before the laptop sleeps, and Super+L locks it straight away. Plasma and GNOME use their own lock settings.
 - smartd's desktop warnings go over the system bus, which lets any local process show you a notification. That's fine with the single user this setup has; turn it off with `services.smartd.notifications.systembus-notify.enable = false`.
 - With `fingerprint` on, a finger also works for `sudo`. To keep sudo on the password only, set `security.pam.services.sudo.fprintAuth = false` in a module of your own.
 

@@ -34,6 +34,8 @@ let
         [keybinds]
         "Mod+Return" = { action = "spawn:ghostty", repeat = false }
         "Mod+slash" = { action = "cheatsheet-toggle", repeat = false }
+        # took the place of focus right, which Mod+Right still does
+        "Mod+L" = { action = "spawn:noctalia msg session lock", repeat = false }
       '';
     in
     {

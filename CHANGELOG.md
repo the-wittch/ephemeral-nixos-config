@@ -2,6 +2,13 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.12.0
+
+### Changed
+
+- Super+L locks the screen on niri and Umbriel. It used to move focus to the window on the right, which Super+Right still does. On niri, Super+Alt+L locks too; it started swaylock, which isn't installed.
+- niri gets its config from `/etc/niri/config.kdl`: niri's own defaults with the keys above, and `~/.config/niri/local.kdl` for your own changes. niri only reads it while `~/.config/niri/config.kdl` doesn't exist, and niri wrote that file at its first start. If you've used niri before, move any changes of yours from it into `local.kdl`, then delete it.
+
 ## 4.11.2
 
 ### Fixed
