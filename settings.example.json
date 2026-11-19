@@ -7,6 +7,7 @@
   "keyboardVariant": "",
   "diskDevice": "/dev/nvme0n1",
   "swapSize": "16G",
+  "bootResolution": "",
   "desktop": "plasma",
   "profile": "full",
   "nvidia": "none",

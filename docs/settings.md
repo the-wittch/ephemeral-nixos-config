@@ -8,6 +8,7 @@
 | `locale` | language, e.g. `de_DE.UTF-8` |
 | `keyboardLayout`, `keyboardVariant` | e.g. `de` and `nodeadkeys`; also used at the LUKS prompt |
 | `diskDevice`, `swapSize` | the whole disk (not a partition) and the swap file size |
+| `bootResolution` | the screen's resolution, e.g. `2880x1920` or `1920x1200`, so the boot menu's wallpaper is drawn for that screen, sharp and the right shape. The installer sets it on a laptop. Empty, the default, scales the 4K wallpaper to fit, which stretches it on a screen that isn't 16:9 |
 | `desktop` | `plasma`, `gnome`, `niri` or `umbriel` |
 | `profile` | `full` (everything in these docs) or `minimal` (the installer's small install) |
 | `nvidia` | `none`, `open` (RTX 20 / GTX 16 series and newer) or `legacy` (GTX 900 / 10 series) |

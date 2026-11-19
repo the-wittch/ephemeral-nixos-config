@@ -19,6 +19,8 @@ in
   keyboardVariant = "[a-z0-9_-]*(,[a-z0-9_-]*)*";
   diskDevice = "/dev/[A-Za-z0-9/_.:+-]+";
   swapSize = "[0-9]+[KMGT]?";
+  # the screen's width and height in pixels, or empty to leave the boot menu's wallpaper as it is
+  bootResolution = "([1-9][0-9]{2,4}x[1-9][0-9]{2,4})?";
   desktop = values "desktop";
   profile = values "profile";
   nvidia = values "nvidia";

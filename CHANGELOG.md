@@ -2,6 +2,12 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.15.0
+
+### Added
+
+- `bootResolution` in `settings.json`, the screen's resolution such as `2880x1920`. The boot menu's wallpaper is then drawn for that screen, so it's sharp and the right shape: Limine stretches its wallpaper to fit, without smoothing, which made the snowflake tall and jagged on screens that aren't 16:9. The part of the wallpaper with the screen's shape is used, around its middle. Empty, the default, keeps the wallpaper as it was. To see a screen's resolution: `head -1 /sys/class/drm/card*-eDP-1/modes`.
+
 ## 4.14.3
 
 ### Changed

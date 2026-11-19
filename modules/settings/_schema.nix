@@ -52,6 +52,11 @@ in
       default = "16G";
       description = "Swap file size, e.g. 16G.";
     };
+    bootResolution = mkOption {
+      type = matching "bootResolution";
+      default = "";
+      description = "The screen's resolution, e.g. 2880x1920, so the boot menu's wallpaper is drawn for it without stretching. Empty leaves it at 3840x2160, scaled to fit.";
+    };
     desktop = mkOption {
       type = types.enum rules.desktop;
       default = "plasma";

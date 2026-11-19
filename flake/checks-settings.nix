@@ -72,6 +72,12 @@ let
     "a DNS server name with a space" = ok // {
       customDns = [ "1.2.3.4#dns example.com" ];
     };
+    "a boot resolution without a height" = ok // {
+      bootResolution = "2880";
+    };
+    "a boot resolution with a shell character" = ok // {
+      bootResolution = "2880x1920;reboot";
+    };
     "a setting that doesn't exist" = ok // {
       desktpo = "gnome";
     };
@@ -83,6 +89,7 @@ let
       // {
         keyboardLayout = "us,de";
         diskDevice = "/dev/disk/by-id/nvme-x";
+        bootResolution = "2880x1920";
         encryptedDns = "custom";
         customDns = [
           "194.242.2.2#dns.mullvad.net"
