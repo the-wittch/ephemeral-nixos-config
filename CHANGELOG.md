@@ -2,6 +2,12 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.14.5
+
+### Changed
+
+- The boot menu's line under the selected generation names the config release instead of the nixpkgs version and commit: `NixOS Zokor 4.14.5 (Linux 6.18.58), built on …`. `nixos-version` still shows the nixpkgs version. The system's store path is named after the release too.
+
 ## 4.14.4
 
 ### Changed

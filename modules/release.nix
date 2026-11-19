@@ -10,6 +10,11 @@ let
   ];
 in
 {
-  # ephemeral-update --list reads it from each generation
-  flake.modules.nixos.base.environment.etc."ephemeral/release".text = "v${version}\n";
+  flake.modules.nixos.base = {
+    # ephemeral-update --list reads it from each generation
+    environment.etc."ephemeral/release".text = "v${version}\n";
+    # the boot menu's line for each entry then has the release in place of nixpkgs' version and
+    # commit, which nixos-version still shows
+    system.nixos.label = version;
+  };
 }
