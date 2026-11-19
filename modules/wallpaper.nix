@@ -1,5 +1,7 @@
 let
   uri = "file:///run/current-system/sw/share/backgrounds/ephemeral/wallpaper.png";
+  # the flat colour round the boot menu's snowflake, the navy in the middle of the wallpaper
+  bootBackdrop = "0d0b26";
 
   gnome = {
     services.desktopManager.gnome.extraGSettingsOverrides = ''
@@ -54,17 +56,23 @@ in
               mkdir -p $out/share/backgrounds/ephemeral
               rsvg-convert -w 3840 -h 2160 ${../assets/wallpaper.svg} \
                 -o $out/share/backgrounds/ephemeral/wallpaper.png
-              # the boot menu's, without the words; each <text> element is on a line of its own
-              grep -v '<text ' ${../assets/wallpaper.svg} >plain.svg
-              rsvg-convert -w 3840 -h 2160 plain.svg \
-                -o $out/share/backgrounds/ephemeral/wallpaper-plain.png
+              awk -v bg=${bootBackdrop} -f ${./_boot-menu.awk} ${../assets/wallpaper.svg} >boot.svg
+              # the filter goes by the svg's lines; a changed svg fails here rather than drawing wrong
+              grep -q 'viewBox="1020 0 1800 1800"' boot.svg
+              grep -q 'translate(1920 900)' boot.svg
+              if grep -q -e '<text ' -e '^<path d="M ' boot.svg; then exit 1; fi
+              rsvg-convert -w 900 -h 900 boot.svg -o $out/share/backgrounds/ephemeral/boot-menu.png
             '';
       };
 
       config = {
-        boot.loader.limine.style.wallpapers = lib.mkForce [
-          "${config.ephemeral.wallpaper}/share/backgrounds/ephemeral/wallpaper-plain.png"
-        ];
+        boot.loader.limine.style = {
+          wallpapers = lib.mkForce [
+            "${config.ephemeral.wallpaper}/share/backgrounds/ephemeral/boot-menu.png"
+          ];
+          wallpaperStyle = lib.mkForce "centered";
+          backdrop = lib.mkForce bootBackdrop;
+        };
         environment.systemPackages = [ config.ephemeral.wallpaper ];
         environment.pathsToLink = [ "/share/backgrounds" ];
       };

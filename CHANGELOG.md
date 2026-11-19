@@ -2,6 +2,12 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.14.4
+
+### Changed
+
+- The boot menu shows only the snowflake, with its glow and glitches, at its own size in the middle of the screen, on the wallpaper's navy. Limine used to stretch the whole wallpaper to fit the screen without smoothing, so on a screen that isn't 16:9 the snowflake was pulled out of shape, with jagged edges. Now nothing is scaled, so it's sharp and the right shape on any screen.
+
 ## 4.14.3
 
 ### Changed
