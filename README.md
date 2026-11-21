@@ -130,6 +130,7 @@ and update it with `nix flake update nixpkgs --flake /persist/etc/nixos`. That c
 | `ephemeral-setup` | switch between the full system and the small install, and turn the main options on or off |
 | `ephemeral-passwd` | change your login password |
 | `ephemeral-backup <folder>` | save the settings and secrets a reinstall needs, encrypted |
+| `ephemeral-restore <path>` | bring back a file or folder as it was in an hourly snapshot |
 | `ephemeral-report` | system details to paste into a bug report |
 | `controld-setup` | set or turn off the Control D resolver id |
 | `smb-setup` | add or remove SMB shares |

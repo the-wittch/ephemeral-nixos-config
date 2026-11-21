@@ -1,5 +1,36 @@
 {
   ephemeral.apps = {
+    # VPN types for NetworkManager, so their connections are set up in the network settings
+    networkmanager-openvpn = {
+      label = "OpenVPN";
+      category = "Utilities";
+      description = "OpenVPN connections in the network settings; imports .ovpn files";
+      nixos =
+        { pkgs, ... }:
+        {
+          networking.networkmanager.plugins = [ pkgs.networkmanager-openvpn ];
+        };
+    };
+    networkmanager-openconnect = {
+      label = "OpenConnect";
+      category = "Utilities";
+      description = "Cisco AnyConnect and GlobalProtect and Fortinet and Pulse VPNs in the network settings";
+      nixos =
+        { pkgs, ... }:
+        {
+          networking.networkmanager.plugins = [ pkgs.networkmanager-openconnect ];
+        };
+    };
+    networkmanager-strongswan = {
+      label = "strongSwan";
+      category = "Utilities";
+      description = "IPsec and IKEv2 VPNs in the network settings";
+      nixos =
+        { pkgs, ... }:
+        {
+          networking.networkmanager.plugins = [ pkgs.networkmanager_strongswan ];
+        };
+    };
     gnome-tweaks = {
       label = "GNOME Tweaks";
       category = "Utilities";

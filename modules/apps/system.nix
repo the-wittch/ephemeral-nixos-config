@@ -1,5 +1,12 @@
 {
   ephemeral.apps = {
+    rocm-opencl = {
+      label = "ROCm OpenCL";
+      category = "System";
+      description = "OpenCL on AMD graphics for apps that compute on the GPU";
+      package = "clinfo";
+      nixos.hardware.amdgpu.opencl.enable = true;
+    };
     profile-sync-daemon = {
       label = "Profile-sync-daemon";
       category = "System";

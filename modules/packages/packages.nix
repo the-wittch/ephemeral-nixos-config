@@ -151,6 +151,15 @@ in
           ];
           env.CATALOG = catalogJson;
         };
+        ephemeral-restore = {
+          description = "bring back a file or folder from an hourly snapshot";
+          deps = [
+            coreutils
+            findutils
+            gnused
+            gum
+          ];
+        };
         luks-header-backup = {
           description = "copy the LUKS header to a USB stick";
           minimal = true;
