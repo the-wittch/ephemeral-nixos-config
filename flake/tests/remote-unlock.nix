@@ -95,6 +95,8 @@ in
               firmware = lib.optionalString sealed "EPHEMERAL_ROOT=/tmp/fw ";
             in
             ''
+              from datetime import timedelta
+
               start_all()
               server.wait_for_unit("multi-user.target")
 
@@ -138,7 +140,7 @@ in
                           " -o UserKnownHostsFile=/etc/initrd-known-hosts -o StrictHostKeyChecking=yes root@server >&2"
                       )
                       return client.execute("timeout 20 sh -c 'until nc -z server 22; do sleep 1; done'")[0] == 0
-                  retry(unlock, timeout=300)
+                  retry(unlock, timeout=timedelta(minutes=5))
                   server.wait_for_unit("multi-user.target")
                   assert server.succeed("findmnt -no SOURCE /").strip() == "/dev/mapper/cryptroot"
 
