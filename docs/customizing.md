@@ -18,10 +18,12 @@ Every `.nix` file in `/persist/etc/nixos/modules/` is loaded the same way. These
 | module | applies to |
 |--------|------------|
 | `flake.modules.nixos.base`, `flake.modules.nixos.pc` | every machine, both profiles |
+| `flake.modules.nixos.graphical` | every machine with a desktop: sound, fonts, Flatpak, the terminal |
+| `flake.modules.nixos.server` | `"server": true` ([Servers](servers.md)) |
 | `flake.modules.nixos.full` | the full profile |
 | `flake.modules.nixos.minimal` | the small install (`"profile": "minimal"`) |
-| `flake.modules.nixos.gnome`, `.plasma`, `.niri`, `.umbriel` | the desktop chosen in `settings.json`, full profile |
-| `flake.modules.nixos.minimal-gnome`, `.minimal-plasma`, `.minimal-niri`, `.minimal-umbriel` | the same, small install |
+| `flake.modules.nixos.gnome`, `.plasma`, `.niri`, `.umbriel`, `.none` | the desktop chosen in `settings.json`, full profile |
+| `flake.modules.nixos.minimal-gnome`, `.minimal-plasma`, `.minimal-niri`, `.minimal-umbriel`, `.minimal-none` | the same, small install |
 | `flake.modules.homeManager.base`, `flake.modules.homeManager.dotfiles` | your user (full system only; the small install has no Home Manager) |
 | `flake.modules.nixos.extras`, `flake.modules.homeManager.extras` | full profile with `"extras": true` |
 

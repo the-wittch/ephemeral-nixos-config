@@ -25,7 +25,8 @@ in
       ephemeral.unfreePackages = lib.concatMap (app: app.unfree) apps;
       home-manager.sharedModules = map (app: app.homeManager) apps;
 
-      systemd.user.services.ephemeral-flatpaks = {
+      # Flathub only comes with a desktop
+      systemd.user.services.ephemeral-flatpaks = lib.mkIf (config.ephemeral.settings.desktop != "none") {
         description = "Install the Flatpaks picked with ephemeral-apps";
         wantedBy = [ "default.target" ];
         unitConfig.ConditionUser = "!@system";

@@ -10,7 +10,7 @@
 | `modules/first-boot.nix` | what the small install (profile `minimal`) has instead of the full system |
 | `modules/vm.nix` | the VM used by `nix run .#vm` and the boot test |
 | `modules/settings/` | the settings options with their defaults (`_schema.nix`), and the loader that checks `settings.json` against them |
-| `modules/desktop/` | Plasma, GNOME, niri, Umbriel, and the Noctalia shell niri and Umbriel share |
+| `modules/desktop/` | Plasma, GNOME, niri, Umbriel, `none` for a server without a screen, and the Noctalia shell niri and Umbriel share |
 | `modules/dotfiles/` | Home Manager dotfiles |
 | `modules/packages/` | the helper commands, the pinned pass-cli, and `app-catalog`, which the installer reads |
 | `modules/apps/` | the app catalog for `ephemeral-apps`, one file per category |
@@ -32,7 +32,7 @@ Each helper command is a Bash script. `modules/packages/packages.nix` builds it 
 | `apps.sh` | the rules for `apps.json`, without the screens |
 | `tpm.sh` | the firmware's Secure Boot state, whether there's a TPM, and enrolling or removing the disk's TPM slot |
 
-A command's `deps` in `packages.nix` lists every tool it runs, the ones the `scripts/lib/` functions it calls run included. Four come from the system instead and aren't listed: `sudo`, which has to be the setuid wrapper in `/run/wrappers`, `nix` and `systemctl`, which have to match the running daemon and systemd, and `systemd-cryptenroll`, which has to match the systemd in the initrd that unlocks the disk. The commands with questions use gum, and stop when there's no terminal rather than do nothing.
+A command's `deps` in `packages.nix` lists every tool it runs, the ones the `scripts/lib/` functions it calls run included. Five come from the system instead and aren't listed: `sudo`, which has to be the setuid wrapper in `/run/wrappers`, `nix` and `systemctl`, which have to match the running daemon and systemd, and `systemd-cryptenroll` and `systemd-creds`, which have to match the systemd in the initrd that unlocks the disk or opens the sealed SSH key. The commands with questions use gum, and stop when there's no terminal rather than do nothing.
 
 Turn on the git hooks once per clone:
 
@@ -45,7 +45,7 @@ They refuse machine files (`settings.json`, `smb-shares.json`, `hardware-configu
 On every pull request, CI runs the secret scan, the link check (`scripts/check-links.py`), actionlint and zizmor on the workflows, shellcheck, shfmt (`-i 2 -ci`) and nixfmt. Then `.github/eval-checks.sh` evaluates every check and builds the ones that don't boot a VM, which takes a few minutes. Among them:
 
 - `features-eval` evaluates a machine with each optional feature on by itself, and one with all of them, and checks each really is on.
-- `exposure-eval` checks every desktop and profile for an open port, SSH, a root password, users that can change outside the config, and OpenSnitch turned off where it should be on.
+- `exposure-eval` checks every desktop and profile for an open port, SSH, a root password, users that can change outside the config, and OpenSnitch turned off where it should be on. A server may have port 22 open, and only with keys.
 - `sandbox-eval` finds each root service a file in `modules/` defines, and fails on one without the sandbox unless `flake/checks-security.nix` says why.
 - `settings-reject` checks that bad `settings.json` values stay refused: an unknown desktop, a disk path with `..`, a vault name with `$`, an old `settings.nix`.
 - `docs-examples` loads every `nix` block in `docs/` into a GNOME machine on the full profile and evaluates it. So each block has to be a whole module for `modules/`, and they can't contradict each other; show a fragment in a `text` block instead.
@@ -60,7 +60,15 @@ When only docs changed (Markdown, `docs/`, the license, issue templates), the se
 - `disk` formats a VM disk with the real layout (LUKS, btrfs, the rollback the other tests switch off), checks the wipe and what survives it, then deletes `root-blank` and brings it back with the steps `ephemeral-doctor --fix-root-reset` runs.
 - `secure-boot` turns `secureBoot` on after an update from the previous release, boots with Secure Boot enforced, also from the fallback path alone, and checks Limine refuses a changed kernel.
 
-Beside them, `desktop-build` builds every desktop and most feature hosts, `desktop-boot-plasma`, `-niri` and `-umbriel` boot those desktops to their login screen, `upgrade-boot` boots the current code on the `/persist` a VM of the previous release wrote, `profile-switch` switches a running small install to the full system, as `ephemeral-setup` does, then back, `network-filter` checks OpenSnitch against a second machine: what it blocks, what the guard holds back at boot and after a crash, and that a stop asked for lets traffic through, even when the daemon dies on the way out, and `tpm-unlock` unlocks a LUKS root with a software TPM and a PIN, then with the passphrase once wrong PINs have locked the TPM out.
+Beside them:
+
+- `desktop-build` builds every desktop and most feature hosts.
+- `desktop-boot-plasma`, `-niri` and `-umbriel` boot those desktops to their login screen.
+- `upgrade-boot` boots the current code on the `/persist` a VM of the previous release wrote.
+- `profile-switch` switches a running small install to the full system, as `ephemeral-setup` does, then back.
+- `network-filter` checks OpenSnitch against a second machine: what it blocks, what the guard holds back at boot and after a crash, and that a requested stop lets traffic through, even when the daemon dies on the way out.
+- `tpm-unlock` unlocks a LUKS root with a software TPM and a PIN, then with the passphrase once wrong PINs have locked the TPM out.
+- `remote-unlock` unlocks a server's LUKS root over SSH from a second machine, with the host key the boot loader adds to the initrd, then logs in with a key and has a password refused. `remote-unlock-sealed` does the same with that key sealed to a software TPM.
 
 To run the checks locally, use the same script as CI:
 
@@ -75,7 +83,7 @@ cp hardware-configuration.example.nix hardware-configuration.nix
 Build the VM tests one at a time:
 
 ```bash
-for t in boot boot-minimal upgrade disk secure-boot desktop-boot-plasma desktop-boot-niri desktop-boot-umbriel upgrade-boot profile-switch network-filter tpm-unlock; do
+for t in boot boot-minimal upgrade disk secure-boot desktop-boot-plasma desktop-boot-niri desktop-boot-umbriel upgrade-boot profile-switch network-filter tpm-unlock remote-unlock remote-unlock-sealed; do
   nix build "path:.#checks.x86_64-linux.$t" -L --no-link
 done
 ```

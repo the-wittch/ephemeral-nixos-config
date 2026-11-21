@@ -1,4 +1,3 @@
-# nix build path:.#checks.x86_64-linux.disk -L
 # The real layout on a real disk: LUKS, the btrfs subvolumes and the rollback, which the
 # other tests turn off. Also breaks the rollback on purpose and fixes it the way
 # ephemeral-doctor --fix-root-reset does.

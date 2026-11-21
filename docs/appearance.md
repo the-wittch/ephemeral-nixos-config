@@ -67,7 +67,7 @@ Some themes don't show the passphrase dots clearly. `nix run path:/persist/etc/n
 
 ## Boot menu
 
-The Limine menu, which shows for 3 seconds at start-up, sits in a mostly see-through box over the wallpaper's snowflake, with its glow and glitches, on the wallpaper's navy, and its version line and key help are in the wallpaper's neon. The snowflake is drawn at 900 by 900 pixels in the middle of the screen, never scaled, so it's sharp and the right shape on any screen, a dock's included; on a larger screen it takes up less of it. The line under the selected generation names the config release and the kernel, and when it was built. To change the look, set `boot.loader.limine.style` in a module of your own; the transparency is the first byte of `graphicalTerminal.background`, and the box's distance from the screen's edges is `graphicalTerminal.margin`, in pixels.
+The Limine menu shows for 3 seconds at start-up. It sits in a mostly see-through box over the wallpaper's snowflake and navy, with its version line and key help in the wallpaper's neon. The snowflake is drawn at 900 by 900 pixels in the middle of the screen and never scaled, so it stays sharp and the right shape on any screen, a dock's included. The line under the selected generation names the config release and the kernel, and when it was built. To change the look, set `boot.loader.limine.style` in a module of your own; the transparency is the first byte of `graphicalTerminal.background`, and the box's distance from the screen's edges is `graphicalTerminal.margin`, in pixels.
 
 ## User picture
 

@@ -1,4 +1,3 @@
-# nix build path:.#checks.x86_64-linux.network-filter -L
 # OpenSnitch against a second machine: what's blocked while it runs, what the guard holds back
 # at boot and after a crash, and what gets through when it's stopped. The boot test only sees
 # the one machine, so it can't show any of them.

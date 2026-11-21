@@ -10,10 +10,13 @@ let
     "niri-minimal"
     "umbriel-full"
     "umbriel-minimal"
+    "none-full"
+    "none-minimal"
     "feat-all"
     "feat-laptop"
     "feat-network"
     "feat-pass"
+    "feat-server"
   ];
   host = name: config.flake.nixosConfigurations.${name}.config;
 
@@ -37,24 +40,29 @@ let
     let
       c = host name;
       fw = c.networking.firewall;
+      ssh = c.services.openssh.settings;
+      # a server opens SSH, keys only, and nothing else
+      serverSsh =
+        c.ephemeral.settings.server
+        && !ssh.PasswordAuthentication
+        && !ssh.KbdInteractiveAuthentication
+        && ssh.PermitRootLogin == "no";
+      tcp = if serverSsh then lib.remove 22 fw.allowedTCPPorts else fw.allowedTCPPorts;
     in
     lib.optional (!fw.enable) "the firewall is off"
-    ++
-      lib.optional
-        (
-          fw.allowedTCPPorts ++ fw.allowedUDPPorts ++ fw.allowedTCPPortRanges ++ fw.allowedUDPPortRanges
-          != [ ]
-        )
-        "ports are open: ${builtins.toJSON fw.allowedTCPPorts} tcp, ${builtins.toJSON fw.allowedUDPPorts} udp"
+    ++ lib.optional (
+      tcp ++ fw.allowedUDPPorts ++ fw.allowedTCPPortRanges ++ fw.allowedUDPPortRanges != [ ]
+    ) "ports are open: ${builtins.toJSON tcp} tcp, ${builtins.toJSON fw.allowedUDPPorts} udp"
     ++ lib.optional (
       openOnInterfaces fw.interfaces != [ ]
     ) "ports are open on ${toString (openOnInterfaces fw.interfaces)}"
-    ++ lib.optional c.services.openssh.enable "SSH is on"
+    ++ lib.optional (c.services.openssh.enable && !serverSsh) "SSH is on"
     ++ lib.optional c.users.mutableUsers "users can be changed outside the config"
     ++ lib.optional (c.users.users.root.hashedPassword != "!") "root has a password"
     ++ lib.optional (
       c.ephemeral.settings.profile == "full"
       && c.ephemeral.settings.useOpenSnitch
+      && c.ephemeral.settings.desktop != "none"
       && !c.services.opensnitch.enable
     ) "OpenSnitch is off";
   exposed = lib.concatMap (name: map (p: "${name}: ${p}") (exposure name)) hosts;

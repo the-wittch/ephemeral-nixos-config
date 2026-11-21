@@ -290,6 +290,27 @@ if [[ -e ${EPHEMERAL_ROOT:-}/etc/ephemeral/tpm-unlock ]]; then
   fi
 fi
 
+if [[ -e ${EPHEMERAL_ROOT:-}/etc/ephemeral/server ]]; then
+  # shellcheck disable=SC2154 # initrd_ssh_boot_key comes from the prelude
+  boot_key=${EPHEMERAL_ROOT:-}$initrd_ssh_boot_key
+  start=
+  if [[ ! -x $(dirname "$boot_key") ]]; then
+    ok "this server can be unlocked over SSH at boot (sudo ephemeral-doctor checks its key)"
+  elif [[ ! -s $boot_key ]]; then
+    bad "there's no key for unlocking this server over SSH at boot, so it only unlocks at the keyboard" "ephemeral-update"
+  else
+    IFS= read -r -n 10 start <"$boot_key" || true
+    if [[ $start != -----BEGIN ]]; then
+      ok "this server can be unlocked over SSH at boot, with its key sealed to the TPM"
+    elif secure_boot_on && tpm_present; then
+      warn "the key for unlocking this server over SSH at boot isn't sealed to the TPM, so anyone with the disk can read it from the boot partition" \
+        "ephemeral-update"
+    else
+      ok "this server can be unlocked over SSH at boot (its key isn't sealed: that needs Secure Boot and a TPM)"
+    fi
+  fi
+fi
+
 # only reads the list fwupd-refresh.timer downloads; installing stays a choice, since a firmware
 # update must not be cut off, and can change what the TPM PIN is bound to
 if command -v fwupdmgr >/dev/null; then

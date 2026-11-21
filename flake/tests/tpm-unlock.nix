@@ -1,4 +1,3 @@
-# nix build path:.#checks.x86_64-linux.tpm-unlock -L
 # The disk unlocked by the TPM and a PIN, and by the passphrase once wrong PINs have locked the
 # TPM out. A software TPM and a real LUKS root; the disk test can't have a TPM, since disko starts
 # its machine itself.

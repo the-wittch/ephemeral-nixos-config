@@ -19,6 +19,8 @@
   "encryptedDns": "none",
   "customDns": [],
   "useTailscale": false,
+  "server": false,
+  "sshKeys": [],
   "useOpenSnitch": true,
   "useFlakePassCli": false,
   "usePassSettings": false,
