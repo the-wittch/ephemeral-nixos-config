@@ -29,7 +29,7 @@ Add `"desktop": "none"` for no desktop at all, then run `ephemeral-update`. Each
 With `"desktop": "none"`:
 
 - There's no desktop, display manager, sound, Flatpak or boot splash. The disk passphrase is asked on the console, or over SSH as below.
-- The apps `ephemeral-apps` turns on by default are desktop apps, so none are added: only what's in `apps.json`.
+- Of the apps `ephemeral-apps` ticks by default, only the terminal ones are added: htop, ripgrep, dig and the WireGuard tools. `ephemeral-apps` and the installer offer only the terminal apps.
 - OpenSnitch is off, because nobody could answer its questions without a screen. A server with a desktop keeps it.
 - Both profiles work. The small install is a console and SSH; `ephemeral-setup` adds the rest later, as on a desktop.
 

@@ -172,7 +172,7 @@ With `extras` on, each new Ghostty window opens with fastfetch: the wallpaper's 
 
 On the full system, `ephemeral-apps` is where apps come from. What isn't in it is part of the desktop or the system: the terminal, the file manager, the image and PDF viewers, the text editor and the services.
 
-It offers over 100 common apps by category: browsers, chat, office, media, graphics, games, development, security and penetration testing (Metasploit, Nmap, Burp Suite, Ghidra and more), terminal apps, utilities, Nerd Fonts, system tuning and virtual machines. Labels show which ones are unfree, which come from Flathub, and which carry a warning (Docker and Wireshark add you to a powerful group, LocalSend opens a port, Nmap notes that OpenSnitch asks about each host a scan reaches). Every warning is shown again before anything is saved.
+It offers over 100 common apps by category: browsers, chat, office, password managers, media, graphics, games, development, terminal apps, utilities, security testing (Metasploit, Nmap, Burp Suite, Ghidra and more), Nerd Fonts, system tuning and virtual machines. "Search all apps" at the top of its menu finds one by the start of any word in its name or description. Labels show which ones are unfree, which come from Flathub, and which carry a warning (Docker and Wireshark add you to a powerful group, LocalSend opens a port, Nmap notes that OpenSnitch asks about each host a scan reaches). Every warning is shown again before anything is saved.
 
 The installer offers the same list. Your picks are saved to `apps.json` next to `settings.json`, a plain list such as `["discord", "obsidian", "-vlc"]`, where `-vlc` leaves out an app that's ticked by default. Commit it with the rest of your machine flake; it isn't a secret, and it brings the same apps to your next machine. On a rebuild:
 
@@ -180,7 +180,7 @@ The installer offers the same list. Your picks are saved to `apps.json` next to 
 - Apps that need more (Docker, Wireshark, GameMode, LocalSend) get their settings, groups and `/persist` folders.
 - Flathub apps are installed for your user at login, from the same pinned Flathub file as the system remote. Unpicking one removes it, but only if it was installed this way; Flatpaks you installed yourself are left alone.
 
-Some apps are ticked from the start: Firefox, VLC, 7-Zip, Syncthing Tray, htop, ripgrep, dig and the WireGuard tools, plus GNOME Tweaks and Extension Manager on GNOME, or Discover and Partition Manager on Plasma. They're installed unless you untick them. Apps for one desktop are only offered, and only installed, on that desktop. A machine with no desktop gets only the apps you pick.
+Some apps are ticked from the start: Firefox, VLC, 7-Zip, Syncthing Tray, htop, ripgrep, dig and the WireGuard tools, plus GNOME Tweaks and Extension Manager on GNOME, or Discover and Partition Manager on Plasma. They're installed unless you untick them. Apps for one desktop are only offered, and only installed, on that desktop. A machine with no desktop is offered only the terminal apps, and of the ones ticked from the start it gets htop, ripgrep, dig and the WireGuard tools.
 
 A name in `apps.json` that's no longer in the catalog gives a warning, not a failed build.
 

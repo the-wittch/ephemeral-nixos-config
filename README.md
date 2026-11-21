@@ -135,7 +135,7 @@ and update it with `nix flake update nixpkgs --flake /persist/etc/nixos`. That c
 | `ephemeral-report` | system details to paste into a bug report |
 | `controld-setup` | set or turn off the Control D resolver id |
 | `smb-setup` | add or remove SMB shares |
-| `ephemeral-apps` | pick apps by category, then rebuild |
+| `ephemeral-apps` | pick apps by category or search for them, then rebuild |
 | `luks-header-backup <file>` | copy the LUKS header to a USB stick |
 | `settings-from-pass` | pull settings from Proton Pass |
 | `ssh-pubs-from-pass` | write SSH public keys from Proton Pass to `~/.ssh` |

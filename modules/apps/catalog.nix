@@ -16,23 +16,7 @@ in
               type = text;
               default = name;
             };
-            category = mkOption {
-              type = types.enum [
-                "Browsers"
-                "Communication"
-                "Office"
-                "Media"
-                "Graphics"
-                "Gaming"
-                "Development"
-                "Security"
-                "Terminal"
-                "Utilities"
-                "Fonts"
-                "System"
-                "Virtualization"
-              ];
-            };
+            category = mkOption { type = types.enum (import ./_categories.nix); };
             description = mkOption { type = text; };
             package = mkOption {
               type = types.nullOr types.str;

@@ -2,25 +2,25 @@
   ephemeral.apps = {
     age = {
       label = "age";
-      category = "Security";
+      category = "Passwords";
       description = "encrypt files with a key or passphrase";
       package = "age";
     };
     keepassxc = {
       label = "KeePassXC";
-      category = "Security";
+      category = "Passwords";
       description = "offline password manager";
       package = "keepassxc";
     };
     bitwarden = {
       label = "Bitwarden";
-      category = "Security";
+      category = "Passwords";
       description = "password manager";
       package = "bitwarden-desktop";
     };
     wireshark = {
       label = "Wireshark";
-      category = "Security";
+      category = "Security testing";
       description = "network traffic analyser";
       warn = "you're added to the wireshark group; it can capture all traffic";
       nixos =
@@ -35,69 +35,69 @@
     };
     metasploit = {
       label = "Metasploit";
-      category = "Security";
+      category = "Security testing";
       description = "penetration testing framework with msfconsole";
       package = "metasploit";
     };
     nmap = {
       label = "Nmap";
-      category = "Security";
+      category = "Security testing";
       description = "network scanner and service detection";
       package = "nmap";
       warn = "with OpenSnitch on you're asked about each host a scan reaches";
     };
     zap = {
       label = "ZAP";
-      category = "Security";
+      category = "Security testing";
       description = "web app security scanner and proxy";
       package = "zap";
     };
     burpsuite = {
       label = "Burp Suite";
-      category = "Security";
+      category = "Security testing";
       description = "web security testing proxy (Community Edition)";
       package = "burpsuite";
       unfree = [ "burpsuite" ];
     };
     sqlmap = {
       label = "sqlmap";
-      category = "Security";
+      category = "Security testing";
       description = "SQL injection testing";
       package = "sqlmap";
     };
     ffuf = {
       label = "ffuf";
-      category = "Security";
+      category = "Security testing";
       description = "web fuzzer";
       package = "ffuf";
     };
     gobuster = {
       label = "Gobuster";
-      category = "Security";
+      category = "Security testing";
       description = "directory and DNS brute-forcing";
       package = "gobuster";
     };
     mitmproxy = {
       label = "mitmproxy";
-      category = "Security";
+      category = "Security testing";
       description = "interactive HTTPS proxy";
       package = "mitmproxy";
     };
     hashcat = {
       label = "Hashcat";
-      category = "Security";
+      category = "Security testing";
       description = "password recovery on the GPU";
       package = "hashcat";
     };
     john = {
       label = "John the Ripper";
-      category = "Security";
+      category = "Security testing";
       description = "password cracker";
       package = "john";
     };
     seclists = {
       label = "SecLists";
-      category = "Security";
+      category = "Security testing";
       description = "wordlists in /run/current-system/sw/share/wordlists/seclists";
       package = "seclists";
       nixos = {
@@ -106,37 +106,37 @@
     };
     exploitdb = {
       label = "Exploit-DB";
-      category = "Security";
+      category = "Security testing";
       description = "offline exploit archive searched with searchsploit";
       package = "exploitdb";
     };
     netexec = {
       label = "NetExec";
-      category = "Security";
+      category = "Security testing";
       description = "network service assessment (nxc)";
       package = "netexec";
     };
     ghidra = {
       label = "Ghidra";
-      category = "Security";
+      category = "Security testing";
       description = "reverse engineering suite";
       package = "ghidra";
     };
     radare2 = {
       label = "radare2";
-      category = "Security";
+      category = "Security testing";
       description = "command-line reverse engineering";
       package = "radare2";
     };
     binwalk = {
       label = "binwalk";
-      category = "Security";
+      category = "Security testing";
       description = "firmware analysis";
       package = "binwalk";
     };
     lynis = {
       label = "Lynis";
-      category = "Security";
+      category = "Security testing";
       description = "audits this system's hardening";
       package = "lynis";
     };

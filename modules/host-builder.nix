@@ -25,9 +25,12 @@ let
       # "-firefox" unpicks an app that's picked by default
       unpicked = map (lib.removePrefix "-") (builtins.filter (lib.hasPrefix "-") entries);
       listed = builtins.filter (id: !lib.hasPrefix "-" id) entries;
-      # a headless server gets only what apps.json lists: the defaults are desktop apps
-      defaults = lib.optionals (settings.desktop != "none") (
-        lib.attrNames (lib.filterAttrs (id: app: app.default && !lib.elem id unpicked) catalog)
+      # without a desktop, only the terminal apps among the defaults
+      defaults = lib.attrNames (
+        lib.filterAttrs (
+          id: app:
+          app.default && !lib.elem id unpicked && (settings.desktop != "none" || app.category == "Terminal")
+        ) catalog
       );
       onThisDesktop =
         id:

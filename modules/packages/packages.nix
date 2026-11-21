@@ -154,7 +154,7 @@ in
           ];
         };
         ephemeral-apps = {
-          description = "pick apps by category, then rebuild";
+          description = "pick apps by category or search for them, then rebuild";
           deps = [
             gum
             jq

@@ -12,7 +12,7 @@
     {
       value = "gnome";
       label = "GNOME";
-      description = "GNOME";
+      description = "GNOME much as it comes, with tray icons and Caffeine";
     }
     {
       value = "niri";
@@ -27,8 +27,8 @@
     }
     {
       value = "none";
-      label = "None (headless server)";
-      description = "no screen: reached over SSH, and needs server";
+      label = "None";
+      description = "no screen, for a server reached over SSH";
     }
   ];
   nvidia = [
@@ -52,7 +52,7 @@
     {
       value = "full";
       label = "Full";
-      description = "dotfiles, the theme, snapshots, OpenSnitch, Syncthing, Podman, Flatpak, and the options that come after this";
+      description = "dotfiles, theme, snapshots, OpenSnitch, Syncthing and more";
     }
     {
       value = "minimal";

@@ -5,9 +5,9 @@ set -euo pipefail
 usage() {
   cat <<'USAGE'
 ephemeral-apps
-Pick apps by category; a few are ticked from the start. The picks are saved to
-apps.json next to settings.json, and it offers to rebuild. Run it again to add or
-remove apps.
+Pick apps by category, or search for them; a few are ticked from the start.
+The picks are saved to apps.json next to settings.json, and it offers to
+rebuild. Run it again to add or remove apps.
 USAGE
 }
 
@@ -32,7 +32,7 @@ declare -A picked=() before=()
 while IFS= read -r id; do
   picked[$id]=1
   before[$id]=1
-done < <(apps_picked "$CATALOG" "$APPS")
+done < <(apps_picked "$CATALOG" "$APPS" "$desktop")
 
 row() {
   jq -r --arg id "$1" '.[$id] |
@@ -74,6 +74,31 @@ pick_category() {
   done <<<"$out"
 }
 
+# Every app not ticked yet, across the categories; what's ticked here is added. Unticking stays in
+# the categories, where everything that's ticked is shown.
+search() {
+  local id line out
+  local -a rows=()
+  local -A by_row=()
+  # shellcheck disable=SC2016 # jq's variables
+  while IFS=$'\t' read -r id line; do
+    [[ -z ${picked[$id]:-} ]] || continue
+    rows+=("$line")
+    by_row[$line]=$id
+  done < <(apps_offered "$CATALOG" "$desktop" | jq -R . | jq -rs --slurpfile c "$CATALOG" \
+    '.[] as $id | $c[0][$id] | "\($id)\t\(.label)  \(.description) · \(.category)"')
+  if ((${#rows[@]} == 0)); then
+    echo "Every app is ticked already."
+    return 0
+  fi
+  out=$(printf '%s\n' "${rows[@]}" |
+    gum filter --no-limit --no-fuzzy --height 20 --placeholder "a name, or what it does" \
+      --header "Type to search, tab to tick, enter to add them") || return 0
+  while IFS= read -r line; do
+    [[ -z $line ]] || picked[${by_row[$line]}]=1
+  done <<<"$out"
+}
+
 mapfile -t categories < <(apps_categories "$CATALOG" "$desktop")
 
 gum style --bold --foreground 212 "Apps"
@@ -88,8 +113,11 @@ while true; do
     done < <(ids_in "$c")
     menu+=("$c ($n)")
   done
-  choice=$(gum choose --header "Pick a category" "${menu[@]}" "Review and save" "Quit without saving") || exit 0
+  # tall enough for every line: gum shows 10, and Review and Quit would be on a second page
+  choice=$(gum choose --height $((${#menu[@]} + 3)) --header "Pick a category" \
+    "Search all apps" "${menu[@]}" "Review and save" "Quit without saving") || exit 0
   case $choice in
+    "Search all apps") search ;;
     "Review and save") break ;;
     "Quit without saving") exit 0 ;;
     *) pick_category "${choice% (*}" ;;
@@ -130,7 +158,7 @@ done
 
 gum confirm "Save these changes?" || exit 0
 
-content=$(printf '%s\n' "${!picked[@]}" | apps_file "$CATALOG")
+content=$(printf '%s\n' "${!picked[@]}" | apps_file "$CATALOG" "$desktop")
 printf '%s\n' "$content" | write_flake_file "$APPS" 644
 gum style --foreground 2 "Saved $APPS"
 
