@@ -5,12 +5,6 @@
     type = lib.types.lazyAttrsOf (lib.types.lazyAttrsOf lib.types.raw);
     readOnly = true;
     description = "flake.modules, each wrapped with a key so importing it again is a no-op.";
-    default = lib.mapAttrs (
-      class: modules:
-      lib.mapAttrs (name: module: {
-        key = "ephemeral/${class}/${name}";
-        imports = [ module ];
-      }) modules
-    ) config.flake.modules;
+    default = lib.mapAttrs (import ./_keyed.nix lib) config.flake.modules;
   };
 }

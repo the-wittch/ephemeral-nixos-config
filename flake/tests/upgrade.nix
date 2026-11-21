@@ -2,6 +2,8 @@
 let
   pin = lib.importJSON ../../tests/upgrade/previous.json;
   previous = builtins.getFlake "git+https://github.com/the-wittch/ephemeral-nixos-config?rev=${pin.rev}";
+  # keyed as its own modules import them, so one they all import is applied once
+  previousAspects = import ../../modules/_keyed.nix lib "nixos" previous.modules.nixos;
 
   settings = {
     hostname = "upgrade";
@@ -47,7 +49,7 @@ in
         (previous.inputs.nixpkgs.legacyPackages.${system}.testers.runNixOSTest {
           name = "upgrade-previous";
           node.pkgsReadOnly = false;
-          nodes.machine = machine previous.modules.nixos;
+          nodes.machine = machine previousAspects;
           testScript = "";
         }).nodes.machine.system.build.vm;
     in
@@ -103,7 +105,7 @@ in
         node.pkgsReadOnly = false;
 
         nodes.machine = {
-          imports = [ (machine previous.modules.nixos) ];
+          imports = [ (machine previousAspects) ];
           virtualisation.additionalPaths = [ next ];
         };
 
