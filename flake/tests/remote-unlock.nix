@@ -120,7 +120,7 @@ in
                       " && ${onLuks}/bin/switch-to-configuration boot >&2"
                   )
                   on_esp = "bsdtar -xOf /boot/limine/kernels/*-secrets"
-                  server.succeed(f"bsdtar -tf /boot/limine/kernels/*-secrets | grep -q etc/ssh/boot-key")
+                  server.succeed("bsdtar -tf /boot/limine/kernels/*-secrets | grep -q etc/ssh/boot-key")
                   ${
                     if sealed then
                       ''server.fail(f"{on_esp} | grep -q 'PRIVATE KEY'")''
