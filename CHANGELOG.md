@@ -2,6 +2,18 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.15.0
+
+### Added
+
+- `ephemeral-restore <path>` brings back a file or folder, in your home folder or anywhere on `/persist`, as it was in one of the hourly snapshots. It lists the snapshots that have it, with their dates, and moves what's there now aside first, so a restore can be undone.
+- The Orca screen reader on niri and Umbriel, as GNOME and Plasma already have it. On niri, Super+Alt+S starts it. [Features](docs/features.md#accessibility) covers the accessibility settings on each desktop.
+- [Security notes](docs/security.md#changing-secrets) say how to change each secret: the login password, the disk passphrase, the TPM PIN, SSH keys, and the rest.
+- [Features](docs/features.md#virtual-machines) lists ways to run something that's gone again when you stop it: `distrobox ephemeral`, `podman run --rm`, QEMU's `-snapshot` and the VM of your own config.
+- OpenVPN, OpenConnect and strongSwan in `ephemeral-apps`, under Utilities, for VPNs set up in the desktop's network settings. [Features](docs/features.md#other-vpns-and-proxies) also says how to set a proxy.
+- ROCm OpenCL in `ephemeral-apps`, under System, for compute on AMD graphics. [Features](docs/features.md#gpu-compute) covers NVIDIA too, containers included.
+- [Features](docs/features.md#reaching-the-machine-from-your-other-devices) shows how to turn SSH on for Tailscale only, with keys, to reach or fix the machine from another device.
+
 ## 4.14.5
 
 ### Changed

@@ -443,12 +443,36 @@ if FAKE_FSTYPE=fuse FAKE_SOURCE=remote: lib "check_offline_destination '$work'" 
   pass "lib: check_offline_destination warns when it can't tell which disk a folder is on"
 else fail "lib: check_offline_destination with an unknown source"; fi
 
+restore=$(tool ephemeral-restore)
+snaps=$ROOT/persist/.snapshots
+live=$ROOT/persist/home/alice/notes.txt
+mkdir -p "$snaps/1/snapshot/home/alice" "$snaps/2/snapshot/home/alice" "$snaps/3/snapshot/home/alice" "${live%/*}"
+printf 'from 1\n' >"$snaps/1/snapshot/home/alice/notes.txt"
+printf 'from 2\n' >"$snaps/2/snapshot/home/alice/notes.txt"
+printf '<snapshot><num>2</num><date>2026-11-20 10:00:00</date></snapshot>\n' >"$snaps/2/info.xml"
+printf 'now\n' >"$live"
+fake gum 'cat >"$FAKE_MENU"; sed -n "${FAKE_LINE:-1}p" "$FAKE_MENU"'
+FAKE_MENU=$work/menu on_tty 'y\n' bash "$restore" /home/alice/notes.txt || true
+aside=$(compgen -G "$live.before-restore-*" || true)
+if [[ $(<"$live") == "from 2" && -n $aside && $(<"$aside") == now ]] &&
+  [[ $(wc -l <"$work/menu") == 2 ]] && grep -q '^2  ' "$work/menu" && ! grep -q '^3' "$work/menu"; then
+  pass "restore: offers only the snapshots that have it, newest first, and keeps what was there aside"
+else fail "restore: $(cat "$work/out")"; fi
+FAKE_MENU=$work/menu FAKE_LINE=2 on_tty 'n\n' bash "$restore" /home/alice/notes.txt || true
+if [[ $(<"$live") == "from 2" && $(compgen -G "$live.before-restore-*" | wc -l) == 1 ]]; then
+  pass "restore: saying no changes nothing"
+else fail "restore after no: $(cat "$work/out")"; fi
+if ! on_tty 'y\n' bash "$restore" /etc/passwd && grep -q "isn't in /home or on /persist" "$work/out"; then
+  pass "restore: refuses a path that isn't kept"
+else fail "restore outside /persist: $(cat "$work/out")"; fi
+rm "$fakes/gum"
+
 # every command: --help works, an unknown option is refused before anything runs, and the ones
 # with questions stop without a terminal instead of doing nothing and exiting 0
 fake gum 'exit 0'
 export CATALOG=$work/catalog.json
 for name in ephemeral-update ephemeral-doctor ephemeral-setup ephemeral-apps ephemeral-backup ephemeral-passwd \
-  ephemeral-report controld-setup smb-setup luks-header-backup settings-from-pass ssh-pubs-from-pass update-pass-cli; do
+  ephemeral-report ephemeral-restore controld-setup smb-setup luks-header-backup settings-from-pass ssh-pubs-from-pass update-pass-cli; do
   cmd=$(tool "$name")
   if bash "$cmd" --help >"$work/out" 2>&1 </dev/null && [[ -s $work/out ]]; then
     pass "$name --help"
@@ -461,9 +485,10 @@ for name in ephemeral-update ephemeral-doctor ephemeral-setup ephemeral-apps eph
   else fail "$name with an unknown option exited $code"; fi
 done
 mkdir -p "$work/stick"
-for name in ephemeral-setup ephemeral-apps ephemeral-passwd controld-setup smb-setup ephemeral-backup; do
+for name in ephemeral-setup ephemeral-apps ephemeral-passwd controld-setup smb-setup ephemeral-backup ephemeral-restore; do
   args=()
   [[ $name == ephemeral-backup ]] && args=("$work/stick")
+  [[ $name == ephemeral-restore ]] && args=(/home/alice/notes.txt)
   code=0
   FAKE_FSTYPE=ext4 FAKE_SOURCE=/dev/sdb1 bash "$(tool "$name")" "${args[@]}" >"$work/out" 2>&1 </dev/null || code=$?
   if ((code == 1)) && grep -q 'in a terminal' "$work/out"; then

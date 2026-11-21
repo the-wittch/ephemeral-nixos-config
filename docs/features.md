@@ -4,10 +4,13 @@
 
 snapper keeps read-only snapshots of `/persist`, and with it your home folder: 24 hourly, 7 daily and 4 weekly. They undo deletes and bad edits, but they're on the same disk, so they aren't a [backup](backup.md).
 
+To bring back a file or folder as it was:
+
 ```bash
-sudo snapper -c persist list
-sudo cp -a /persist/.snapshots/<n>/snapshot/home/$USER/path/to/file ~/path/to/
+ephemeral-restore ~/path/to/file
 ```
+
+It lists the snapshots that have it, with their dates, and puts back the one you pick. What's there now is moved aside first, to `<name>.before-restore-<time>`, so the restore can be undone. It works for your home folder and anything on `/persist`; for another kept path, give where it's kept, such as `/persist/var/lib/bluetooth`. `sudo snapper -c persist list` shows every snapshot.
 
 Only root can read them, because old snapshots still contain old password hashes and keys. Exclude `/persist/.snapshots` from Borg or any other backup of `/persist`, or every snapshot is backed up again.
 
@@ -82,6 +85,14 @@ Laptops with both an NVIDIA and an Intel or AMD GPU also need [PRIME](https://wi
 
 GNOME's own Extensions app is hidden; Extension Manager, ticked by default in `ephemeral-apps`, takes its place. The tray (AppIndicator) and Caffeine extensions come from Nix and are on by default. A copy of an extension in `~/.local/share/gnome-shell/extensions` takes precedence over the Nix one, so remove it there to use the version from this repo.
 
+## Accessibility
+
+The Orca screen reader is installed on every desktop. GNOME turns it on in Settings, Accessibility, which also has high contrast and larger text, and Plasma in System Settings, Accessibility. On niri, Super+Alt+S starts and stops it; on Umbriel, start `orca` from the launcher. To make text larger in GTK apps on niri and Umbriel:
+
+```bash
+gsettings set org.gnome.desktop.interface text-scaling-factor 1.25
+```
+
 ## Laptops and fingerprint login
 
 The installer sets `laptop` when it finds a battery, and asks about `fingerprint` when it sees a USB device from a fingerprint reader maker. Enroll a finger once with `fprintd-enroll`; after that the login screen and sudo accept it. Enrolled prints are kept on `/persist`.
@@ -90,9 +101,52 @@ The installer sets `laptop` when it finds a battery, and asks about `fingerprint
 
 NetworkManager handles WireGuard itself, so there's nothing extra to install. On GNOME or Plasma, import a `.conf` file from the network settings (VPN, then import from file); `nmcli connection import type wireguard file wg0.conf` does the same from a terminal.
 
+## Other VPNs and proxies
+
+For OpenVPN, OpenConnect (Cisco AnyConnect, GlobalProtect, Fortinet, Pulse) and strongSwan (IPsec, IKEv2), tick it in `ephemeral-apps` under Utilities. Its connections are then set up in the desktop's network settings, like WireGuard's; OpenVPN imports `.ovpn` files there. On the full system, OpenSnitch asks about the VPN program the first time it connects.
+
+GNOME and Plasma set a proxy in their network settings, for the apps that follow them. For every program, set it in a module of your own:
+
+```nix
+{
+  flake.modules.nixos.pc.networking.proxy = {
+    default = "http://proxy.example.com:3128";
+    noProxy = "127.0.0.1,localhost,.example.com";
+  };
+}
+```
+
 ## Tailscale
 
 Set `"useTailscale": true`, rebuild, then sign in once with `sudo tailscale up`. Its state stays on `/persist`, and OpenSnitch gets a rule that lets `tailscaled` through.
+
+## Reaching the machine from your other devices
+
+SSH is off, and the firewall closes every port. To reach this machine when you're away from it, or to fix it when its desktop won't start, turn SSH on for Tailscale only, with keys and no passwords. Turn on `useTailscale` first, then add a module with your public key:
+
+```nix
+{
+  flake.modules.nixos.pc =
+    { config, ... }:
+    {
+      services.openssh = {
+        enable = true;
+        settings = {
+          PasswordAuthentication = false;
+          KbdInteractiveAuthentication = false;
+          PermitRootLogin = "no";
+        };
+      };
+      # only over Tailscale; the firewall keeps port 22 shut everywhere else
+      networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 22 ];
+      users.users.${config.ephemeral.settings.username}.openssh.authorizedKeys.keys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExampleKeyReplaceWithYours you@phone"
+      ];
+    };
+}
+```
+
+Then, from another device on your tailnet, `ssh <user>@<this machine>` gets a shell, where `ephemeral-update --previous` or `ephemeral-doctor` work as at the keyboard. Its host key is kept in `/persist/etc/ssh`. Anyone with the key and a place on your tailnet can log in, so keep the key in Proton Pass or a hardware key, and remove a lost device from the tailnet. A remote desktop isn't set up: an SSH shell is enough to fix a machine, and keeps one less service listening.
 
 ## Scanners
 
@@ -156,6 +210,10 @@ zram swap and systemd-oomd are always on. Three more are in `ephemeral-apps` und
 - **ananicy-cpp** raises or lowers the CPU and IO priority of known programs, using CachyOS's rules: games and audio up, compilers and indexers down.
 - **bpftune** watches the network and memory and adjusts kernel settings such as TCP buffer sizes as the load changes. None of what it changes overlaps with the hardening settings.
 
+## GPU compute
+
+With `"nvidia"` set, the NVIDIA driver brings its CUDA and OpenCL libraries, so apps that ship their own CUDA, such as Blender and most AI tools, use the card. To give Podman containers the card too, set `hardware.nvidia-container-toolkit.enable = true` in a module of your own and start them with `--device nvidia.com/gpu=all`. On AMD graphics, ROCm OpenCL in `ephemeral-apps` under System adds OpenCL, and `clinfo` lists what it finds. nvtop, under Terminal, shows how busy the GPU is on either. The CUDA toolkit itself, for building CUDA code, is several gigabytes; use it from a project's own Nix shell rather than installing it.
+
 ## Virtual machines
 
 `ephemeral-apps` has a Virtualization category:
@@ -163,6 +221,13 @@ zram swap and systemd-oomd are always on. Three more are in `ephemeral-apps` und
 - **virt-manager** runs VMs through libvirt. For Windows 11, pick it as the OS and virt-manager adds the TPM 2.0 it needs. For Secure Boot, tick "Customize configuration before install" and check that Firmware under Overview is the `secure` UEFI image. The Secure Boot keys aren't enrolled, which Windows 11 accepts. VM disks and settings are kept in `/var/lib/libvirt`.
 - **VM Curator** is a terminal UI that runs QEMU directly, with ready-made profiles for over 130 systems. Its VMs live in a folder in your home, and it finds the UEFI firmware and TPM on its own.
 - **GPU passthrough** gives a virt-manager VM the only graphics card on a desktop. In the VM's settings, add the card and its HDMI audio as PCI host devices. Starting the VM logs you out, unloads the GPU driver and hands the card to the guest, so its monitor shows the guest. When the guest shuts down, the card comes back and the login screen returns. If the driver won't let go, the start fails and you're back at the login screen; `journalctl -u libvirtd` says what held it. NVIDIA cards often need their vBIOS as a ROM file on the host device. A VM that gets a second GPU instead isn't affected.
+
+For something that's gone again when you stop it:
+
+- `distrobox ephemeral` opens a shell in a new Linux container, of any distribution, and deletes it when you leave. Distrobox is in `ephemeral-apps` under Development.
+- `podman run --rm -it <image>` does the same with any container image.
+- `qemu-system-x86_64 -snapshot`, with your usual options, runs a VM from its disk image but keeps every change in temporary files, so the image is untouched when it stops.
+- `nix run path:/persist/etc/nixos#vm` boots your own config in a throwaway VM; see [Try it in a VM](vm.md).
 
 ## Flatpak
 

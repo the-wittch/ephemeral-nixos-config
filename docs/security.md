@@ -55,3 +55,17 @@ The boot always asks for the PIN first, since the TPM needs it to try. A wrong P
 - after the TPM was cleared in the firmware settings, or with the disk in another machine, the same way.
 
 It doesn't help against someone who knows the PIN and has the laptop, nor against something with root on the running system. The PIN starts any system in the boot menu built with TPM unlock on, older ones included. `ephemeral-doctor` says whether TPM unlock is set up, and, run with sudo, whether the disk has its TPM slot. LUKS header backups made before keep opening with the passphrase. To go back to the passphrase only, pick it in `ephemeral-setup`, which removes the TPM slot.
+
+## Changing secrets
+
+Each secret has its own way to change it:
+
+- **Login password**: `ephemeral-passwd`.
+- **Disk passphrase**: `sudo cryptsetup luksChangeKey /dev/disk/by-partlabel/disk-main-luks` asks for the current one, then the new one. The TPM PIN, if you use one, keeps working. LUKS header backups made before still open with the old passphrase, so make a new one with [`luks-header-backup`](features.md#luks-header-backup) and destroy the old copies.
+- **TPM PIN**: `ephemeral-setup`, and pick the option that enrolls the PIN again. It asks for the passphrase, then the new PIN twice.
+- **The machine's SSH host key**, with SSH turned on: `sudo rm /persist/etc/ssh/ssh_host_*` and `sudo systemctl restart sshd`, which makes new ones. Computers that connect to this one then warn that the key changed, until you remove the old one from their `known_hosts`.
+- **Your own SSH keys**: in Proton Pass, if you use the [SSH agent](features.md#ssh-agent); otherwise the files in `~/.ssh`. Replace the public half wherever it's authorized.
+- **The Control D id and SMB passwords**: `controld-setup` and `smb-setup`.
+- **Secure Boot keys**: only worth replacing if they leaked. That means Setup Mode again and new keys, as in [Secure Boot](#secure-boot), and the old ones stay in the snapshots until those expire.
+
+Run `ephemeral-backup` afterwards, so the copy of these off the machine is the current one.

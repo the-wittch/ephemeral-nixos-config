@@ -19,6 +19,9 @@ in
       # the greeter logs in through greetd
       security.pam.services.greetd.enableGnomeKeyring = true;
 
+      # the screen reader, which GNOME and Plasma turn on themselves; niri starts it with Super+Alt+S
+      services.orca.enable = true;
+
       # gvfs gives Nautilus the trash, network shares and phones
       services.gvfs.enable = true;
 
