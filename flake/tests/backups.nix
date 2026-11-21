@@ -53,10 +53,15 @@ in
           storage.wait_for_unit("sshd.service")
 
           with subtest("backup-setup makes root's key and keeps the typed passphrase root-only"):
-              machine.succeed("mkdir -p /tmp/flake && touch /tmp/flake/flake.nix")
-              # a terminal, as it asks for the passphrase; the empty line skips adding a repository
+              # with a repository already there, it only asks for the passphrase
               machine.succeed(
-                  "printf 'correct horse\\ncorrect horse\\n\\n'"
+                  "mkdir -p /tmp/flake && touch /tmp/flake/flake.nix",
+                  "echo '[{\"label\": \"box\", \"path\": \"ssh://borg@storage/./repo\"}]' > /tmp/flake/backup.json",
+              )
+              # in a terminal, as it asks there; each answer waits for its question, since sudo takes
+              # in what was typed before it while it runs
+              machine.succeed(
+                  "{ sleep 5; echo 'correct horse'; sleep 2; echo 'correct horse'; }"
                   " | script -qec 'FLAKE_DIR=/tmp/flake backup-setup' /dev/null >&2"
               )
               assert machine.succeed("stat -c '%a %U' ${backup.dir} ${backup.dir}/passphrase ${backup.dir}/ssh_key").split() == [
