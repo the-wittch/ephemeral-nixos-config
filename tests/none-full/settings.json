@@ -1,0 +1,8 @@
+{
+  "hostname": "none-full",
+  "username": "alice",
+  "desktop": "none",
+  "profile": "full",
+  "server": true,
+  "sshKeys": ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFakeTestKeyForEvaluationOnlyNotARealKey00 alice@test"]
+}

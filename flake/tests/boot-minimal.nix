@@ -1,4 +1,3 @@
-# nix build path:.#checks.x86_64-linux.boot-minimal -L
 { config, ... }:
 let
   nixos = config.ephemeral.aspects.nixos;

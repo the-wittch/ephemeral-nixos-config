@@ -96,6 +96,35 @@ if grep -q '^nh os switch' "$calls"; then
   pass "update: offline, it rebuilds what's pinned"
 else fail "update: offline"; fi
 
+initrd_key=$ROOT/persist/etc/ssh/initrd/ssh_host_ed25519_key
+flake_at v4.0.0
+printf '{"server": false}\n' >"$work/flake/settings.json"
+FAKE_OFFLINE=1 on_tty '' bash "$update" || true
+first=
+if [[ ! -e $initrd_key ]]; then
+  printf '{"server": true}\n' >"$work/flake/settings.json"
+  FAKE_OFFLINE=1 on_tty '' bash "$update" || true
+  first=$(cat "$initrd_key.pub" 2>/dev/null) || true
+  FAKE_OFFLINE=1 on_tty '' bash "$update" || true
+fi
+boot_key=$ROOT/persist/etc/ssh/initrd/boot-key
+if [[ -n $first && $(stat -c %a "$initrd_key") == 600 && $(cat "$initrd_key.pub") == "$first" ]] &&
+  cmp -s "$initrd_key" "$boot_key" && [[ $(stat -c %a "$boot_key") == 600 ]] && grep -q '^nh os switch' "$calls"; then
+  pass "update: only a server gets a key for unlocking over SSH, made before the rebuild and kept after"
+else fail "update: the key for unlocking a server over SSH"; fi
+
+fake systemd-creds 'echo "systemd-creds $*" >>"$CALLS"; printf "sealed %s\n" "${*: -2:1}" >"${*: -1}"'
+sealing=$work/sealing
+mkdir -p "$sealing/dev" "$sealing/sys/firmware/efi/efivars"
+: >"$sealing/dev/tpmrm0"
+printf '\x06\x00\x00\x00\x01' >"$sealing/sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c"
+EPHEMERAL_ROOT=$sealing FAKE_OFFLINE=1 on_tty '' bash "$update" || true
+if grep -q -- '--with-key=tpm2 .*--tpm2-pcrs=7 --name=initrd-ssh-host-key' "$calls" &&
+  [[ $(cat "$boot_key") == "sealed $ROOT/persist/etc/ssh/initrd/ssh_host_ed25519_key" ]] &&
+  [[ $(cat "$initrd_key.pub") == "$first" ]] && ! grep -q 'PRIVATE KEY' "$boot_key"; then
+  pass "update: with Secure Boot and a TPM, the boot copy of a server's key is sealed to PCR 7"
+else fail "update: sealing the boot copy of a server's key"; fi
+
 flake_at v4.0.0
 mkdir -p "$work/flake/modules" && : >"$work/flake/modules/deploy.key"
 if ! FAKE_LATEST=v4.0.0 on_tty '' bash "$update" && ! grep -q '^nh' "$calls" && grep -q 'deploy.key' "$work/out"; then
@@ -365,6 +394,26 @@ rm "$fakes/systemctl"
 if grep -qF "Secure Boot is on" "$work/out" && grep -qF "can't be checked" "$work/out" && ! grep -qF "no list of revoked" "$work/out"; then
   pass "doctor: Secure Boot hidden from Linux but on is reported as on, and the dbx as unknown, not missing"
 else fail "doctor: Secure Boot with hidden variables"; fi
+
+srv=$work/server-root
+mkdir -p "$srv/etc/ephemeral" "$srv/dev" "$srv/sys/firmware/efi/efivars" "$srv/persist/etc/ssh/initrd"
+: >"$srv/etc/ephemeral/server"
+: >"$srv/dev/tpmrm0"
+printf '\x06\x00\x00\x00\x01' >"$srv/sys/firmware/efi/efivars/SecureBoot-8be4df61-93ca-11d2-aa0d-00e098032b8c"
+doctor_srv() {
+  USER=alice EPHEMERAL_ROOT=$srv FLAKE_DIR=$work/flake FAKE_OFFLINE=1 bash "$doctor" >"$work/out" 2>&1 || true
+  grep -c "$1" "$work/out" || true
+}
+fake systemctl '[[ $1 == is-active ]] && exit 1; exit 0'
+missing=$(doctor_srv "no key for unlocking")
+printf -- '-----BEGIN a plain key\n' >"$srv/persist/etc/ssh/initrd/boot-key"
+unsealed=$(doctor_srv "isn't sealed to the TPM, so")
+printf 'sealed\n' >"$srv/persist/etc/ssh/initrd/boot-key"
+sealed=$(doctor_srv "with its key sealed to the TPM")
+rm "$fakes/systemctl"
+if ((missing == 1 && unsealed == 1 && sealed == 1)); then
+  pass "doctor: a server's key for unlocking over SSH: missing, unsealed with a TPM to seal it, and sealed"
+else fail "doctor: a server's key for unlocking over SSH ($missing $unsealed $sealed)"; fi
 if lib 'valid_controld_id abc-1_2 && ! valid_controld_id "a b" && ! valid_controld_id "x;y" && ! valid_controld_id ""'; then
   pass "lib: valid_controld_id takes the rule from the settings rules"
 else fail "lib: valid_controld_id"; fi

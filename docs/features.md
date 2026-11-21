@@ -137,7 +137,6 @@ SSH is off, and the firewall closes every port. To reach this machine when you'r
           PermitRootLogin = "no";
         };
       };
-      # only over Tailscale; the firewall keeps port 22 shut everywhere else
       networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 22 ];
       users.users.${config.ephemeral.settings.username}.openssh.authorizedKeys.keys = [
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExampleKeyReplaceWithYours you@phone"
@@ -146,7 +145,7 @@ SSH is off, and the firewall closes every port. To reach this machine when you'r
 }
 ```
 
-Then, from another device on your tailnet, `ssh <user>@<this machine>` gets a shell, where `ephemeral-update --previous` or `ephemeral-doctor` work as at the keyboard. Its host key is kept in `/persist/etc/ssh`. Anyone with the key and a place on your tailnet can log in, so keep the key in Proton Pass or a hardware key, and remove a lost device from the tailnet. A remote desktop isn't set up: an SSH shell is enough to fix a machine, and keeps one less service listening.
+Then, from another device on your tailnet, `ssh <user>@<this machine>` gets a shell, where `ephemeral-update --previous` or `ephemeral-doctor` work as at the keyboard. Its host key is kept in `/persist/etc/ssh`. Anyone with the key and a place on your tailnet can log in, so keep the key in Proton Pass or a hardware key, and remove a lost device from the tailnet. There's no remote desktop. An SSH shell is enough to fix a machine, and it's one less service listening. For a machine that should always be reachable, see [Servers](servers.md).
 
 ## Scanners
 
@@ -181,7 +180,7 @@ The installer offers the same list. Your picks are saved to `apps.json` next to 
 - Apps that need more (Docker, Wireshark, GameMode, LocalSend) get their settings, groups and `/persist` folders.
 - Flathub apps are installed for your user at login, from the same pinned Flathub file as the system remote. Unpicking one removes it, but only if it was installed this way; Flatpaks you installed yourself are left alone.
 
-Some apps are ticked from the start: Firefox, VLC, 7-Zip, Syncthing Tray, htop, ripgrep, dig and the WireGuard tools, plus GNOME Tweaks and Extension Manager on GNOME, or Discover and Partition Manager on Plasma. They're installed unless you untick them. Apps for one desktop are only offered, and only installed, on that desktop.
+Some apps are ticked from the start: Firefox, VLC, 7-Zip, Syncthing Tray, htop, ripgrep, dig and the WireGuard tools, plus GNOME Tweaks and Extension Manager on GNOME, or Discover and Partition Manager on Plasma. They're installed unless you untick them. Apps for one desktop are only offered, and only installed, on that desktop. A machine with no desktop gets only the apps you pick.
 
 A name in `apps.json` that's no longer in the catalog gives a warning, not a failed build.
 

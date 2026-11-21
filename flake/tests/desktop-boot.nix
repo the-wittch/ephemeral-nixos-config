@@ -1,4 +1,3 @@
-# nix build path:.#checks.x86_64-linux.desktop-boot-umbriel -L
 # The boot test runs GNOME; these boot the other desktops far enough to show their login screen.
 { config, lib, ... }:
 let

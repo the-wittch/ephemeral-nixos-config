@@ -1,4 +1,3 @@
-# nix build path:.#checks.x86_64-linux.scripts-behaviour -L
 { lib, ... }:
 {
   perSystem =
@@ -16,6 +15,7 @@
               gnused
               jq
               mkpasswd
+              openssh
               util-linux
             ];
             SCRIPTS = ../../scripts;

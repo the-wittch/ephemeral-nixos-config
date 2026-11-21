@@ -1,6 +1,6 @@
 {
   # GNOME and Plasma make ~/Documents and the rest themselves; niri and Umbriel don't
-  flake.modules.nixos.pc =
+  flake.modules.nixos.graphical =
     { pkgs, ... }:
     {
       environment.systemPackages = [ pkgs.xdg-user-dirs ];

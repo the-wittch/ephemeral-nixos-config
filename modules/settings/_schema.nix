@@ -83,6 +83,12 @@ in
       default = [ ];
       description = "DNS over TLS servers for encryptedDns = \"custom\", each as address#name, e.g. 194.242.2.2#dns.mullvad.net.";
     };
+    server = flag false "A server: SSH on with sshKeys, no sleep, and the disk unlocked over SSH after a reboot. desktop = \"none\" needs it.";
+    sshKeys = mkOption {
+      type = types.listOf (matching "sshKeys");
+      default = [ ];
+      description = "SSH public keys that may log in, such as \"ssh-ed25519 AAAA… you@laptop\". A server needs at least one.";
+    };
     useTailscale = flag false "Tailscale VPN.";
     useOpenSnitch = flag true "OpenSnitch: outgoing connections need your OK (full profile).";
     useFlakePassCli = flag false "Build modules/packages/_pass-cli.nix instead of nixpkgs proton-pass-cli.";

@@ -72,6 +72,12 @@ let
     "a DNS server name with a space" = ok // {
       customDns = [ "1.2.3.4#dns example.com" ];
     };
+    "an SSH key with a shell character in its comment" = ok // {
+      sshKeys = [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFake me$(reboot)" ];
+    };
+    "an SSH key of an unknown type" = ok // {
+      sshKeys = [ "ssh-dss AAAAB3NzaC1kc3MAAACBAP" ];
+    };
     "a setting that doesn't exist" = ok // {
       desktpo = "gnome";
     };
@@ -83,6 +89,7 @@ let
       // {
         keyboardLayout = "us,de";
         diskDevice = "/dev/disk/by-id/nvme-x";
+        sshKeys = [ "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFakeTestKey alice@laptop" ];
         encryptedDns = "custom";
         customDns = [
           "194.242.2.2#dns.mullvad.net"

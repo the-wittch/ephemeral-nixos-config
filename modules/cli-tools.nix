@@ -3,11 +3,9 @@
     { pkgs, ... }:
     {
       environment.systemPackages = with pkgs; [
-        ghostty
         git
         curl
         wget
-        wl-clipboard
         mkpasswd
         unzip
         zip
@@ -15,7 +13,16 @@
         usbutils
         pciutils
       ];
+    };
 
+  # the terminal and the clipboard need a screen
+  flake.modules.nixos.graphical =
+    { pkgs, ... }:
+    {
+      environment.systemPackages = with pkgs; [
+        ghostty
+        wl-clipboard
+      ];
       environment.sessionVariables.TERMINAL = "ghostty";
     };
 }

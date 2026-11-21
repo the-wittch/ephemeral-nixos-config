@@ -1,4 +1,3 @@
-# nix build path:.#checks.x86_64-linux.profile-switch -L
 # A live switch from the small install to the full system and back, as ephemeral-setup
 # does it. Booting each one can't show units failing on the switch, or new kept folders
 # not mounting until a reboot.

@@ -54,6 +54,7 @@ case $mode in
     ;;
   installed)
     [[ -f $installed/flake.nix ]] || die "there's no copy of the installed system in $installed; it's kept by installs from v3.0.0 on"
+    FLAKE_DIR=$installed make_initrd_ssh_key
     echo "Rebuilding the system as it was installed. Your files and $flake stay as they are."
     nh os switch "path:$installed" --hostname nixos "$@"
     echo "To go back to your own config: ephemeral-update"
@@ -119,6 +120,7 @@ if is_newer "$latest" "$pinned"; then
   fi
 fi
 
+make_initrd_ssh_key
 nh os switch "path:${flake}" --hostname nixos "$@"
 trap - ERR
 echo "If something's wrong now: ephemeral-update --previous, or pick the previous entry in the boot menu."
