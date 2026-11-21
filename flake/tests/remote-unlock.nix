@@ -119,8 +119,11 @@ in
                       "nix-env -p /nix/var/nix/profiles/system --set ${onLuks}"
                       " && ${onLuks}/bin/switch-to-configuration boot >&2"
                   )
-                  on_esp = "bsdtar -xOf /boot/limine/kernels/*-secrets"
-                  server.succeed("bsdtar -tf /boot/limine/kernels/*-secrets | grep -q etc/ssh/boot-key")
+                  # one secrets file per generation; bsdtar reads one archive at a time
+                  print(server.succeed("ls -la /boot/limine/kernels"))
+                  each = "for f in /boot/limine/kernels/*-secrets; do bsdtar {} \"$f\"; done"
+                  server.succeed(each.format("-tf") + " | grep -q etc/ssh/boot-key")
+                  on_esp = each.format("-xOf")
                   ${
                     if sealed then
                       ''server.fail(f"{on_esp} | grep -q 'PRIVATE KEY'")''
