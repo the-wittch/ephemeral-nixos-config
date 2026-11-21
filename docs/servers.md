@@ -4,7 +4,9 @@ A server is a machine you reach over SSH instead of sitting at it. It can keep a
 
 ## Turning it on
 
-In `settings.json`:
+The installer asks on its Server screen, from version 3.10.0. Paste your public keys there, or type `github:yourname` to fetch the ones on your GitHub account. Picking "None" as the desktop makes it a server. At the end, the install shows the fingerprint of the key for unlocking over SSH (below), to check the first time you connect.
+
+On a machine that's already installed, add to `settings.json`:
 
 ```json
 {
