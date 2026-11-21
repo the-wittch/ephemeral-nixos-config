@@ -74,6 +74,7 @@ let
           {
             ephemeral.settings = settings;
             ephemeral.smbShares = readData (host.root + "/smb-shares") [ ];
+            ephemeral.backupRepositories = readData (host.root + "/backup") [ ];
             ephemeral.pickedApps = picked;
           }
           (

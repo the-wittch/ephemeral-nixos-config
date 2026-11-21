@@ -7,6 +7,7 @@ let
   pass = import ../settings/_pass-keys.nix;
   choices = import ../settings/_choices.nix;
   initrdKey = import ../_initrd-ssh-key.nix;
+  backup = import ../_backup.nix;
   libDir = ../../scripts/lib;
   array = name: list: "${name}=(${lib.escapeShellArgs list})\n";
 in
@@ -18,6 +19,9 @@ in
 + "initrd_ssh_key=${lib.escapeShellArg initrdKey.key}\n"
 + "initrd_ssh_boot_key=${lib.escapeShellArg initrdKey.boot}\n"
 + "initrd_ssh_key_name=${lib.escapeShellArg initrdKey.name}\n"
++ "backup_dir=${lib.escapeShellArg backup.dir}\n"
++ "backup_label_re=${lib.escapeShellArg backup.label}\n"
++ "backup_repo_re=${lib.escapeShellArg backup.repository}\n"
 + array "pass_string_keys" pass.strings
 + array "pass_bool_keys" pass.bools
 # menu_<setting> lists a menu's values in order; menu_label has "<setting>/<value>"

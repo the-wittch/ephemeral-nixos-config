@@ -270,3 +270,7 @@ jobs:
         run: |
           nix build path:.#checks.x86_64-linux.remote-unlock -L --no-link
           nix build path:.#checks.x86_64-linux.remote-unlock-sealed -L --no-link
+      - name: back up over SSH to a second machine
+        if: steps.changes.outputs.code == 'true'
+        timeout-minutes: 20
+        run: nix build path:.#checks.x86_64-linux.backups -L --no-link

@@ -311,6 +311,21 @@ if [[ -e ${EPHEMERAL_ROOT:-}/etc/ephemeral/server ]]; then
   fi
 fi
 
+# backups.nix writes borgmatic's config only when backup.json has a repository
+if [[ -e ${EPHEMERAL_ROOT:-}/etc/borgmatic/config.yaml ]]; then
+  # shellcheck disable=SC2154 # backup_dir comes from the prelude
+  borg_dir=${EPHEMERAL_ROOT:-}$backup_dir
+  if [[ ! -x $borg_dir ]]; then
+    ok "scheduled backups are on (sudo ephemeral-doctor checks their passphrase and key)"
+  elif [[ ! -s $borg_dir/passphrase || ! -s $borg_dir/ssh_key ]]; then
+    bad "scheduled backups are on, but their passphrase or SSH key is missing, so they can't run" "backup-setup"
+  elif systemctl is-failed --quiet borgmatic.service 2>/dev/null; then
+    warn "the last scheduled backup failed" "journalctl -u borgmatic"
+  else
+    ok "scheduled backups are on"
+  fi
+fi
+
 # only reads the list fwupd-refresh.timer downloads; installing stays a choice, since a firmware
 # update must not be cut off, and can change what the TPM PIN is bound to
 if command -v fwupdmgr >/dev/null; then

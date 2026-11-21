@@ -2,6 +2,14 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.17.0
+
+### Added
+
+- Scheduled backups with borgmatic, every 6 hours, as root: your home folder, `/persist/etc` and the Secure Boot keys, without caches and what can be fetched or built again. They go to a Hetzner Storage Box, BorgBase, another machine over SSH, or a disk. `backup-setup` makes root's SSH key, keeps the passphrase root-only in `/persist/etc/borg`, typed or from Proton Pass, and writes the repositories to the gitignored `backup.json`. A module can back up more through `ephemeral.backup.patterns`. Nothing changes until `backup-setup` has been run. [Backups](docs/backup.md#scheduled-backups) has the details.
+- `ephemeral-doctor` says when scheduled backups are missing their passphrase or key, or the last one failed.
+- `ephemeral-backup` also saves `backup.json` and the scheduled backups' passphrase and key, which a restore needs.
+
 ## 4.16.0
 
 ### Added

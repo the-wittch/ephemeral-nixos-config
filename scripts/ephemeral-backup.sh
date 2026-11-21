@@ -6,10 +6,10 @@ usage() {
   cat <<'USAGE'
 ephemeral-backup <folder>
 Save what a reinstall needs and git doesn't keep: settings.json, hardware-configuration.nix,
-apps.json, smb-shares.json, the Control D id, SMB and Wi-Fi passwords, the SSH host key, and
-the Secure Boot keys.
+apps.json, smb-shares.json, backup.json, the Control D id, SMB and Wi-Fi passwords, the SSH host
+key, the scheduled backups' passphrase and key, and the Secure Boot keys.
 They go into one file encrypted with a passphrase you pick, so a lost stick gives nothing away.
-Your home folder isn't in it; back that up with Vorta or Pika Backup.
+Your home folder isn't in it; scheduled backups (backup-setup) or Vorta take care of that.
 USAGE
 }
 
@@ -32,8 +32,8 @@ out="$dir/ephemeral-backup-$(</proc/sys/kernel/hostname)-$(date +%F).tar.age"
 [[ ! -e $out ]] || die "$out already exists"
 
 paths=()
-for p in "$flake"/{settings.json,hardware-configuration.nix,apps.json,smb-shares.json} \
-  /persist/etc/controld-resolver /persist/etc/smb /persist/etc/NetworkManager/system-connections \
+for p in "$flake"/{settings.json,hardware-configuration.nix,apps.json,smb-shares.json,backup.json} \
+  /persist/etc/controld-resolver /persist/etc/smb /persist/etc/borg /persist/etc/NetworkManager/system-connections \
   /persist/etc/ssh /persist/var/lib/sbctl; do
   if sudo test -e "$p"; then
     paths+=("$p")

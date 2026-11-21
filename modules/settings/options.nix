@@ -3,6 +3,7 @@
     { lib, ... }:
     let
       inherit (lib) mkOption types;
+      backup = import ../_backup.nix;
     in
     {
       imports = [ ./_schema.nix ];
@@ -29,6 +30,19 @@
           );
           default = [ ];
           description = "CIFS mounts written by smb-setup to smb-shares.json.";
+        };
+
+        backupRepositories = mkOption {
+          type = types.listOf (
+            types.submodule {
+              options = {
+                label = mkOption { type = types.strMatching backup.label; };
+                path = mkOption { type = types.strMatching backup.repository; };
+              };
+            }
+          );
+          default = [ ];
+          description = "Where scheduled backups go, written by backup-setup to backup.json. None turns them off.";
         };
       };
     };

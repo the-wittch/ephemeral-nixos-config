@@ -143,6 +143,16 @@ in
             jq
           ];
         };
+        backup-setup = {
+          description = "set up scheduled backups: root's SSH key, the passphrase and where they go";
+          minimal = true;
+          deps = [
+            coreutils
+            gnused
+            jq
+            openssh
+          ];
+        };
         ephemeral-apps = {
           description = "pick apps by category, then rebuild";
           deps = [
