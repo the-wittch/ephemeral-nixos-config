@@ -15,7 +15,7 @@ The installer sets up the full system by default. Next to a plain desktop, it ad
 
 - Home Manager dotfiles: zsh, git, starship, zoxide, neovim and ghostty.
 - A dark Catppuccin Mocha theme everywhere, through [Stylix](https://github.com/nix-community/stylix), with the snowflake as the default user picture.
-- Hourly snapper snapshots of `/persist`, and desktop warnings when a disk starts failing.
+- Hourly snapper snapshots of `/persist`, and desktop warnings when a disk starts failing. Backups to a storage box, BorgBase or a disk every 6 hours, once `backup-setup` has been run.
 - OpenSnitch, Syncthing, Podman, Flatpak with Flathub, and scanning.
 - Rebuilds through [nh](https://github.com/nix-community/nh), with a summary of what changed.
 - Laptop extras (thermald, battery reporting, fingerprint login) when the hardware is there.
@@ -130,6 +130,7 @@ and update it with `nix flake update nixpkgs --flake /persist/etc/nixos`. That c
 | `ephemeral-setup` | switch between the full system and the small install, and turn the main options on or off |
 | `ephemeral-passwd` | change your login password |
 | `ephemeral-backup <folder>` | save the settings and secrets a reinstall needs, encrypted |
+| `backup-setup` | set up scheduled backups of your home folder and the config, to a storage box, BorgBase or a disk |
 | `ephemeral-restore <path>` | bring back a file or folder as it was in an hourly snapshot |
 | `ephemeral-report` | system details to paste into a bug report |
 | `controld-setup` | set or turn off the Control D resolver id |
@@ -140,7 +141,7 @@ and update it with `nix flake update nixpkgs --flake /persist/etc/nixos`. That c
 | `ssh-pubs-from-pass` | write SSH public keys from Proton Pass to `~/.ssh` |
 | `update-pass-cli` | bump or check the pinned pass-cli (run in a checkout of this repo) |
 
-Most of them ask what to do; `--help` on one shows its options. The small install has `ephemeral-update`, `ephemeral-doctor`, `ephemeral-setup`, `ephemeral-passwd`, `ephemeral-backup`, `ephemeral-report` and `luks-header-backup`; `ephemeral-help` lists the ones a machine has.
+Most of them ask what to do; `--help` on one shows its options. The small install has `ephemeral-update`, `ephemeral-doctor`, `ephemeral-setup`, `ephemeral-passwd`, `ephemeral-backup`, `backup-setup`, `ephemeral-report` and `luks-header-backup`; `ephemeral-help` lists the ones a machine has.
 
 ## Documentation
 
@@ -150,7 +151,7 @@ Most of them ask what to do; `--help` on one shows its options. The small instal
 - [Servers](docs/servers.md): SSH with keys and no sleep, with a desktop or none
 - [Customizing](docs/customizing.md): your own modules, and how this repo is organized
 - [Keeping things across reboots](docs/persistence.md)
-- [Backups](docs/backup.md): what to copy off the machine, and restoring after a reinstall
+- [Backups](docs/backup.md): what to copy off the machine, scheduled backups, and restoring after a reinstall
 - [Dotfiles and appearance](docs/appearance.md): dotfiles, theme, wallpaper
 - [Try it in a VM](docs/vm.md)
 - [When something breaks](docs/troubleshooting.md): recovery, bug reports, what's tested

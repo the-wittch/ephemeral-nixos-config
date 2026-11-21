@@ -1,0 +1,40 @@
+## What scheduled backups read, as borg patterns. A machine's own lines, from
+## ephemeral.backup.patterns, come before these.
+##
+## Only the areas on R lines are read. Inside them:
+##   !  left out without looking inside, the cheap way to skip a folder
+##   +  kept, even inside a folder a later line leaves out
+##   -  left out, but borg still looks inside for + lines
+## The first line that matches wins. Paths have no leading slash; * stays within one folder and
+## ** crosses folders. Folders with a CACHEDIR.TAG or a .nobackup file are left out too.
+
+P sh
+
+R /home
+R /persist/etc
+R /persist/var/lib/sbctl
+
+## The backup's own key and passphrase, which a restore can't use without them anyway, and the
+## SSH host keys. ephemeral-backup saves those for a reinstall.
+! persist/etc/borg
+! persist/etc/ssh
+
+## Caches, and what apps, package managers and builds fetch or make again.
+! home/*/.cache
+! home/*/.local/share/Trash
+! home/*/.local/share/Steam
+! home/*/.local/share/flatpak
+! home/*/.local/share/containers
+! home/*/.var/app/*/cache
+! home/*/.steam
+! home/*/.npm
+! home/*/.cargo/registry
+! home/*/.cargo/git
+! home/*/.rustup
+! home/*/go/pkg
+! home/*/.gradle/caches
+! home/*/.m2/repository
+! **/node_modules
+! **/.direnv
+! **/.venv
+! **/__pycache__

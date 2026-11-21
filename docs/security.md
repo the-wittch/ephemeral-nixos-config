@@ -66,6 +66,7 @@ Each secret has its own way to change it:
 - **The machine's SSH host key**, with SSH turned on: `sudo rm /persist/etc/ssh/ssh_host_*` and `sudo systemctl restart sshd`, which makes new ones. Computers that connect to this one then warn that the key changed, until you remove the old one from their `known_hosts`.
 - **Your own SSH keys**: in Proton Pass, if you use the [SSH agent](features.md#ssh-agent); otherwise the files in `~/.ssh`. Replace the public half wherever it's authorized, `sshKeys` on a server included.
 - **The Control D id and SMB passwords**: `controld-setup` and `smb-setup`.
+- **The scheduled backups' passphrase**: `sudo borgmatic key change-passphrase` changes it in each repository, then write the new one to `/persist/etc/borg/passphrase` with `sudo tee`. Their SSH key: remove `/persist/etc/borg/ssh_key*`, run `backup-setup` for a new one, and replace the old one where it's authorized.
 - **Secure Boot keys**: only worth replacing if they leaked. That means Setup Mode again and new keys, as in [Secure Boot](#secure-boot), and the old ones stay in the snapshots until those expire.
 
 Run `ephemeral-backup` afterwards, so the copy of these off the machine is the current one.

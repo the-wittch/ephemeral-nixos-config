@@ -414,6 +414,56 @@ rm "$fakes/systemctl"
 if ((missing == 1 && unsealed == 1 && sealed == 1)); then
   pass "doctor: a server's key for unlocking over SSH: missing, unsealed with a TPM to seal it, and sealed"
 else fail "doctor: a server's key for unlocking over SSH ($missing $unsealed $sealed)"; fi
+backup=$(tool backup-setup)
+flake_at v4.17.0
+bjson=$work/flake/backup.json
+box=ssh://u1@u1.your-storagebox.de:23/./borg
+if bash "$backup" add storagebox "$box" >"$work/out" 2>&1 &&
+  [[ $(jq -c . "$bjson") == "[{\"label\":\"storagebox\",\"path\":\"$box\"}]" ]] &&
+  bash "$backup" add usb /run/media/alice/disk/borg >"$work/out" 2>&1 && [[ $(jq length "$bjson") == 2 ]]; then
+  pass "backup-setup: adds repositories to backup.json"
+else fail "backup-setup add: $(cat "$work/out")"; fi
+refused=0
+for args in "storagebox $box" "x ssh://host/;reboot" "x relative/folder" "a.b /mnt/borg" "x https://example.com/borg"; do
+  # shellcheck disable=SC2086 # one argument per word
+  if ! bash "$backup" add $args >"$work/out" 2>&1; then refused=$((refused + 1)); fi
+done
+if ((refused == 5)) && [[ $(jq length "$bjson") == 2 ]]; then
+  pass "backup-setup: refuses a label that's taken, and labels and repositories that don't fit the rules"
+else fail "backup-setup refused $refused of 5"; fi
+if bash "$backup" remove usb >"$work/out" 2>&1 && [[ $(jq -r '.[].label' "$bjson") == storagebox ]] &&
+  ! bash "$backup" remove usb >"$work/out" 2>&1; then
+  pass "backup-setup: removes a repository, and says when there's none of that name"
+else fail "backup-setup remove: $(cat "$work/out")"; fi
+borg=$ROOT/persist/etc/borg
+if on_tty 'correct horse\ncorrect horse\n' bash "$backup" && [[ $(cat "$borg/passphrase") == "correct horse" ]] &&
+  [[ $(stat -c %a "$borg/passphrase") == 600 && $(stat -c %a "$borg") == 700 ]] &&
+  grep -qF "$(cat "$borg/ssh_key.pub")" "$work/out"; then
+  pass "backup-setup: makes root's key and keeps the typed passphrase root-only, and shows the key to add"
+else fail "backup-setup: $(cat "$work/out")"; fi
+key=$(cat "$borg/ssh_key.pub")
+if on_tty '' bash "$backup" && [[ $(cat "$borg/ssh_key.pub") == "$key" ]] && grep -q "already in" "$work/out"; then
+  pass "backup-setup: run again, it keeps the key and the passphrase"
+else fail "backup-setup again: $(cat "$work/out")"; fi
+
+bk=$work/backup-root
+mkdir -p "$bk/etc/borgmatic" "$bk/persist/etc/borg"
+: >"$bk/etc/borgmatic/config.yaml"
+doctor_bk() {
+  USER=alice EPHEMERAL_ROOT=$bk FLAKE_DIR=$work/flake FAKE_OFFLINE=1 bash "$doctor" >"$work/out" 2>&1 || true
+  grep -c "$1" "$work/out" || true
+}
+fake systemctl '[[ $1 == is-failed ]] && exit "${FAKE_FAILED:-1}"; [[ $1 == is-active ]] && exit 1; exit 0'
+nokey=$(doctor_bk "passphrase or SSH key is missing")
+echo x >"$bk/persist/etc/borg/ssh_key"
+echo x >"$bk/persist/etc/borg/passphrase"
+fine=$(doctor_bk "scheduled backups are on$")
+failed=$(FAKE_FAILED=0 doctor_bk "the last scheduled backup failed")
+rm "$fakes/systemctl"
+if ((nokey == 1 && fine == 1 && failed == 1)); then
+  pass "doctor: scheduled backups without their passphrase, working, and after a failed run"
+else fail "doctor: scheduled backups ($nokey $fine $failed)"; fi
+
 if lib 'valid_controld_id abc-1_2 && ! valid_controld_id "a b" && ! valid_controld_id "x;y" && ! valid_controld_id ""'; then
   pass "lib: valid_controld_id takes the rule from the settings rules"
 else fail "lib: valid_controld_id"; fi
@@ -521,7 +571,7 @@ rm "$fakes/gum"
 fake gum 'exit 0'
 export CATALOG=$work/catalog.json
 for name in ephemeral-update ephemeral-doctor ephemeral-setup ephemeral-apps ephemeral-backup ephemeral-passwd \
-  ephemeral-report ephemeral-restore controld-setup smb-setup luks-header-backup settings-from-pass ssh-pubs-from-pass update-pass-cli; do
+  ephemeral-report ephemeral-restore controld-setup smb-setup backup-setup luks-header-backup settings-from-pass ssh-pubs-from-pass update-pass-cli; do
   cmd=$(tool "$name")
   if bash "$cmd" --help >"$work/out" 2>&1 </dev/null && [[ -s $work/out ]]; then
     pass "$name --help"
@@ -534,12 +584,15 @@ for name in ephemeral-update ephemeral-doctor ephemeral-setup ephemeral-apps eph
   else fail "$name with an unknown option exited $code"; fi
 done
 mkdir -p "$work/stick"
-for name in ephemeral-setup ephemeral-apps ephemeral-passwd controld-setup smb-setup ephemeral-backup ephemeral-restore; do
+for name in ephemeral-setup ephemeral-apps ephemeral-passwd controld-setup smb-setup ephemeral-backup ephemeral-restore backup-setup; do
   args=()
+  # an empty /persist, without the passphrase the test above left
+  root=$ROOT
+  [[ $name == backup-setup ]] && root=$work/no-backup-yet
   [[ $name == ephemeral-backup ]] && args=("$work/stick")
   [[ $name == ephemeral-restore ]] && args=(/home/alice/notes.txt)
   code=0
-  FAKE_FSTYPE=ext4 FAKE_SOURCE=/dev/sdb1 bash "$(tool "$name")" "${args[@]}" >"$work/out" 2>&1 </dev/null || code=$?
+  FAKE_FSTYPE=ext4 FAKE_SOURCE=/dev/sdb1 ROOT=$root bash "$(tool "$name")" "${args[@]}" >"$work/out" 2>&1 </dev/null || code=$?
   if ((code == 1)) && grep -q 'in a terminal' "$work/out"; then
     pass "$name stops without a terminal"
   else fail "$name without a terminal exited $code: $(head -c 200 "$work/out")"; fi

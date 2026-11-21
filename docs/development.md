@@ -69,6 +69,7 @@ Beside them:
 - `network-filter` checks OpenSnitch against a second machine: what it blocks, what the guard holds back at boot and after a crash, and that a requested stop lets traffic through, even when the daemon dies on the way out.
 - `tpm-unlock` unlocks a LUKS root with a software TPM and a PIN, then with the passphrase once wrong PINs have locked the TPM out.
 - `remote-unlock` unlocks a server's LUKS root over SSH from a second machine, with the host key the boot loader adds to the initrd, then logs in with a key and has a password refused. `remote-unlock-sealed` does the same with that key sealed to a software TPM.
+- `backups` backs up over SSH to a second machine, as a storage box, with the key and passphrase `backup-setup` made, then checks the archive has what the patterns keep and none of what they leave out.
 
 To run the checks locally, use the same script as CI:
 
@@ -83,7 +84,7 @@ cp hardware-configuration.example.nix hardware-configuration.nix
 Build the VM tests one at a time:
 
 ```bash
-for t in boot boot-minimal upgrade disk secure-boot desktop-boot-plasma desktop-boot-niri desktop-boot-umbriel upgrade-boot profile-switch network-filter tpm-unlock remote-unlock remote-unlock-sealed; do
+for t in boot boot-minimal upgrade disk secure-boot desktop-boot-plasma desktop-boot-niri desktop-boot-umbriel upgrade-boot profile-switch network-filter tpm-unlock remote-unlock remote-unlock-sealed backups; do
   nix build "path:.#checks.x86_64-linux.$t" -L --no-link
 done
 ```

@@ -19,7 +19,9 @@ let
       && c.services.tailscale.enable
       && c.fileSystems ? "/mnt/files"
       && c.boot.loader.limine.secureBoot.enable
-      && lib.elem "tpm2-device=auto" c.boot.initrd.luks.devices.cryptroot.crypttabExtraOpts;
+      && lib.elem "tpm2-device=auto" c.boot.initrd.luks.devices.cryptroot.crypttabExtraOpts
+      && c.services.borgmatic.enable
+      && c.services.opensnitch.rules.borgmatic-ssh.operator.list != [ ];
     feat-laptop =
       c:
       c.services.fprintd.enable
