@@ -6,6 +6,8 @@ let
   common =
     { pkgs, ... }:
     {
+      imports = [ nixos.graphical ];
+
       environment.persistence."/persist".directories = [ "/var/lib/plasmalogin" ];
 
       services.xserver.enable = true;

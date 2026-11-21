@@ -4,7 +4,7 @@
     {
       services.openssh = {
         enable = lib.mkDefault false;
-        openFirewall = false;
+        openFirewall = lib.mkDefault false;
         settings = {
           PasswordAuthentication = false;
           KbdInteractiveAuthentication = false;

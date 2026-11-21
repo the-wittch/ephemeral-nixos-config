@@ -8,7 +8,7 @@
 | `locale` | language, e.g. `de_DE.UTF-8` |
 | `keyboardLayout`, `keyboardVariant` | e.g. `de` and `nodeadkeys`; also used at the LUKS prompt |
 | `diskDevice`, `swapSize` | the whole disk (not a partition) and the swap file size |
-| `desktop` | `plasma`, `gnome`, `niri` or `umbriel` |
+| `desktop` | `plasma`, `gnome`, `niri` or `umbriel`, or `none` for a headless server, which needs `server` |
 | `profile` | `full` (everything in these docs) or `minimal` (the installer's small install) |
 | `nvidia` | `none`, `open` (RTX 20 / GTX 16 series and newer) or `legacy` (GTX 900 / 10 series) |
 | `extras` | the extra shell tools listed in the [README](../README.md): atuin, fzf, bat, fastfetch, comma and more |
@@ -20,6 +20,8 @@
 | `customDns` | DNS over TLS servers for `custom`, each as `address#name`, e.g. `194.242.2.2#dns.mullvad.net` |
 | `useControlD` | DNS over TLS through Control D, with your own resolver id; can't be on with `encryptedDns` |
 | `useTailscale` | the Tailscale VPN |
+| `server` | a server: SSH on for the keys in `sshKeys`, no sleep, and the disk unlocked over SSH after a reboot. See [Servers](servers.md) |
+| `sshKeys` | SSH public keys that may log in, such as `"ssh-ed25519 AAAA… you@laptop"`; a server needs at least one |
 | `useOpenSnitch` | OpenSnitch asks before programs connect out (on by default) |
 | `usePassSettings`, `passSettingsVault`, `passSettingsItem` | merge settings from Proton Pass |
 | `usePassSshAgent`, `passSshVault` | the Proton Pass SSH agent at login, serving the keys in that vault |

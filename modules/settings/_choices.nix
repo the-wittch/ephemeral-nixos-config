@@ -25,6 +25,11 @@
       description = "a new compositor, with the Noctalia shell";
       tag = "may change";
     }
+    {
+      value = "none";
+      label = "None (headless server)";
+      description = "no screen: reached over SSH, and needs server";
+    }
   ];
   nvidia = [
     {

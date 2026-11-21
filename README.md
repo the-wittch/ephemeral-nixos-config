@@ -59,7 +59,7 @@ It switches between the full system and the small install (`"profile": "full"` o
 
 `extras`, `useControlD`, `usePassSshAgent`, `useFlakePassCli` and the apps in `apps.json` only apply to the full system; on the small install the rebuild warns that they're ignored.
 
-> **Just want to get going?** Run `ephemeral-apps` and tick the apps you want. No Nix files to edit: your picks are saved to `apps.json` and installed on the next rebuild, and you can run it again any time to add or remove apps.
+To add or remove apps without touching Nix, run `ephemeral-apps` and tick the ones you want. They're saved to `apps.json` and installed at the next rebuild.
 
 ### Keep it in git
 
@@ -121,7 +121,7 @@ and update it with `nix flake update nixpkgs --flake /persist/etc/nixos`. That c
 
 ## Commands
 
-`ephemeral-help` lists these, so there's no need to remember them:
+`ephemeral-help` lists these:
 
 | command | what |
 |---------|------|
@@ -147,6 +147,7 @@ Most of them ask what to do; `--help` on one shows its options. The small instal
 - [The first hour](docs/first-hour.md): what to do right after installing
 - [Features](docs/features.md): snapshots, encrypted DNS, SMB, NVIDIA, Proton Pass and the rest
 - [settings.json](docs/settings.md): every setting
+- [Servers](docs/servers.md): SSH with keys and no sleep, with a desktop or none
 - [Customizing](docs/customizing.md): your own modules, and how this repo is organized
 - [Keeping things across reboots](docs/persistence.md)
 - [Backups](docs/backup.md): what to copy off the machine, and restoring after a reinstall

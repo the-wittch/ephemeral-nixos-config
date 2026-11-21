@@ -1,0 +1,8 @@
+{
+  "hostname": "none-minimal",
+  "username": "alice",
+  "desktop": "none",
+  "profile": "minimal",
+  "server": true,
+  "sshKeys": ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFakeTestKeyForEvaluationOnlyNotARealKey00 alice@test"]
+}

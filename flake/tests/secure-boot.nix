@@ -1,4 +1,3 @@
-# nix build path:.#checks.x86_64-linux.secure-boot -L
 # A machine on the previous release turns secureBoot on after updating, as docs/security.md
 # describes, on firmware that starts in Setup Mode and keeps its variables across reboots.
 { config, lib, ... }:

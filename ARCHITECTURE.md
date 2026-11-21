@@ -6,7 +6,7 @@ A change that breaks one of these rules needs a reason, written in the pull requ
 
 ## What it is
 
-An opinionated NixOS for one person on one machine. `/` is wiped at every boot; what's kept lives on `/persist`. One disk layout, one user, four desktops, two profiles. Anything that would make it a general installer, such as other layouts, dual boot, more users or other file systems, is out of scope.
+An opinionated NixOS for one person on one machine. `/` is wiped at every boot; what's kept lives on `/persist`. One disk layout, one user, four desktops or none, two profiles. Anything that would make it a general installer, such as other layouts, dual boot, more users or other file systems, is out of scope.
 
 ## The pieces
 
@@ -89,7 +89,7 @@ These hold on every machine, in every profile:
 2. **No secret goes into `/persist/etc/nixos`**, or anywhere else built with `path:`. Those are copied into the world-readable Nix store, whatever `.gitignore` says. Secrets live in `/persist/etc/<name>`, owned by root with mode 600, and are read at runtime. `ephemeral-update` refuses to rebuild when the folder has a file named like a secret, a private key or token inside a file, or a token in a git remote URL. It can't see a secret that was committed and later deleted: that stays in `.git`, which goes into the store too.
 3. **Secret permissions are set again at every boot**, by tmpfiles rules next to the feature that owns the secret.
 4. **Root has no password. sudo is for `wheel`, with a password. The Nix daemon is for `wheel` only. Users are declared by the config** (`mutableUsers = false`).
-5. **The firewall is on, SSH is off, and no port opens without an explicit setting.** On the full profile, OpenSnitch denies outgoing connections that haven't been allowed.
+5. **The firewall is on, SSH is off, and no port opens without an explicit setting.** `server` is that setting for SSH: port 22, for the keys in `sshKeys` only, with passwords and root refused, and port 2222 in the initrd, for the same keys, only until the disk is unlocked. Its host key reaches the initrd through the boot loader, never the Nix store, sealed to the TPM with Secure Boot on. On the full profile, OpenSnitch denies outgoing connections that haven't been allowed, except without a desktop, where nobody could answer it.
 6. **Root services this repo adds run in `config.ephemeral.sandbox`**, unless `unsandboxed` in `flake/checks-security.nix` says why they can't.
 7. **Anything a user typed reaches a shell only through a validator, `escapeShellArg`, an environment variable or `jq --arg`.** Never through string concatenation.
 8. **Every value in `settings.json` that ends up in a script or a path has a type that refuses what would break it.** `settings-reject` checks the refusals.
@@ -104,7 +104,7 @@ What checks each one:
 | 2 | `scripts-behaviour`: key files, tokens in files and tokens in a git remote stop a rebuild; an ordinary flake doesn't |
 | 3 | `boot`: secrets written with loose modes are root-only after a reboot |
 | 4 | `exposure-eval`: no root password and `mutableUsers` off on every desktop and profile; `boot`: root locked, sudo refused outside `wheel`, the Nix daemon refused outside `wheel` |
-| 5 | `exposure-eval`: firewall on, no open ports, SSH off and OpenSnitch on, on every desktop and profile; `boot`: IPv4 and IPv6 refuse what isn't allowed, `sshd` isn't running, nothing new listens beyond loopback; `network-filter`: an unapproved program can't reach another machine while OpenSnitch runs, before it filters at boot, or after it crashes |
+| 5 | `exposure-eval`: firewall on, no open ports, SSH off and OpenSnitch on, on every desktop and profile, and on a server only port 22, with passwords, keyboard-interactive login and root refused; `features-eval`: a server without keys, and no desktop without `server`, don't build, and the initrd host key isn't in the store; `scripts-behaviour`: the boot copy of that key is sealed to PCR 7 with Secure Boot and a TPM; `remote-unlock` and `remote-unlock-sealed`: the passphrase over SSH at boot unlocks the disk, with the plain and the sealed key, and the running server refuses a password; `boot`: IPv4 and IPv6 refuse what isn't allowed, `sshd` isn't running, nothing new listens beyond loopback; `network-filter`: an unapproved program can't reach another machine while OpenSnitch runs, before it filters at boot, or after it crashes |
 | 6 | `sandbox-eval`, which finds the services from where they're defined |
 | 7, 8 | `settings-reject`, the installer's validation cases (shared by its Go and shell tests), and the script tests |
 | 9 | `boot`: the sysctls, kernel command line and blocked modules are in effect |

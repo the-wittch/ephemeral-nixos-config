@@ -2,6 +2,12 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.16.0
+
+### Added
+
+- Servers. `"server": true` turns SSH on for the public keys in the new `sshKeys` setting, on every network, keys only, and turns sleep off. It works with a desktop, or with the new `"desktop": "none"` for a machine with no screen, which leaves out the desktop, sound, Flatpak, the boot splash, the default apps and OpenSnitch. After a reboot, `ssh -p 2222 root@<server>` asks for the disk passphrase, over Ethernet, with a host key of its own, sealed to the TPM when Secure Boot is on. [Servers](docs/servers.md) has the details.
+
 ## 4.15.0
 
 ### Added

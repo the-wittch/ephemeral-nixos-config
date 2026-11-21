@@ -1,6 +1,6 @@
 {
   # once, at the first graphical login, on every desktop and both profiles
-  flake.modules.nixos.pc =
+  flake.modules.nixos.graphical =
     { pkgs, ... }:
     {
       systemd.user.services.ephemeral-welcome = {

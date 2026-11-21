@@ -1,4 +1,3 @@
-# nix build path:.#checks.x86_64-linux.upgrade -L
 { config, lib, ... }:
 let
   pin = lib.importJSON ../../tests/upgrade/previous.json;

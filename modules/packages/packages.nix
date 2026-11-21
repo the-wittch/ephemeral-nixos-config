@@ -115,6 +115,7 @@ in
           minimal = true;
           deps = [
             nh
+            openssh
             curl
             gawk
             gnugrep

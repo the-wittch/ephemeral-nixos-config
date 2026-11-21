@@ -25,7 +25,10 @@ let
       # "-firefox" unpicks an app that's picked by default
       unpicked = map (lib.removePrefix "-") (builtins.filter (lib.hasPrefix "-") entries);
       listed = builtins.filter (id: !lib.hasPrefix "-" id) entries;
-      defaults = lib.attrNames (lib.filterAttrs (id: app: app.default && !lib.elem id unpicked) catalog);
+      # a headless server gets only what apps.json lists: the defaults are desktop apps
+      defaults = lib.optionals (settings.desktop != "none") (
+        lib.attrNames (lib.filterAttrs (id: app: app.default && !lib.elem id unpicked) catalog)
+      );
       onThisDesktop =
         id:
         !(catalog ? ${id})
@@ -93,8 +96,10 @@ let
                 secure-boot = settings.secureBoot;
                 tpm-unlock = settings.tpmUnlock;
                 tailscale = settings.useTailscale;
+                inherit (settings) server;
                 encrypted-dns = settings.encryptedDns != "none";
-                opensnitch = full && settings.useOpenSnitch;
+                # nobody could answer its questions without a screen
+                opensnitch = full && settings.useOpenSnitch && settings.desktop != "none";
               }
               // lib.mapAttrs (_: key: full && settings.${key}) fullOnly
             )

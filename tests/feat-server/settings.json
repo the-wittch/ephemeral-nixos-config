@@ -1,0 +1,1 @@
+{ "hostname": "feat-server", "username": "alice", "desktop": "gnome", "server": true, "sshKeys": ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFakeTestKeyForEvaluationOnlyNotARealKey00 alice@test"] }

@@ -6,6 +6,7 @@ let
   rules = import ../settings/_rules.nix;
   pass = import ../settings/_pass-keys.nix;
   choices = import ../settings/_choices.nix;
+  initrdKey = import ../_initrd-ssh-key.nix;
   libDir = ../../scripts/lib;
   array = name: list: "${name}=(${lib.escapeShellArgs list})\n";
 in
@@ -14,6 +15,9 @@ in
 + "controld_id_re=${lib.escapeShellArg rules.controldResolver}\n"
 + "vault_re=${lib.escapeShellArg rules.passSshVault}\n"
 + "custom_dns_re=${lib.escapeShellArg rules.customDns}\n"
++ "initrd_ssh_key=${lib.escapeShellArg initrdKey.key}\n"
++ "initrd_ssh_boot_key=${lib.escapeShellArg initrdKey.boot}\n"
++ "initrd_ssh_key_name=${lib.escapeShellArg initrdKey.name}\n"
 + array "pass_string_keys" pass.strings
 + array "pass_bool_keys" pass.bools
 # menu_<setting> lists a menu's values in order; menu_label has "<setting>/<value>"

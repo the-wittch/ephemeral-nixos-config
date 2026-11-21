@@ -7,6 +7,8 @@ in
   flake.modules.nixos.noctalia-base =
     { lib, pkgs, ... }:
     {
+      imports = [ nixos.graphical ];
+
       programs.noctalia = {
         enable = true;
         systemd.enable = true;

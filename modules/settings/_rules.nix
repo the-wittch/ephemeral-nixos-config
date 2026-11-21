@@ -25,6 +25,9 @@ in
   encryptedDns = values "encryptedDns";
   # each entry, address#name: resolved checks the server's certificate against the name
   customDns = "[0-9A-Fa-f.:]+#[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?";
+  # an SSH public key: its type, the key, and an optional comment without quotes, $, backticks or
+  # backslashes, since the keys are written into sshd's files
+  sshKeys = "(ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp(256|384|521)|sk-ssh-ed25519@openssh\\.com|sk-ecdsa-sha2-nistp256@openssh\\.com) [A-Za-z0-9+/]+=*( [^\"$`\\\\[:cntrl:]]*)?";
   passSettingsVault = vault;
   passSettingsItem = vault;
   passSshVault = vault;
