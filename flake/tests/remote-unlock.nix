@@ -122,13 +122,15 @@ in
                   # one secrets file per generation; bsdtar reads one archive at a time
                   print(server.succeed("ls -la /boot/limine/kernels"))
                   each = "for f in /boot/limine/kernels/*-secrets; do bsdtar {} \"$f\"; done"
-                  server.succeed(each.format("-tf") + " | grep -q etc/ssh/boot-key")
-                  on_esp = each.format("-xOf")
+                  listed = server.succeed(each.format("-tf"))
+                  assert "etc/ssh/boot-key" in listed, listed
+                  # grep -c reads it all: grep -q would stop early and fail the loop under pipefail
+                  plain = int(server.succeed(each.format("-xOf") + " | grep -ac 'PRIVATE KEY' || true"))
                   ${
                     if sealed then
-                      ''server.fail(f"{on_esp} | grep -q 'PRIVATE KEY'")''
+                      ''assert plain == 0, "the key is on the boot partition unsealed"''
                     else
-                      ''server.succeed(f"{on_esp} | grep -q 'PRIVATE KEY'")''
+                      ''assert plain > 0, "the boot partition doesn't have the key"''
                   }
                   host_key = server.succeed("cat ${key.key}.pub").split()[:2]
                   client.succeed(f"echo '[server]:2222 {' '.join(host_key)}' > /etc/initrd-known-hosts")
