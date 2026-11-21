@@ -91,6 +91,14 @@ in
         assert lib.assertMsg (refused "none-full" {
           server = false;
         }) "desktop none without server was accepted";
+        assert lib.assertMsg
+          (
+            let
+              picked = (host "none-full").ephemeral.pickedApps;
+            in
+            lib.elem "htop" picked && !lib.elem "firefox" picked
+          )
+          "without a desktop, the terminal apps ticked by default should be picked, and the desktop ones not";
         pkgs.writeText "features-eval" (
           builtins.unsafeDiscardStringContext (
             lib.concatMapStrings (name: (host name).system.build.toplevel.drvPath + "\n") hosts

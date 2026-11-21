@@ -506,28 +506,35 @@ if ! FLAKE_DIR=$work/sf lib 'd=$(setting desktop)' && grep -q 'settings.nix has 
   pass "lib: setting stops on a leftover settings.nix, as a rebuild does"
 else fail "lib: setting with settings.nix"; fi
 
-# a small catalog: two defaults, one of them for GNOME only, and one for Plasma only
+# a small catalog: three defaults, one of them for GNOME only and one a terminal app, one app for
+# Plasma only, and Passwords, which the config's order puts before Gaming and the alphabet after it
 cat >"$work/catalog.json" <<'JSON'
 {
   "firefox": {"label": "Firefox", "category": "Browsers", "default": true, "desktops": []},
   "tweaks": {"label": "GNOME Tweaks", "category": "Utilities", "default": true, "desktops": ["gnome"]},
   "discover": {"label": "Discover", "category": "Utilities", "default": false, "desktops": ["plasma"]},
-  "steam": {"label": "Steam", "category": "Gaming", "default": false, "desktops": []}
+  "steam": {"label": "Steam", "category": "Gaming", "default": false, "desktops": []},
+  "htop": {"label": "htop", "category": "Terminal", "default": true, "desktops": []},
+  "keepassxc": {"label": "KeePassXC", "category": "Passwords", "default": false, "desktops": []}
 }
 JSON
 printf '["-firefox", "discover", "steam"]\n' >"$work/apps.json"
-if lib "[[ \$(apps_picked '$work/catalog.json' '$work/apps.json' | paste -sd ' ') == 'discover steam tweaks' ]]"; then
+if lib "[[ \$(apps_picked '$work/catalog.json' '$work/apps.json' | paste -sd ' ') == 'discover htop steam tweaks' ]]"; then
   pass "lib: apps_picked has what apps.json lists and the defaults it doesn't untick"
 else fail "lib: apps_picked: $(cat "$work/out")"; fi
-if lib "[[ \$(apps_picked '$work/catalog.json' '$work/none.json' | paste -sd ' ') == 'firefox tweaks' ]]"; then
+if lib "[[ \$(apps_picked '$work/catalog.json' '$work/none.json' | paste -sd ' ') == 'firefox htop tweaks' ]]"; then
   pass "lib: apps_picked with no apps.json is the defaults"
 else fail "lib: apps_picked without apps.json"; fi
-if lib "[[ \$(apps_offered '$work/catalog.json' gnome Utilities) == tweaks && \$(apps_offered '$work/catalog.json' plasma Utilities) == discover && \$(apps_categories '$work/catalog.json' plasma | paste -sd ' ') == 'Browsers Gaming Utilities' ]]"; then
-  pass "lib: an app for one desktop is only offered on that one"
+if lib "[[ \$(apps_offered '$work/catalog.json' gnome Utilities) == tweaks && \$(apps_offered '$work/catalog.json' plasma Utilities) == discover && \$(apps_categories '$work/catalog.json' plasma | paste -sd ' ') == 'Browsers Passwords Gaming Terminal Utilities' ]]"; then
+  pass "lib: an app for one desktop is only offered on that one, and the categories come in the config's order"
 else fail "lib: apps_offered and apps_categories"; fi
-if lib "[[ \$(printf 'steam\ntweaks\n' | apps_file '$work/catalog.json' | jq -c .) == '[\"-firefox\",\"steam\",\"tweaks\"]' ]]"; then
+if lib "[[ \$(printf 'steam\ntweaks\n' | apps_file '$work/catalog.json' | jq -c .) == '[\"-firefox\",\"-htop\",\"steam\",\"tweaks\"]' ]]"; then
   pass "lib: apps_file writes the picks, and -<name> for an unticked default"
 else fail "lib: apps_file: $(cat "$work/out")"; fi
+# without a desktop: only the terminal apps, and only those among the defaults
+if lib "[[ \$(apps_picked '$work/catalog.json' '$work/none.json' none) == htop && \$(apps_categories '$work/catalog.json' none) == Terminal && \$(apps_offered '$work/catalog.json' none) == htop && \$(printf 'htop\n' | apps_file '$work/catalog.json' none | jq -c .) == '[\"htop\"]' && \$(printf '' | apps_file '$work/catalog.json' none | jq -c .) == '[\"-htop\"]' ]]"; then
+  pass "lib: without a desktop, only terminal apps are offered, and only the terminal defaults are picked"
+else fail "lib: apps without a desktop: $(cat "$work/out")"; fi
 printf '{"not": "a list"}\n' >"$work/bad-apps.json"
 if ! lib "apps_check '$work/bad-apps.json'" && grep -q 'has to be a list' "$work/out"; then
   pass "lib: apps_check stops on an apps.json that isn't a list"

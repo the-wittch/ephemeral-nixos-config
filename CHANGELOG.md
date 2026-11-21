@@ -2,6 +2,24 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.18.0
+
+### Added
+
+- `ephemeral-apps` has a search: "Search all apps" at the top of its menu finds apps by the start of any word in their name or description, across the categories, and adds the ones you tick.
+
+### Changed
+
+- The Security category is split in two: Passwords, for Bitwarden, KeePassXC and age, and Security testing, for the penetration-testing tools. Picked apps stay picked.
+- `ephemeral-apps` shows the categories in the same order as the installer, which now both read from the config.
+- A machine without a desktop gets the terminal apps ticked by default (htop, ripgrep, dig and the WireGuard tools), as the installer already ticked them. It got none before.
+- Shorter lines in the desktop and install-type menus, so they fit an 80-column screen: the headless choice is now just "None".
+
+### Fixed
+
+- `ephemeral-apps` on a machine without a desktop offered every app and showed Firefox and VLC ticked, though they're never installed there. It now offers the terminal apps only, as the installer does.
+- `ephemeral-apps` showed 10 lines of its category menu, so "Review and save" and "Quit without saving" were on a second page. The menu is now tall enough for all of them.
+
 ## 4.17.0
 
 ### Added
