@@ -30,6 +30,9 @@ let
       boot.consoleLogLevel = lib.mkForce 7;
       # test machines leave switch-to-configuration out unless asked
       system.switch.enable = true;
+      # the test driver's shell, which runs the switch; a newer nixpkgs changes its unit, and
+      # restarting it would cut the switch off halfway
+      systemd.services.backdoor.restartIfChanged = false;
     };
 in
 {
