@@ -6,7 +6,9 @@ Breaking changes are listed first in each release, with what to do about them. R
 
 ### Changed
 
-- nixpkgs updated to 2026-11-21. It brings PipeWire 1.6.11, which fixes the login screen's PipeWire crashing at every login, and Linux 6.18.64.
+- nixpkgs updated to 2026-11-21. It brings GNOME 51, Linux 6.18.64 and PipeWire 1.6.11, which fixes the login screen's PipeWire crashing at every login.
+- GNOME 51 ships its Extensions app as a package of its own, which is left out, so Extension Manager stays the one app for extensions.
+- Umbriel's terminal and lock keys use its new action syntax, `spawn <command>`; the old `spawn:<command>` stopped the build.
 - The firewall check allows Podman's DNS over TCP as well as UDP on its container bridges, as nixpkgs now opens both.
 - The weekly release starts at 06:17 UTC instead of 06:00, when GitHub delays or drops many scheduled runs.
 

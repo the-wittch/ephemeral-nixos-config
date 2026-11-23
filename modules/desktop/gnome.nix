@@ -45,16 +45,9 @@ in
       environment.systemPackages = with pkgs; [
         gnomeExtensions.appindicator
         gnomeExtensions.caffeine
-        # it ships inside gnome-shell, so hide it instead
-        (lib.hiPrio (
-          runCommand "hide-gnome-extensions-app" { } ''
-            mkdir -p $out/share/applications
-            sed '/^\[Desktop Entry\]$/a NoDisplay=true' \
-              ${gnome-shell}/share/applications/org.gnome.Extensions.desktop \
-              > $out/share/applications/org.gnome.Extensions.desktop
-          ''
-        ))
       ];
+      # Extension Manager takes its place
+      environment.gnome.excludePackages = [ pkgs.gnome-extensions-app ];
     };
 
   flake.modules.nixos."minimal-gnome" =

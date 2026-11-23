@@ -240,7 +240,7 @@ in
                 ).strip()
                 assert "appindicatorsupport@rgcjonas.gmail.com" in ext, f"enabled-extensions is {ext!r}"
                 assert "caffeine@patapon.info" in ext, f"enabled-extensions is {ext!r}"
-                machine.succeed("grep -qx NoDisplay=true /run/current-system/sw/share/applications/org.gnome.Extensions.desktop")
+                machine.fail("test -e /run/current-system/sw/share/applications/org.gnome.Extensions.desktop")
                 machine.succeed("test -e /run/current-system/sw/share/applications/com.mattjakeman.ExtensionManager.desktop")
                 machine.succeed("test -d /run/current-system/sw/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com")
 
