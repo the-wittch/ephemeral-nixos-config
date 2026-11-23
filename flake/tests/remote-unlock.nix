@@ -150,9 +150,10 @@ in
                   assert server.succeed("findmnt -no SOURCE /").strip() == "/dev/mapper/cryptroot"
 
               with subtest("the running server takes the key and refuses a password"):
-                  client.succeed("${ssh} -o StrictHostKeyChecking=no alice@server true")
+                  # -n: ssh would otherwise read the test driver's own commands from stdin
+                  client.succeed("timeout 30 ${ssh} -n -o StrictHostKeyChecking=no alice@server true")
                   refused = client.fail(
-                      "${ssh} -o StrictHostKeyChecking=no -o PubkeyAuthentication=no"
+                      "timeout 30 ${ssh} -n -o StrictHostKeyChecking=no -o PubkeyAuthentication=no"
                       " -o PreferredAuthentications=password,keyboard-interactive alice@server true 2>&1"
                   )
                   assert "Permission denied (publickey)" in refused, refused
