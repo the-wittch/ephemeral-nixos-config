@@ -2,6 +2,14 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.19.0
+
+### Changed
+
+- Syncthing's web page asks for a password. Before, anything that could reach 127.0.0.1:8384 could change what Syncthing shares, an app sandboxed by Flatpak included. Log in with your username and the password in `/persist/etc/syncthing/gui-password`, made the first time Syncthing starts after the update, and let the browser remember it. Syncthing Tray uses Syncthing's API key, so it isn't affected. [Syncthing](docs/features.md#syncthing) has more.
+- `ephemeral-backup` also saves Syncthing's web page password.
+- The secret check in CI catches more: GitHub's other token types (`gho_`, `ghu_`, `ghs_`, `ghr_`), and DSA and encrypted private keys, the same as the check `ephemeral-update` runs before a rebuild.
+
 ## 4.18.0
 
 ### Added

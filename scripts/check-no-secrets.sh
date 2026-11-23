@@ -59,9 +59,9 @@ FORBIDDEN_PATHS=(
 # shellcheck disable=SC2016 # literal $ in the hash pattern
 CONTENT_PATTERNS=(
   'password[[:space:]]*=[[:space:]]*[^[:space:]#'\'']{8,}'
-  'BEGIN (RSA |OPENSSH |EC )?PRIVATE KEY'
+  'BEGIN (RSA |OPENSSH |EC |DSA |ENCRYPTED )?PRIVATE KEY'
   'hashedPassword[[:space:]]*=[[:space:]]*["'\'']\$(y|gy|7|6|5|2[aby]?|1)\$'
-  'ghp_[A-Za-z0-9]{20,}'
+  'gh[pousr]_[A-Za-z0-9]{20,}'
   'github_pat_[A-Za-z0-9_]{20,}'
   '(^|[^A-Za-z0-9])sk-[A-Za-z0-9_-]{20,}'
   'tskey-[a-z]+-[A-Za-z0-9-]{10,}'
