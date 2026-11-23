@@ -10,7 +10,7 @@
         # a different MAC address on each Wi-Fi network, the same one every time
         wifi.macAddress = "stable";
       };
-      environment.persistence."/persist".directories = [
+      preservation.preserveAt."/persist".directories = [
         "/var/lib/NetworkManager"
         {
           directory = "/etc/NetworkManager/system-connections";

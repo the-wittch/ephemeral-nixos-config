@@ -2,6 +2,28 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 5.0.0
+
+### Breaking
+
+- What's kept across reboots is set up by [preservation](https://github.com/nix-community/preservation) instead of impermanence, with preservation's own option. In your own modules, rename `environment.persistence."/persist"` to `preservation.preserveAt."/persist"`. `directories` and `files` keep their fields (`directory`, `file`, `user`, `group`, `mode`). A module that still uses the old name stops the rebuild with a message saying so.
+- A kept folder now gets its owner and mode at every boot, root and `0755` unless the entry gives others. impermanence only set them when it made the folder. For a folder a service owns, give `user`, `group` and `mode` as it has them now (`ls -ld` shows them), or the service may lose access to it. `sudo ephemeral-doctor audit` suggests entries with them filled in. For a `DynamicUser` folder in `/var/lib/private`, add `configureParent = true; parent.mode = "0700";`, which replaces a separate tmpfiles rule for `/var/lib/private`. [Keeping things across reboots](docs/persistence.md) has examples.
+- The update takes a reboot. A running system can't move from impermanence's mounts to preservation's, so switching to 5.0.0 straight away is refused, with nothing changed. `ephemeral-update` stops there, after asking about the new version, and its advice about going back can be ignored. Set the update up for the next boot instead, then reboot:
+
+  ```sh
+  nh os boot path:/persist/etc/nixos --hostname nixos
+  systemctl reboot
+  ```
+
+  To go back afterwards, pick the previous entry in the boot menu; `ephemeral-update --previous` would switch back on the running system, which has the same problem. A folder added to the list later is kept from the next reboot.
+
+### Changed
+
+- `/etc/machine-id` is a link to `/persist/etc/machine-id`, made in the initrd, and a new machine gets its id there on its first boot, as preservation's first-boot setup does. `/var/lib/systemd/random-seed` is a link too. `/home` and `/var/lib/nixos` are mounted in the initrd, so users keep their uid and their home folder is in place before NixOS sets them up.
+- The kept folders that belong to a service user keep that owner: the Plasma and Noctalia greeters' (`0750`), colord's, fwupd's and systemd-timesyncd's. `AccountsService` keeps `0775` and Docker's folder `0710`.
+- The two activation scripts that set `/persist`'s folder modes and the home folder's owner are gone. preservation makes missing folders itself, and the home folder on `/persist` is a tmpfiles rule. Installs from before installer v3.7.3 that left `/persist/etc/nixos` readable by root alone are no longer fixed at boot; `ephemeral-update` says how to fix it if it can't read the folder.
+- `ephemeral-doctor audit` suggests entries in the new form, with the folder's owner and mode when they aren't root and `0755`.
+
 ## 4.20.0
 
 ### Added

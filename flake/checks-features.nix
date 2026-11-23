@@ -27,7 +27,7 @@ let
       c.services.fprintd.enable
       && c.services.upower.enable
       && lib.elem "/var/lib/upower" (
-        map (d: d.directory) c.environment.persistence."/persist".directories
+        map (d: d.directory) c.preservation.preserveAt."/persist".directories
       )
       && c.services.resolved.settings.Resolve.DNSOverTLS == "yes"
       && c.services.resolved.settings.Resolve.FallbackDNS == ""

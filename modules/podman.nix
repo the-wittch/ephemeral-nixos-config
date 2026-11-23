@@ -1,6 +1,6 @@
 {
   flake.modules.nixos.pc = {
-    environment.persistence."/persist".directories = [ "/var/lib/containers" ];
+    preservation.preserveAt."/persist".directories = [ "/var/lib/containers" ];
 
     # rootless; don't add yourself to the podman group, it's root-equivalent
     virtualisation.podman = {

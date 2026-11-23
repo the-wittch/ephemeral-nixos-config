@@ -9,46 +9,128 @@
     }:
     let
       settings = config.ephemeral.settings;
-      owner = lib.escapeShellArg "${settings.username}:${config.users.users.${settings.username}.group}";
+      user = config.users.users.${settings.username};
+      kept = config.preservation.preserveAt."/persist";
+      credentialSecret = "/var/lib/systemd/credential.secret";
     in
     {
-      imports = [ inputs.impermanence.nixosModules.impermanence ];
+      imports = [
+        inputs.preservation.nixosModules.preservation
+        (lib.mkRemovedOptionModule [ "environment" "persistence" ] ''
+          It's preservation.preserveAt now, with the same directories and files: rename
+          environment.persistence."/persist" to preservation.preserveAt."/persist" in your modules.
+          The 5.0.0 CHANGELOG entry has the details.'')
+      ];
 
       fileSystems."/persist".neededForBoot = true;
       fileSystems."/var/log".neededForBoot = true;
 
       # ephemeral-doctor kept lists them; here they come from every feature that adds one
       environment.etc."ephemeral/kept".text =
-        let
-          kept = config.environment.persistence."/persist";
-        in
         lib.concatMapStrings (d: d.directory + "/\n") kept.directories
-        + lib.concatMapStrings (f: f.file + "\n") kept.files;
+        + lib.concatMapStrings (f: f.file + "\n") kept.files
+        + credentialSecret
+        + "\n";
 
-      environment.persistence."/persist" = {
-        hideMounts = true;
-        directories = [
-          "/home"
-          "/var/lib/nixos"
-          "/var/lib/AccountsService"
-          "/var/lib/systemd/backlight"
-          "/var/lib/systemd/rfkill"
-          "/var/lib/systemd/timers"
-          "/var/lib/systemd/linger"
-          {
-            directory = "/var/lib/systemd/timesync";
-            user = "systemd-timesync";
-            group = "systemd-timesync";
-          }
+      # A kept folder's owner and mode are set at every boot, as given here, so a folder a service
+      # owns has to say so.
+      preservation = {
+        enable = true;
+        preserveAt."/persist" = {
+          # out of the file manager's list of drives
+          commonMountOptions = [ "x-gvfs-hide" ];
+          directories = [
+            # before NixOS sets up the user in the initrd, so its home folder is made in /persist
+            {
+              directory = "/home";
+              inInitrd = true;
+            }
+            # the uid and gid of every user, read when they're set up in the initrd
+            {
+              directory = "/var/lib/nixos";
+              inInitrd = true;
+            }
+            {
+              directory = "/var/lib/AccountsService";
+              mode = "0775";
+            }
+            "/var/lib/systemd/backlight"
+            "/var/lib/systemd/rfkill"
+            "/var/lib/systemd/timers"
+            "/var/lib/systemd/linger"
+            {
+              directory = "/var/lib/systemd/timesync";
+              user = "systemd-timesync";
+              group = "systemd-timesync";
+            }
+          ];
+          files = [
+            # preservation's first-boot setup: systemd writes a new id through the link once
+            {
+              file = "/etc/machine-id";
+              inInitrd = true;
+              how = "symlink";
+              configureParent = true;
+            }
+            # made only once something has written it, so a link rather than a mount
+            {
+              file = "/var/lib/systemd/random-seed";
+              how = "symlink";
+              inInitrd = true;
+              configureParent = true;
+            }
+          ];
+        };
+      };
+
+      # A running system can't move from impermanence's mounts to these: the old ones are taken
+      # down before anything puts the initrd's back, /etc/machine-id among them, and the desktop
+      # stops. Systems with this key are already on preservation.
+      system.switch.inhibitors.ephemeral-persistence = "preservation";
+      system.preSwitchChecks.ephemeral-persistence = ''
+        case ''${2-} in
+          switch | test) ;;
+          *) exit 0 ;;
+        esac
+        running=/run/current-system/switch-inhibitors
+        if [[ -e /run/current-system ]] &&
+          ! ${lib.getExe pkgs.jq} -e '."ephemeral-persistence"' "$running" >/dev/null 2>&1; then
+          cat <<'EOF'
+
+        This release keeps files with preservation instead of impermanence, and a running
+        system can't be moved over. Nothing has been changed. Set it up for the next boot
+        instead, then reboot:
+
+          nh os boot path:/persist/etc/nixos --hostname nixos
+          systemctl reboot
+
+        The release itself is fine, so there's no need to go back to the old one.
+
+        EOF
+          exit 1
+        fi
+      '';
+
+      boot.initrd.systemd.tmpfiles.settings.preservation."/sysroot/persist/etc/machine-id".f = {
+        argument = "uninitialized";
+      };
+      systemd.services.systemd-machine-id-commit = {
+        unitConfig.ConditionPathIsMountPoint = [
+          ""
+          "/persist/etc/machine-id"
         ];
-        files = [
-          "/etc/machine-id"
-          "/var/lib/systemd/random-seed"
-          "/var/lib/systemd/credential.secret"
+        serviceConfig.ExecStart = [
+          ""
+          "systemd-machine-id-setup --commit --root /persist"
         ];
       };
 
-      # systemd-creds can't run in the initrd, so make the key here and bind-mount it
+      systemd.tmpfiles.rules = [
+        "d /persist/home/${user.name} 0700 ${user.name} ${user.group} -"
+      ];
+
+      # Not left to preservation: it would make an empty key file, which systemd-creds won't
+      # replace. systemd-creds can't run in the initrd, so the key is made here and mounted.
       systemd.services.credential-secret-setup = {
         description = "Create the systemd credential key on /persist";
         wantedBy = [ "sysinit.target" ];
@@ -66,49 +148,17 @@
           UMask = "0077";
         };
         script = ''
-          key=/persist/var/lib/systemd/credential.secret
-          dest=/var/lib/systemd/credential.secret
+          key=/persist${credentialSecret}
+          dest=${credentialSecret}
           if [[ ! -s $key ]]; then
             install -d -m 0755 "$(dirname "$key")"
             SYSTEMD_CREDENTIAL_SECRET=$key systemd-creds setup
           fi
-          if [[ -L $dest ]]; then
-            rm "$dest"
+          if ! mountpoint -q "$dest"; then
+            rm -f "$dest"
             touch "$dest"
             mount --bind "$key" "$dest"
           fi
-        '';
-      };
-
-      # impermanence copies these modes to the new root; 0700 locks users out of /etc
-      system.activationScripts.persistParentModes = {
-        text = ''
-          for d in /persist /persist/etc /persist/var /persist/var/lib /persist/home; do
-            if [ -d "$d" ]; then
-              chmod 0755 "$d"
-              chown 0:0 "$d"
-            fi
-          done
-          # installers up to v3.7.3 left the flake root-only, so ephemeral-update couldn't read it
-          if [ -d /persist/etc/nixos ] && [ "$(stat -c %u%a /persist/etc/nixos)" = 0700 ]; then
-            chmod 0755 /persist/etc/nixos
-          fi
-        '';
-      };
-      system.activationScripts.createPersistentStorageDirs.deps = [ "persistParentModes" ];
-
-      system.activationScripts.ensureUserHome = {
-        deps = [
-          "users"
-          "groups"
-        ];
-        text = ''
-          home=${lib.escapeShellArg "/persist/home/${settings.username}"}
-          if [ ! -d "$home" ]; then
-            mkdir -p "$home"
-            chmod 0700 "$home"
-          fi
-          chown ${owner} "$home"
         '';
       };
     };

@@ -4,7 +4,7 @@ let
     { pkgs, ... }:
     {
       imports = [ config.ephemeral.aspects.nixos.graphical ];
-      environment.persistence."/persist".directories = [ "/var/lib/gdm" ];
+      preservation.preserveAt."/persist".directories = [ "/var/lib/gdm" ];
 
       services.xserver.enable = true;
 

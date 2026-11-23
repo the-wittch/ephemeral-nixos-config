@@ -55,7 +55,13 @@
         {
           virtualisation.docker.enable = true;
           virtualisation.podman.dockerCompat = lib.mkForce false;
-          environment.persistence."/persist".directories = [ "/var/lib/docker" ];
+          # the mode dockerd gives it when it starts
+          preservation.preserveAt."/persist".directories = [
+            {
+              directory = "/var/lib/docker";
+              mode = "0710";
+            }
+          ];
           users.users.${config.ephemeral.settings.username}.extraGroups = [ "docker" ];
         };
     };

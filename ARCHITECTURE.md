@@ -31,7 +31,7 @@ Every fact the two repos share has one owner. The other side reads it from a rel
 | the wallpaper and the snowflake logo | `assets/wallpaper.svg` and `modules/branding/_logo.sh` | the desktops, the splash, fastfetch, and the installer, through the `wallpaper` and `welcome-logo` packages |
 | the app catalog: ids, labels, categories, defaults, desktops | `ephemeral.apps`, one file per category in `modules/apps/` | `ephemeral-apps`, `host-builder.nix`, and the installer, through the `app-catalog` package |
 | the disk layout | `modules/_disko-layout.nix` | disko when installing, the rebuild, and the disk test |
-| what's kept across reboots | the feature that needs it, in `environment.persistence."/persist"` | impermanence, `ephemeral-doctor kept` and `audit`, and the boot test, which reads the same list |
+| what's kept across reboots | the feature that needs it, in `preservation.preserveAt."/persist"` | preservation, `ephemeral-doctor kept` and `audit`, and the boot test, which reads the same list |
 | the version | the newest heading in `CHANGELOG.md` | `modules/release.nix`, `ephemeral-update --list`, and the release scripts |
 | the installer's screens, their wording apart from the menus, disk checks and install steps | the installer | nothing here |
 
@@ -68,7 +68,7 @@ Where things go:
 
 1. **`/` is reset to the empty, read-only `root-blank` at every boot**, in the initrd, before `/` is mounted.
 2. **A failed reset doesn't stop the boot, but it's never silent.** `root-reset-check` fails, and `ephemeral-doctor` says so and how to fix it.
-3. **Everything that has to survive a reboot is listed in `environment.persistence."/persist"`**, by the feature that needs it. The boot test reads that list and checks each entry survives.
+3. **Everything that has to survive a reboot is listed in `preservation.preserveAt."/persist"`**, by the feature that needs it, with its owner and mode when they aren't root and 0755, since preservation sets them at every boot. The boot test reads that list and checks each entry survives.
 4. **`/persist` is never reset or reformatted**, except by a reinstall the user has confirmed.
 
 ## Disk and encryption

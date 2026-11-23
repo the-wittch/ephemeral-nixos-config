@@ -23,7 +23,7 @@
       '';
     in
     {
-      environment.persistence."/persist".directories = [ "/var/lib/opensnitch" ];
+      preservation.preserveAt."/persist".directories = [ "/var/lib/opensnitch" ];
       environment.systemPackages = [ pkgs.opensnitch-ui ];
 
       services.opensnitch = {

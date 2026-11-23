@@ -63,7 +63,7 @@
 
       # for secure-boot.nix, on every machine: the rebuild that turns it on still runs with the
       # old system, so its keys only reach /persist through this
-      environment.persistence."/persist".directories = [
+      preservation.preserveAt."/persist".directories = [
         {
           directory = "/var/lib/sbctl";
           mode = "0700";

@@ -60,7 +60,7 @@ fix_root_reset() {
 
 # EPHEMERAL_ROOT is for the tests
 audit() {
-  local root=${EPHEMERAL_ROOT:-} list d p unit dyn rest dir dirs entry found=0
+  local root=${EPHEMERAL_ROOT:-} list d p unit dyn rest dir dirs entry owner group mode found=0
   list=$root/etc/ephemeral/kept
   [[ -r $list ]] || die "$list is missing; it comes with v4.1.0 and later"
   [[ $EUID -eq 0 ]] || echo "Run it with sudo to see into folders only root can read." >&2
@@ -108,10 +108,17 @@ audit() {
       [[ -z ${seen[$p]:-} ]] || continue
       seen[$p]=1
       if ! is_kept "$p" && ! is_kept "/var/lib/$dir" && [[ -e $root$p ]] && has_content "$root$p"; then
+        # preservation sets a kept folder's owner and mode at every boot, so they're spelled out
+        # unless they're its defaults; systemd refuses DynamicUser unless /var/lib/private is 0700
+        read -r owner group mode < <(stat -c '%U %G %a' "$root$p")
         entry="\"$p\""
-        [[ $dyn == yes ]] && entry="{ directory = \"$p\"; mode = \"0700\"; }"
+        if [[ $dyn == yes ]]; then
+          entry="{ directory = \"$p\"; mode = \"0700\"; configureParent = true; parent.mode = \"0700\"; }"
+        elif [[ "$owner $group $mode" != "root root 755" ]]; then
+          entry="{ directory = \"$p\"; user = \"$owner\"; group = \"$group\"; mode = \"0$mode\"; }"
+        fi
         warn "$unit keeps its state in $p ($(size "$root$p")), which isn't kept, so it starts over at every boot" \
-          "to keep it, add $entry to environment.persistence.\"/persist\".directories, as in docs/persistence.md"
+          "to keep it, add $entry to preservation.preserveAt.\"/persist\".directories, as in docs/persistence.md"
         found=1
       fi
     done

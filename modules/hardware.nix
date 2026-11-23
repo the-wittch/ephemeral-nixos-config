@@ -3,7 +3,7 @@
     hardware.enableRedistributableFirmware = true;
 
     services.fwupd.enable = true;
-    environment.persistence."/persist".directories = [
+    preservation.preserveAt."/persist".directories = [
       {
         directory = "/var/lib/fwupd";
         user = "fwupd-refresh";
@@ -24,7 +24,7 @@
 
       services.power-profiles-daemon.enable = true;
 
-      environment.persistence."/persist".directories = [
+      preservation.preserveAt."/persist".directories = [
         {
           directory = "/var/lib/bluetooth";
           mode = "0700";

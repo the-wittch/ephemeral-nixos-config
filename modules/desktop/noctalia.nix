@@ -5,7 +5,15 @@ let
 in
 {
   flake.modules.nixos.noctalia-base =
-    { lib, pkgs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
+    let
+      greeter = config.services.greetd.settings.default_session.user;
+    in
     {
       imports = [ nixos.graphical ];
 
@@ -15,7 +23,15 @@ in
         recommendedServices.enable = true;
       };
       services.displayManager.noctalia-greeter.enable = true;
-      environment.persistence."/persist".directories = [ "/var/lib/noctalia-greeter" ];
+      # the greeter writes its state there, as the module's own tmpfiles rule sets it up
+      preservation.preserveAt."/persist".directories = [
+        {
+          directory = "/var/lib/noctalia-greeter";
+          user = greeter;
+          group = config.users.users.${greeter}.group;
+          mode = "0750";
+        }
+      ];
 
       services.gnome.gnome-keyring.enable = true;
       # the greeter logs in through greetd

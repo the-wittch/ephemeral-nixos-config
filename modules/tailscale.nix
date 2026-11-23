@@ -6,7 +6,7 @@
     in
     {
       services.tailscale.enable = true;
-      environment.persistence."/persist".directories = [
+      preservation.preserveAt."/persist".directories = [
         {
           directory = "/var/lib/tailscale";
           mode = "0700";

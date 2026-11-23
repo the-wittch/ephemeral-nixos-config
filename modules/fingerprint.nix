@@ -1,7 +1,7 @@
 {
   flake.modules.nixos.fingerprint = {
     services.fprintd.enable = true;
-    environment.persistence."/persist".directories = [
+    preservation.preserveAt."/persist".directories = [
       {
         directory = "/var/lib/fprint";
         mode = "0700";

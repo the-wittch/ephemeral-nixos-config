@@ -19,7 +19,7 @@
       };
 
       config.services.flatpak.enable = true;
-      config.environment.persistence."/persist".directories = [ "/var/lib/flatpak" ];
+      config.preservation.preserveAt."/persist".directories = [ "/var/lib/flatpak" ];
 
       config.systemd.services.flatpak-flathub = {
         description = "Add Flathub Flatpak remote";
