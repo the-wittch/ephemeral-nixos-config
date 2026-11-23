@@ -60,14 +60,17 @@ in
         testScript =
           { nodes, ... }:
           let
-            persisted = nodes.machine.environment.persistence."/persist";
+            persisted = nodes.machine.preservation.preserveAt."/persist";
           in
           ''
             import json
             from datetime import timedelta
 
             kept_dirs = json.loads('${builtins.toJSON (map (d: d.directory) persisted.directories)}')
-            kept_files = json.loads('${builtins.toJSON (map (f: f.file) persisted.files)}')
+            # the credential key is mounted by persist.nix's own service, not by preservation
+            kept_files = json.loads('${
+              builtins.toJSON (map (f: f.file) persisted.files)
+            }') + ["/var/lib/systemd/credential.secret"]
 
             def boot_is_clean(boot):
                 machine.wait_for_unit("multi-user.target")
@@ -285,6 +288,8 @@ in
                 # a dot file, so services that read their folder skip it
                 for d in kept_dirs:
                     machine.succeed(f"findmnt -n {d} >/dev/null && touch {d}/.kept-across-reboot")
+                machine.succeed("test \"$(readlink /etc/machine-id)\" = /persist/etc/machine-id")
+                machine.succeed("findmnt -n /var/lib/systemd/credential.secret")
                 ids = {f: machine.succeed(f"sha256sum {f}").split()[0] for f in kept_files}
                 reboot()
                 boot_is_clean(3)

@@ -20,7 +20,7 @@ let
           programs.virt-manager.enable = true;
           users.users.${config.ephemeral.settings.username}.extraGroups = [ "libvirtd" ];
 
-          environment.persistence."/persist".directories = [
+          preservation.preserveAt."/persist".directories = [
             "/var/lib/libvirt"
             "/var/lib/swtpm-localca"
           ];

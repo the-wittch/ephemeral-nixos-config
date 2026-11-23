@@ -257,6 +257,11 @@ else fail "audit: the other state in /var/lib"; fi
 if audit_says "/persist/var/lib/docker" && ! audit_says "/persist/var/lib/bluetooth" && ! audit_says "/persist/var/lib/systemd"; then
   pass "audit: a folder on /persist nothing keeps any more is reported, ones in use aren't"
 else fail "audit: leftovers on /persist"; fi
+# the build runs as its own user, so the folders here aren't root's
+if audit_says "{ directory = \"/var/lib/private/foo\"; mode = \"0700\"; configureParent = true; parent.mode = \"0700\"; }" &&
+  audit_says "{ directory = \"/var/lib/upower\"; user = \"$(id -un)\"; group = \"$(id -gn)\"; mode = \"0755\"; }"; then
+  pass "audit: the advice gives a folder's owner and mode, and /var/lib/private's for DynamicUser"
+else fail "audit: advice $(grep -F 'to keep it' "$work/out")"; fi
 
 sb=$work/sb
 vars=$sb/sys/firmware/efi/efivars

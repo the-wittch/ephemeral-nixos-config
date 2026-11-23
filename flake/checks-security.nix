@@ -79,22 +79,20 @@ let
   unsandboxed = {
     credential-secret-setup = "it bind-mounts the credential key into the running system";
     opensnitch-boot-guard = "it adds nftables rules to the system's network, so it can't have a private one; the rest of the sandbox applies";
+    systemd-machine-id-commit = "systemd's own unit; persist.nix only points it at /persist, as preservation's first-boot setup does";
   };
   ours = lib.filter (
     d: lib.hasPrefix (toString ../modules) d.file
   ) everything.options.systemd.services.definitionsWithLocations;
-  # impermanence makes a persist-<path> unit for each kept file, from persist.nix's list
-  defined = lib.filter (name: !lib.hasPrefix "persist-persist-" name) (
-    lib.unique (
-      lib.concatMap (
-        d:
-        lib.attrNames (
-          lib.filterAttrs (
-            _: s: lib.isAttrs s && (s ? script || (s.serviceConfig or { }) ? ExecStart)
-          ) d.value
-        )
-      ) ours
-    )
+  defined = lib.unique (
+    lib.concatMap (
+      d:
+      lib.attrNames (
+        lib.filterAttrs (
+          _: s: lib.isAttrs s && (s ? script || (s.serviceConfig or { }) ? ExecStart)
+        ) d.value
+      )
+    ) ours
   );
   sandboxed =
     name:

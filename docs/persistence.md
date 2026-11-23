@@ -36,28 +36,36 @@ To keep more, save this as `/persist/etc/nixos/modules/keep.nix`, with your own 
 
 ```nix
 {
-  flake.modules.nixos.pc.environment.persistence."/persist" = {
-    directories = [ "/var/lib/postgresql" ];
+  flake.modules.nixos.pc.preservation.preserveAt."/persist" = {
+    directories = [
+      {
+        directory = "/var/lib/postgresql";
+        user = "postgres";
+        group = "postgres";
+        mode = "0750";
+      }
+    ];
     files = [ "/etc/machine-info" ];
   };
 }
 ```
 
-They're kept from then on. Whatever was in them before isn't copied over, so copy it to `/persist` first if you need it; `/persist/var/lib/postgresql` for the example above.
+They're kept from the next reboot. Whatever was in them before isn't copied over, so copy it to `/persist` first if you need it; `/persist/var/lib/postgresql` for the example above.
+
+A kept folder gets the owner and mode given here at every boot, root and `0755` unless you say otherwise, so give them for a folder a service owns, as above. `ls -ld` on the folder shows what they are now, and `sudo ephemeral-doctor audit` suggests the entry for a service's folder with them filled in. The options are [preservation's](https://nix-community.github.io/preservation/configuration-options.html).
 
 A service with `DynamicUser` keeps its data in `/var/lib/private/<name>`, and systemd refuses to start it unless that folder and `/var/lib/private` are mode `0700`:
 
 ```nix
 {
-  flake.modules.nixos.pc = {
-    environment.persistence."/persist".directories = [
-      {
-        directory = "/var/lib/private/i2pd";
-        mode = "0700";
-      }
-    ];
-    systemd.tmpfiles.rules = [ "d /var/lib/private 0700 root root -" ];
-  };
+  flake.modules.nixos.pc.preservation.preserveAt."/persist".directories = [
+    {
+      directory = "/var/lib/private/i2pd";
+      mode = "0700";
+      configureParent = true;
+      parent.mode = "0700";
+    }
+  ];
 }
 ```
 

@@ -91,7 +91,7 @@
 
         systemd.tmpfiles.rules = [ "d ${dir} 0700 root root -" ];
 
-        environment.persistence."/persist".directories = [
+        preservation.preserveAt."/persist".directories = [
           {
             directory = "/var/lib/borg";
             mode = "0700";

@@ -8,7 +8,15 @@ let
     {
       imports = [ nixos.graphical ];
 
-      environment.persistence."/persist".directories = [ "/var/lib/plasmalogin" ];
+      # the greeter writes its state there, as the package's own tmpfiles rule sets it up
+      preservation.preserveAt."/persist".directories = [
+        {
+          directory = "/var/lib/plasmalogin";
+          user = "plasmalogin";
+          group = "plasmalogin";
+          mode = "0750";
+        }
+      ];
 
       services.xserver.enable = true;
 

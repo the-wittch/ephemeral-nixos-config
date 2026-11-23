@@ -149,7 +149,7 @@ let
       full = host "full";
       minimal = host "minimal";
       get = c: name: lib.attrByPath (lib.splitString "." name) null c;
-      persisted = c: map (d: d.directory) c.environment.persistence."/persist".directories;
+      persisted = c: map (d: d.directory) c.preservation.preserveAt."/persist".directories;
       differs = lib.filter (name: get full name != get minimal name) parityOptions;
       onlyOne =
         lib.subtractLists (persisted full) (persisted minimal)
