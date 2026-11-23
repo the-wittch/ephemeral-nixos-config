@@ -57,7 +57,7 @@ ephemeral-setup
 
 It switches between the full system and the small install (`"profile": "full"` or `"minimal"`), asks which options you want (extras, OpenSnitch, the Proton Pass SSH agent) and where DNS goes, and rebuilds. After a small install, this is how you get the rest. Log out and back in when it's done.
 
-`extras`, `useControlD`, `usePassSshAgent`, `useFlakePassCli` and the apps in `apps.json` only apply to the full system; on the small install the rebuild warns that they're ignored.
+`extras`, `useControlD`, `usePassSshAgent` and the apps in `apps.json` only apply to the full system; on the small install the rebuild warns that they're ignored.
 
 To add or remove apps without touching Nix, run `ephemeral-apps` and tick the ones you want. They're saved to `apps.json` and installed at the next rebuild.
 
@@ -139,7 +139,6 @@ and update it with `nix flake update nixpkgs --flake /persist/etc/nixos`. That c
 | `luks-header-backup <file>` | copy the LUKS header to a USB stick |
 | `settings-from-pass` | pull settings from Proton Pass |
 | `ssh-pubs-from-pass` | write SSH public keys from Proton Pass to `~/.ssh` |
-| `update-pass-cli` | bump or check the pinned pass-cli (run in a checkout of this repo) |
 
 Most of them ask what to do; `--help` on one shows its options. The small install has `ephemeral-update`, `ephemeral-doctor`, `ephemeral-setup`, `ephemeral-passwd`, `ephemeral-backup`, `backup-setup`, `ephemeral-report` and `luks-header-backup`; `ephemeral-help` lists the ones a machine has.
 

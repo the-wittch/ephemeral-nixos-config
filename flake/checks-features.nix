@@ -38,7 +38,6 @@ let
     feat-pass =
       c:
       c.environment.sessionVariables.PASS_SSH_VAULT == "Work keys"
-      && c.ephemeral.passCli.pname == "pass-cli"
       && c.services.resolved.settings.Resolve.DNS == [ "194.242.2.2#dns.mullvad.net" ];
     # a server with a desktop keeps it, and OpenSnitch, which has somewhere to ask
     feat-server =

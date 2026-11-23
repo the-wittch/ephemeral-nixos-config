@@ -12,7 +12,7 @@
 | `modules/settings/` | the settings options with their defaults (`_schema.nix`), and the loader that checks `settings.json` against them |
 | `modules/desktop/` | Plasma, GNOME, niri, Umbriel, `none` for a server without a screen, and the Noctalia shell niri and Umbriel share |
 | `modules/dotfiles/` | Home Manager dotfiles |
-| `modules/packages/` | the helper commands, the pinned pass-cli, and `app-catalog`, which the installer reads |
+| `modules/packages/` | the helper commands, and `app-catalog`, which the installer reads |
 | `modules/apps/` | the app catalog for `ephemeral-apps`, one file per category |
 | `flake/tests/` | the VM tests (boot, upgrade, disk layout, desktops, switching profiles) and the helper command tests |
 | `tests/` | machines CI evaluates (each desktop with both profiles, each optional feature, and settings that have to be refused), and `upgrade/previous.json`, the release the upgrade test starts from |

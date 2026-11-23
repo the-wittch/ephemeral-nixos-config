@@ -2,6 +2,17 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 4.20.0
+
+### Added
+
+- Flatpak apps are updated once a week on the full system with a desktop, along with the runtimes they use, and runtimes nothing uses any more are removed. It runs at a random time in the week, only on mains power, and catches up after a week the machine was off. Nothing updated them before unless a software centre happened to be open. `ephemeral-doctor` says when the last update failed. `"flatpakUpdates": false` turns it off. [Flatpak](docs/features.md#flatpak) has more.
+- An OpenSnitch rule lets `flatpak` reach Flathub, so installing the apps picked with `ephemeral-apps` and updating them no longer asks.
+
+### Removed
+
+- `useFlakePassCli`, the `pass-cli` downloaded from Proton's releases, and `update-pass-cli`. nixpkgs has the same version, so `pass-cli` always comes from there now. A `settings.json` that still sets it gets a warning to delete it; nothing else changes.
+
 ## 4.19.0
 
 ### Changed

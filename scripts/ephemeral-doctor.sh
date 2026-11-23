@@ -326,6 +326,15 @@ if [[ -e ${EPHEMERAL_ROOT:-}/etc/borgmatic/config.yaml ]]; then
   fi
 fi
 
+# picked.nix adds the timer on a full system with a desktop, unless flatpakUpdates is off
+if [[ -e ${EPHEMERAL_ROOT:-}/etc/systemd/user/flatpak-update.timer ]]; then
+  if systemctl is-failed --user --quiet flatpak-update.service 2>/dev/null; then
+    warn "the last weekly Flatpak update failed" "journalctl --user -u flatpak-update"
+  else
+    ok "Flatpak apps are updated once a week"
+  fi
+fi
+
 # only reads the list fwupd-refresh.timer downloads; installing stays a choice, since a firmware
 # update must not be cut off, and can change what the TPM PIN is bound to
 if command -v fwupdmgr >/dev/null; then

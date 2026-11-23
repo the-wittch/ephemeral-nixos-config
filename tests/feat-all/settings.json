@@ -1,1 +1,1 @@
-{ "hostname": "feat-all", "username": "alice", "desktop": "umbriel", "extras": true, "laptop": true, "fingerprint": true, "secureBoot": true, "tpmUnlock": true, "nvidia": "open", "useTailscale": true, "useControlD": true, "useOpenSnitch": true, "usePassSshAgent": true, "useFlakePassCli": true }
+{ "hostname": "feat-all", "username": "alice", "desktop": "umbriel", "extras": true, "laptop": true, "fingerprint": true, "secureBoot": true, "tpmUnlock": true, "nvidia": "open", "useTailscale": true, "useControlD": true, "useOpenSnitch": true, "usePassSshAgent": true }

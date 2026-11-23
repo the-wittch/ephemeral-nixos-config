@@ -48,7 +48,7 @@ let
         passSshAgent = "usePassSshAgent";
       };
       ignored = lib.optionals (!full) (
-        lib.filter (key: settings.${key}) (lib.attrValues fullOnly ++ [ "useFlakePassCli" ])
+        lib.filter (key: settings.${key}) (lib.attrValues fullOnly)
         ++ lib.optional (lib.any (id: catalog ? ${id}) listed) "the apps in apps.json"
       );
       system = inputs.nixpkgs.lib.nixosSystem {

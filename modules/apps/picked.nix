@@ -15,6 +15,10 @@ in
       apps = map (id: catalog.${id}) (builtins.filter (id: catalog ? ${id}) picked);
       unknown = builtins.filter (id: !(catalog ? ${id})) picked;
       flatpaks = lib.concatMap (app: lib.optional (app.flatpak != null) app.flatpak) apps;
+      # Flathub only comes with a desktop
+      withFlathub = config.ephemeral.settings.desktop != "none";
+      flatpak = config.services.flatpak.package;
+      updates = withFlathub && config.ephemeral.settings.flatpakUpdates;
     in
     {
       warnings = map (id: "apps.json: ${id} isn't in the app catalog, so it's skipped") unknown;
@@ -25,12 +29,11 @@ in
       ephemeral.unfreePackages = lib.concatMap (app: app.unfree) apps;
       home-manager.sharedModules = map (app: app.homeManager) apps;
 
-      # Flathub only comes with a desktop
-      systemd.user.services.ephemeral-flatpaks = lib.mkIf (config.ephemeral.settings.desktop != "none") {
+      systemd.user.services.ephemeral-flatpaks = lib.mkIf withFlathub {
         description = "Install the Flatpaks picked with ephemeral-apps";
         wantedBy = [ "default.target" ];
         unitConfig.ConditionUser = "!@system";
-        path = [ pkgs.flatpak ];
+        path = [ flatpak ];
         serviceConfig.Type = "oneshot";
         script = ''
           state=''${XDG_STATE_HOME:-$HOME/.local/state}/ephemeral
@@ -51,6 +54,59 @@ in
           fi
           printf '%s\n' "''${wanted[@]}" >"$state/flatpaks"
         '';
+      };
+
+      # nothing else updates them on niri and Umbriel, or on GNOME and Plasma when their software
+      # centre isn't open
+      systemd.user.services.flatpak-update = lib.mkIf updates {
+        description = "Update the Flatpak apps and runtimes";
+        after = [ "ephemeral-flatpaks.service" ];
+        unitConfig = {
+          ConditionUser = "!@system";
+          ConditionACPower = true;
+        };
+        path = [ flatpak ];
+        serviceConfig.Type = "oneshot";
+        script = ''
+          flatpak update --user --noninteractive
+          flatpak uninstall --user --unused --noninteractive
+        '';
+      };
+      systemd.user.timers.flatpak-update = lib.mkIf updates {
+        description = "Update the Flatpak apps and runtimes once a week";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnCalendar = "weekly";
+          # spread over the week, so a household's machines don't all fetch at once
+          RandomizedDelaySec = "6d";
+          Persistent = true;
+        };
+      };
+
+      # the installs and updates are unattended, so nobody would be there to answer OpenSnitch
+      services.opensnitch.rules.flatpak-flathub = lib.mkIf withFlathub {
+        name = "flatpak-flathub";
+        enabled = true;
+        action = "allow";
+        duration = "always";
+        operator = {
+          type = "list";
+          operand = "list";
+          list = [
+            {
+              type = "simple";
+              sensitive = false;
+              operand = "process.path";
+              data = "${flatpak}/bin/.flatpak-wrapped";
+            }
+            {
+              type = "regexp";
+              sensitive = false;
+              operand = "dest.host";
+              data = "^(dl\\.)?flathub\\.org$";
+            }
+          ];
+        };
       };
     };
 }

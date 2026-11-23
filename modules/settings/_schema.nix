@@ -91,7 +91,7 @@ in
     };
     useTailscale = flag false "Tailscale VPN.";
     useOpenSnitch = flag true "OpenSnitch: outgoing connections need your OK (full profile).";
-    useFlakePassCli = flag false "Build modules/packages/_pass-cli.nix instead of nixpkgs proton-pass-cli.";
+    flatpakUpdates = flag true "Update the Flatpak apps once a week (full profile, with a desktop).";
     usePassSettings = flag false "Merge settings.from-pass.json.";
     passSettingsVault = mkOption {
       type = matching "passSettingsVault";

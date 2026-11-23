@@ -236,6 +236,8 @@ For something that's gone again when you stop it:
 
 Flathub is added system-wide from a pinned copy of its repo file, so its signing key can't be swapped. Install Flathub apps through `ephemeral-apps`, or with `flatpak install --user flathub <id>` for anything that isn't in the list.
 
+On the full system with a desktop, your Flatpak apps and the runtimes they use are updated once a week, at a random time in the week and only on mains power, and runtimes nothing uses any more are removed. An app that's open keeps its old version until you restart it. `ephemeral-doctor` says when the last update failed. OpenSnitch lets `flatpak` reach Flathub without asking; an app that downloads its files from its maker's own site while installing, as a few unfree ones do, still gets asked about. To update by hand: `flatpak update --user`. To turn the weekly update off, set `"flatpakUpdates": false`.
+
 ## direnv
 
 direnv and nix-direnv are on, with the hook in the system zshrc:
@@ -250,7 +252,6 @@ direnv allow
 `settings-from-pass` reads an item (vault `passSettingsVault` and item `passSettingsItem`, by default `Personal` and `nixos-settings`) and writes `settings.from-pass.json`, which is merged over `settings.json` when `usePassSettings` is true. Fields it understands, and the only ones the rebuild takes from that file:
 
 - `hostname`, `username`, `diskDevice`, `swapSize`, `timeZone`, `desktop`
-- `useFlakePassCli`, as the text `true` or `false`
 - `controldResolver`, written to `/persist/etc/controld-resolver`; it also turns on `useControlD`
 
 ```bash

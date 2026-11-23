@@ -198,17 +198,6 @@ in
             gnused
           ];
         };
-        update-pass-cli = {
-          description = "bump or check the pinned pass-cli (run in a config checkout)";
-          deps = [
-            curl
-            jq
-            gawk
-            coreutils
-            git
-            nix
-          ];
-        };
       };
 
       script =
@@ -260,7 +249,6 @@ in
       packages = commands // {
         # the installer reads it to offer the same apps
         app-catalog = catalogJson;
-        pass-cli = pkgs.callPackage ./_pass-cli.nix { };
 
         check-no-secrets = pkgs.writeShellApplication {
           name = "check-no-secrets";
