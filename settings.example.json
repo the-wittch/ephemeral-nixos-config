@@ -22,6 +22,7 @@
   "server": false,
   "sshKeys": [],
   "useOpenSnitch": true,
+  "flatpakUpdates": true,
   "usePassSettings": false,
   "passSettingsVault": "Personal",
   "passSettingsItem": "nixos-settings",
