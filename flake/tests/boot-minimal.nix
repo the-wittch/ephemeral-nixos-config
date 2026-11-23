@@ -57,6 +57,10 @@ in
 
           with subtest("ephemeral-setup is there to switch to the full profile"):
               machine.succeed("ephemeral-setup --help")
+              machine.succeed("ephemeral setup --help")
+              # what the small install leaves out says what adds it
+              status, out = machine.execute("ephemeral apps 2>&1")
+              assert status == 127 and "ephemeral setup" in out, f"{status}: {out}"
 
           with subtest("no home manager on the minimal profile, and zsh completion comes from the system"):
               machine.fail("systemctl cat home-manager-alice.service")

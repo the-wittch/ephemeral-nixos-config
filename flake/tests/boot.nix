@@ -283,6 +283,25 @@ in
                 machine.succeed("cryptsetup isLuks /mnt/usb/header.img")
                 assert machine.succeed("stat -c %a /mnt/usb/header.img").strip() == "600"
                 machine.fail("luks-header-backup /mnt/usb/header.img")
+
+            # a reinstall depends on this file, so it's restored here as docs/backup.md says
+            with subtest("an ephemeral-backup file opens with its passphrase only, and restores what it saved"):
+                # age asks on the terminal, twice when encrypting. What's typed before it asks goes to
+                # the sudo calls before it, which pass the terminal on to what they run, so it waits
+                machine.succeed("{ sleep 10; printf 'correct horse\\n'; sleep 2; printf 'correct horse\\n'; sleep 5; }"
+                                " | timeout 60 script -qec 'ephemeral-backup /mnt/usb' /dev/null >&2")
+                saved = machine.succeed("ls /mnt/usb/ephemeral-backup-*.tar.age").strip()
+                # the age ephemeral-backup itself uses, from its PATH; the system may not have one
+                age = machine.succeed("grep -o '/nix/store/[a-z0-9]*-age-[^/:]*/bin' \"$(command -v ephemeral-backup)\" | head -n 1").strip() + "/age"
+                machine.fail(f"printf 'wrong\\n' | timeout 30 script -qec '{age} -d -o /tmp/wrong.tar {saved}' /dev/null")
+                machine.fail("test -s /tmp/wrong.tar")
+                machine.succeed(f"printf 'correct horse\\n' | timeout 30 script -qec '{age} -d -o /tmp/restored.tar {saved}' /dev/null >&2")
+                files = machine.succeed("tar -tf /tmp/restored.tar | grep -v '/$'").split()
+                assert files, "the backup saved nothing"
+                machine.succeed("install -d /tmp/restore && tar -C /tmp/restore -xf /tmp/restored.tar")
+                for f in files:
+                    machine.succeed(f"cmp /tmp/restore/{f} /{f}")
+                machine.succeed("rm -rf /tmp/restore /tmp/restored.tar /tmp/wrong.tar")
                 machine.succeed("umount /mnt/usb && cryptsetup close cryptroot && rm /persist/fake-disk.img")
 
             with subtest("root is wiped, /persist is kept"):
@@ -310,6 +329,34 @@ in
                         assert machine.succeed(f"sha256sum {f}").split()[0] == before, f"{f} changed across the reboot"
                 got = machine.succeed("systemd-creds decrypt --name=t /persist/t.cred -").strip()
                 assert got == "boot-one-secret", f"credential from boot 1 no longer decrypts: {got!r}"
+
+            # the same paths the reboot above just showed are kept, as the explorer and --json see them
+            with subtest("ephemeral-doctor persistence agrees with what the reboot kept"):
+                report = json.loads(machine.succeed(
+                    "ephemeral-doctor persistence --json --path / --path /root-was-here --path /var/tmp "
+                    + " ".join(f"--path {p}" for p in kept_dirs + kept_files)))
+                at = {p["path"]: p for p in report["paths"]}
+                for p in kept_dirs + kept_files:
+                    assert at[p]["classification"] == "persistent" and at[p]["verified"], f"{p}: {at[p]}"
+                assert at["/"]["classification"] == "mixed", at["/"]
+                for p in ["/root-was-here", "/var/tmp"]:
+                    assert at[p]["classification"] == "ephemeral" and at[p]["survives_reboot"] is False, at[p]
+                assert report["as_root"] and report["summary"]["unverified"] == 0, report["summary"]
+                children = json.loads(machine.succeed("ephemeral-doctor persistence --children /var/lib"))
+                assert children["paths"][0]["path"] == "/var/lib" and len(children["paths"]) > 1, children
+                # a healthy machine has nothing critical, and the command says so with its exit code
+                machine.succeed("ephemeral-doctor persistence --audit >&2")
+                # the whole output: grep -q stops reading early, and the doctor's next line then fails
+                assert "set up now" in machine.succeed("ephemeral-doctor persistence")
+
+            with subtest("ephemeral reaches the same commands, and passes their exit codes back"):
+                assert "ephemeral persistence" in machine.succeed("ephemeral --help")
+                exported = json.loads(machine.succeed("ephemeral persistence export /var/lib/nixos"))
+                assert exported["paths"][0]["classification"] == "persistent", exported
+                machine.succeed("ephemeral persistence audit >&2")
+                assert "/home/" in machine.succeed("ephemeral doctor kept").splitlines()
+                status, _ = machine.execute("ephemeral no-such-command")
+                assert status == 2, f"an unknown command exited {status}"
           '';
       };
     };

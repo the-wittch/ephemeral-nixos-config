@@ -15,7 +15,7 @@
 | `laptop` | thermald on Intel, battery reporting, screen rotation and light sensors |
 | `fingerprint` | fingerprint login and sudo |
 | `secureBoot` | Secure Boot with keys made on this machine; it needs steps in the firmware, see [Secure Boot](security.md#secure-boot) |
-| `tpmUnlock` | unlock the disk with the TPM and a PIN, the passphrase as the fallback; needs `secureBoot`, and `ephemeral-setup` sets it, see [TPM unlock](security.md#tpm-unlock) |
+| `tpmUnlock` | unlock the disk with the TPM and a PIN, the passphrase as the fallback; needs `secureBoot`, and `ephemeral setup` sets it, see [TPM unlock](security.md#tpm-unlock) |
 | `encryptedDns` | `none` (the network's DNS, not encrypted), `cloudflare`, `quad9` or `adguard`: DNS over TLS to that provider. `custom` uses the servers in `customDns` |
 | `customDns` | DNS over TLS servers for `custom`, each as `address#name`, e.g. `194.242.2.2#dns.mullvad.net` |
 | `useControlD` | DNS over TLS through Control D, with your own resolver id; can't be on with `encryptedDns` |

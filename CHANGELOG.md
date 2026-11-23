@@ -2,7 +2,21 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
-## 5.0.1
+## 5.1.0
+
+### Added
+
+- `ephemeral`, one command for all the others: `ephemeral update`, `ephemeral doctor`, `ephemeral backup save` and the rest, as the [README](README.md#commands) lists, each running the command it names with the same options, questions and exit code. `ephemeral tui` is a menu of what's on the machine, and `ephemeral persistence` the explorer below. The old names, `ephemeral-update` and the rest, work as before. It's in the colours of [the site](https://ephemeral-nix.sh/), reads without colour, and uses the Linux console's own characters there.
+- `ephemeral-doctor persistence` shows what survives a reboot. In a terminal it's an explorer of the whole file system, with the details of each path beside it: PERSISTENT, EPHEMERAL, MIXED, UNKNOWN, or UNVERIFIED when the config keeps it and it isn't set up that way, how it's kept, which module keeps it, and whether the scheduled backups read it. `--path` asks about given paths, `--summary` prints what's declared and set up as a tree, and `--json` is the same for scripts, with its fields in [Keeping things across reboots](docs/persistence.md#for-scripts). It only reads.
+- `ephemeral-doctor persistence --audit` lists what isn't as the config says, as CRITICAL, WARNING, INFORMATIONAL or UNKNOWN, each with what it saw and what to do, and exits 1 when something is CRITICAL: a kept path that isn't mounted, its copy on `/persist` gone, `/` not from the subvolume that's reset, an owner or mode that isn't the config's, a mount from `/persist` nothing declares, and kept paths the backups don't read, besides what `audit` found before.
+
+### Changed
+
+- `ephemeral-doctor audit` is now `persistence --audit`, so it says more, and exits 1 when something is CRITICAL instead of always 0.
+- `/var/lib/boltd` is kept with the mode `bolt.service` gives it, `0755`, instead of `0700`, which preservation set at every boot and the service changed straight back.
+- `ephemeral-backup` could lose the passphrase you typed while it was still reading the files, so it asked again or waited. sudo hands what's typed on to the command it runs, here `tar`, which now reads nothing from the terminal.
+- [When something breaks](docs/troubleshooting.md) has the steps to install the boot loader again from the installer USB, when the boot menu doesn't come up.
+
 
 ### Changed
 

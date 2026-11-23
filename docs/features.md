@@ -7,7 +7,7 @@ snapper keeps read-only snapshots of `/persist`, and with it your home folder: 2
 To bring back a file or folder as it was:
 
 ```bash
-ephemeral-restore ~/path/to/file
+ephemeral snapshot restore ~/path/to/file
 ```
 
 It lists the snapshots that have it, with their dates, and puts back the one you pick. What's there now is moved aside first, to `<name>.before-restore-<time>`, so the restore can be undone. It works for your home folder and anything on `/persist`; for another kept path, give where it's kept, such as `/persist/var/lib/bluetooth`. `sudo snapper -c persist list` shows every snapshot.
@@ -16,10 +16,10 @@ Only root can read them, because old snapshots still contain old password hashes
 
 ## LUKS header backup
 
-If the LUKS header at the start of the disk gets damaged, the disk can't be unlocked even with the right passphrase. Keep a copy on a USB stick:
+If the LUKS header at the start of the disk gets damaged, the disk can't be unlocked even with the right passphrase. Keep a copy on a USB stick, with its name in place of `STICK`:
 
 ```bash
-luks-header-backup /run/media/$USER/<stick>/luks-header.img
+ephemeral backup header /run/media/$USER/STICK/luks-header.img
 ```
 
 It refuses to write onto the encrypted disk itself or into memory. The copy unlocks with every passphrase the disk had when it was made, so after changing or removing one, make a new copy and destroy the old ones.
@@ -30,7 +30,7 @@ smartd watches the disks and sends a desktop notification when one starts to fai
 
 ## Encrypted DNS
 
-By default, DNS goes unencrypted to whatever server the network hands out, so the network can see and change every name you look up. `ephemeral-setup` or the installer can send it over TLS to a public resolver instead, with no account:
+By default, DNS goes unencrypted to whatever server the network hands out, so the network can see and change every name you look up. `ephemeral setup` or the installer can send it over TLS to a public resolver instead, with no account:
 
 | `encryptedDns` | provider |
 |---|---|
@@ -60,8 +60,8 @@ It's strict: when the provider can't be reached over TLS, names don't resolve, r
 For your own filtering rules, Control D gives you a resolver id. It's only on the full system, and can't be on together with `encryptedDns`.
 
 ```bash
-controld-setup
-ephemeral-update
+ephemeral dns
+ephemeral update
 ```
 
 Stores your resolver id in `/persist/etc/controld-resolver` (root only, never in the Nix store) and sets `useControlD`. All DNS then goes over TLS to Control D, with no fallback servers. The id is part of the server name, `<id>.dns.controld.com`, which TLS sends unencrypted, so your network can see it. It tells Control D which settings to use; it doesn't log you in.
@@ -69,8 +69,8 @@ Stores your resolver id in `/persist/etc/controld-resolver` (root only, never in
 ## SMB shares
 
 ```bash
-smb-setup
-ephemeral-update
+ephemeral shares
+ephemeral update
 ```
 
 Asks for the server, share, user and password. The password goes to `/persist/etc/smb/<label>.creds` (root only) and the mount to the gitignored `smb-shares.json`. Mounts use SMB 3.1.1 with encryption (`seal`), and don't block booting if the server is away.
@@ -83,7 +83,7 @@ Laptops with both an NVIDIA and an Intel or AMD GPU also need [PRIME](https://wi
 
 ## GNOME extensions
 
-GNOME's own Extensions app is hidden; Extension Manager, ticked by default in `ephemeral-apps`, takes its place. The tray (AppIndicator) and Caffeine extensions come from Nix and are on by default. A copy of an extension in `~/.local/share/gnome-shell/extensions` takes precedence over the Nix one, so remove it there to use the version from this repo.
+GNOME's own Extensions app is hidden; Extension Manager, ticked by default in `ephemeral apps`, takes its place. The tray (AppIndicator) and Caffeine extensions come from Nix and are on by default. A copy of an extension in `~/.local/share/gnome-shell/extensions` takes precedence over the Nix one, so remove it there to use the version from this repo.
 
 ## Accessibility
 
@@ -103,7 +103,7 @@ NetworkManager handles WireGuard itself, so there's nothing extra to install. On
 
 ## Other VPNs and proxies
 
-For OpenVPN, OpenConnect (Cisco AnyConnect, GlobalProtect, Fortinet, Pulse) and strongSwan (IPsec, IKEv2), tick it in `ephemeral-apps` under Utilities. Its connections are then set up in the desktop's network settings, like WireGuard's; OpenVPN imports `.ovpn` files there. On the full system, OpenSnitch asks about the VPN program the first time it connects.
+For OpenVPN, OpenConnect (Cisco AnyConnect, GlobalProtect, Fortinet, Pulse) and strongSwan (IPsec, IKEv2), tick it in `ephemeral apps` under Utilities. Its connections are then set up in the desktop's network settings, like WireGuard's; OpenVPN imports `.ovpn` files there. On the full system, OpenSnitch asks about the VPN program the first time it connects.
 
 GNOME and Plasma set a proxy in their network settings, for the apps that follow them. For every program, set it in a module of your own:
 
@@ -149,7 +149,7 @@ SSH is off, and the firewall closes every port. To reach this machine when you'r
 }
 ```
 
-Then, from another device on your tailnet, `ssh <user>@<this machine>` gets a shell, where `ephemeral-update --previous` or `ephemeral-doctor` work as at the keyboard. Its host key is kept in `/persist/etc/ssh`. Anyone with the key and a place on your tailnet can log in, so keep the key in Proton Pass or a hardware key, and remove a lost device from the tailnet. There's no remote desktop. An SSH shell is enough to fix a machine, and it's one less service listening. For a machine that should always be reachable, see [Servers](servers.md).
+Then, from another device on your tailnet, `ssh <user>@<this machine>` gets a shell, where `ephemeral update --previous` or `ephemeral doctor` work as at the keyboard. Its host key is kept in `/persist/etc/ssh`. Anyone with the key and a place on your tailnet can log in, so keep the key in Proton Pass or a hardware key, and remove a lost device from the tailnet. There's no remote desktop. An SSH shell is enough to fix a machine, and it's one less service listening. For a machine that should always be reachable, see [Servers](servers.md).
 
 ## Scanners
 
@@ -174,7 +174,7 @@ With `extras` on, each new Ghostty window opens with fastfetch: the wallpaper's 
 
 ## Apps
 
-On the full system, `ephemeral-apps` is where apps come from. What isn't in it is part of the desktop or the system: the terminal, the file manager, the image and PDF viewers, the text editor and the services.
+On the full system, `ephemeral apps` is where apps come from. What isn't in it is part of the desktop or the system: the terminal, the file manager, the image and PDF viewers, the text editor and the services.
 
 It offers over 100 common apps by category: browsers, chat, office, password managers, media, graphics, games, development, terminal apps, utilities, security testing (Metasploit, Nmap, Burp Suite, Ghidra and more), Nerd Fonts, system tuning and virtual machines. "Search all apps" at the top of its menu finds one by the start of any word in its name or description. Labels show which ones are unfree, which come from Flathub, and which carry a warning (Docker and Wireshark add you to a powerful group, LocalSend opens a port, Nmap notes that OpenSnitch asks about each host a scan reaches). Every warning is shown again before anything is saved.
 
@@ -207,7 +207,7 @@ CI evaluates a machine with every app picked, so a package renamed upstream show
 
 ## System tuning
 
-zram swap and systemd-oomd are always on. Three more are in `ephemeral-apps` under System, off unless you pick them:
+zram swap and systemd-oomd are always on. Three more are in `ephemeral apps` under System, off unless you pick them:
 
 - **Profile-sync-daemon** keeps Firefox and Chromium-based browser profiles in RAM and copies them back every 10 minutes and at logout. It helps on slow disks; on an SSD you won't notice much.
 - **ananicy-cpp** raises or lowers the CPU and IO priority of known programs, using CachyOS's rules: games and audio up, compilers and indexers down.
@@ -215,11 +215,11 @@ zram swap and systemd-oomd are always on. Three more are in `ephemeral-apps` und
 
 ## GPU compute
 
-With `"nvidia"` set, the NVIDIA driver brings its CUDA and OpenCL libraries, so apps that ship their own CUDA, such as Blender and most AI tools, use the card. To give Podman containers the card too, set `hardware.nvidia-container-toolkit.enable = true` in a module of your own and start them with `--device nvidia.com/gpu=all`. On AMD graphics, ROCm OpenCL in `ephemeral-apps` under System adds OpenCL, and `clinfo` lists what it finds. nvtop, under Terminal, shows how busy the GPU is on either. The CUDA toolkit itself, for building CUDA code, is several gigabytes; use it from a project's own Nix shell rather than installing it.
+With `"nvidia"` set, the NVIDIA driver brings its CUDA and OpenCL libraries, so apps that ship their own CUDA, such as Blender and most AI tools, use the card. To give Podman containers the card too, set `hardware.nvidia-container-toolkit.enable = true` in a module of your own and start them with `--device nvidia.com/gpu=all`. On AMD graphics, ROCm OpenCL in `ephemeral apps` under System adds OpenCL, and `clinfo` lists what it finds. nvtop, under Terminal, shows how busy the GPU is on either. The CUDA toolkit itself, for building CUDA code, is several gigabytes; use it from a project's own Nix shell rather than installing it.
 
 ## Virtual machines
 
-`ephemeral-apps` has a Virtualization category:
+`ephemeral apps` has a Virtualization category:
 
 - **virt-manager** runs VMs through libvirt. For Windows 11, pick it as the OS and virt-manager adds the TPM 2.0 it needs. For Secure Boot, tick "Customize configuration before install" and check that Firmware under Overview is the `secure` UEFI image. The Secure Boot keys aren't enrolled, which Windows 11 accepts. VM disks and settings are kept in `/var/lib/libvirt`.
 - **VM Curator** is a terminal UI that runs QEMU directly, with ready-made profiles for over 130 systems. Its VMs live in a folder in your home, and it finds the UEFI firmware and TPM on its own.
@@ -227,16 +227,16 @@ With `"nvidia"` set, the NVIDIA driver brings its CUDA and OpenCL libraries, so 
 
 For something that's gone again when you stop it:
 
-- `distrobox ephemeral` opens a shell in a new Linux container, of any distribution, and deletes it when you leave. Distrobox is in `ephemeral-apps` under Development.
+- `distrobox ephemeral` opens a shell in a new Linux container, of any distribution, and deletes it when you leave. Distrobox is in `ephemeral apps` under Development.
 - `podman run --rm -it <image>` does the same with any container image.
 - `qemu-system-x86_64 -snapshot`, with your usual options, runs a VM from its disk image but keeps every change in temporary files, so the image is untouched when it stops.
 - `nix run path:/persist/etc/nixos#vm` boots your own config in a throwaway VM; see [Try it in a VM](vm.md).
 
 ## Flatpak
 
-Flathub is added system-wide from a pinned copy of its repo file, so its signing key can't be swapped. Install Flathub apps through `ephemeral-apps`, or with `flatpak install --user flathub <id>` for anything that isn't in the list.
+Flathub is added system-wide from a pinned copy of its repo file, so its signing key can't be swapped. Install Flathub apps through `ephemeral apps`, or with `flatpak install --user flathub <id>` for anything that isn't in the list.
 
-On the full system with a desktop, your Flatpak apps and the runtimes they use are updated once a week, at a random time in the week and only on mains power, and runtimes nothing uses any more are removed. An app that's open keeps its old version until you restart it. `ephemeral-doctor` says when the last update failed. OpenSnitch lets `flatpak` reach Flathub without asking; an app that downloads its files from its maker's own site while installing, as a few unfree ones do, still gets asked about. To update by hand: `flatpak update --user`. To turn the weekly update off, set `"flatpakUpdates": false`.
+On the full system with a desktop, your Flatpak apps and the runtimes they use are updated once a week, at a random time in the week and only on mains power, and runtimes nothing uses any more are removed. An app that's open keeps its old version until you restart it. `ephemeral doctor` says when the last update failed. OpenSnitch lets `flatpak` reach Flathub without asking; an app that downloads its files from its maker's own site while installing, as a few unfree ones do, still gets asked about. To update by hand: `flatpak update --user`. To turn the weekly update off, set `"flatpakUpdates": false`.
 
 ## direnv
 
@@ -249,18 +249,18 @@ direnv allow
 
 ## Proton Pass
 
-`settings-from-pass` reads an item (vault `passSettingsVault` and item `passSettingsItem`, by default `Personal` and `nixos-settings`) and writes `settings.from-pass.json`, which is merged over `settings.json` when `usePassSettings` is true. Fields it understands, and the only ones the rebuild takes from that file:
+`ephemeral pass settings` reads an item (vault `passSettingsVault` and item `passSettingsItem`, by default `Personal` and `nixos-settings`) and writes `settings.from-pass.json`, which is merged over `settings.json` when `usePassSettings` is true. Fields it understands, and the only ones the rebuild takes from that file:
 
 - `hostname`, `username`, `diskDevice`, `swapSize`, `timeZone`, `desktop`
 - `controldResolver`, written to `/persist/etc/controld-resolver`; it also turns on `useControlD`
 
 ```bash
 pass-cli login
-settings-from-pass
-ephemeral-update
+ephemeral pass settings
+ephemeral update
 ```
 
-`ssh-pubs-from-pass` writes the public half of each SSH key item in `passSshVault` to `~/.ssh/<title>.pub` (lowercased, with anything but letters, digits, `.`, `_` and `-` turned into `_`), for `IdentityFile` lines. It only opens SSH key items. `--list` shows what it would write. `PASS_SETTINGS_VAULT`, `PASS_SETTINGS_ITEM` and `PASS_SSH_VAULT` (or `--vault`) change where they look.
+`ephemeral pass ssh-keys` writes the public half of each SSH key item in `passSshVault` to `~/.ssh/<title>.pub` (lowercased, with anything but letters, digits, `.`, `_` and `-` turned into `_`), for `IdentityFile` lines. It only opens SSH key items. `--list` shows what it would write. `PASS_SETTINGS_VAULT`, `PASS_SETTINGS_ITEM` and `PASS_SSH_VAULT` (or `--vault`) change where they look.
 
 ### SSH agent
 

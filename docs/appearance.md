@@ -2,7 +2,7 @@
 
 ## Dotfiles
 
-Each file in `modules/dotfiles/` sets up one program in Home Manager: zsh with autosuggestions and syntax highlighting, git, starship, zoxide, neovim and ghostty, plus yazi (`y`), btop, fastfetch, atuin, fzf, bat and tealdeer with `extras`. Change them from your own modules, as shown in [Customizing](customizing.md#your-own-modules). When Home Manager has to replace a file that's already there, it renames the old one to `<name>.hm-backup` first. `$EDITOR` is neovim, or VS Code (`code --wait`) when it's picked in `ephemeral-apps`.
+Each file in `modules/dotfiles/` sets up one program in Home Manager: zsh with autosuggestions and syntax highlighting, git, starship, zoxide, neovim and ghostty, plus yazi (`y`), btop, fastfetch, atuin, fzf, bat and tealdeer with `extras`. Change them from your own modules, as shown in [Customizing](customizing.md#your-own-modules). When Home Manager has to replace a file that's already there, it renames the old one to `<name>.hm-backup` first. `$EDITOR` is neovim, or VS Code (`code --wait`) when it's picked in `ephemeral apps`.
 
 ![A new Ghostty window with extras: fastfetch, with btop and areofyl's fetch spinning below it](images/terminal.gif)
 

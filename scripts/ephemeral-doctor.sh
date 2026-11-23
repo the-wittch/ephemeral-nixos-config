@@ -7,13 +7,14 @@ header_marker=/persist/etc/ephemeral/luks-header-backup
 
 usage() {
   cat <<'USAGE'
-ephemeral-doctor [kept | lost | audit | --fix-root-reset]
+ephemeral-doctor [persistence | kept | lost | audit | --fix-root-reset]
 
 With nothing: check this machine, and say how to fix whatever isn't right.
 
+  persistence       what survives a reboot and what's backed up; --help for more
   kept              the folders and files kept across reboots
   lost              files written on / since this boot, which the next reboot removes
-  audit             service state in /var/lib that isn't kept, and kept folders nothing uses
+  audit             the same as persistence --audit
   --fix-root-reset  make / reset at every boot again, when the check says it doesn't
 USAGE
 }
@@ -58,15 +59,15 @@ fix_root_reset() {
   echo "Done. / is reset at the next boot; reboot when it suits you."
 }
 
-# EPHEMERAL_ROOT is for the tests
-audit() {
-  local root=${EPHEMERAL_ROOT:-} list d p unit dyn rest dir dirs entry owner group mode found=0
-  list=$root/etc/ephemeral/kept
-  [[ -r $list ]] || die "$list is missing; it comes with v4.1.0 and later"
-  [[ $EUID -eq 0 ]] || echo "Run it with sudo to see into folders only root can read." >&2
-  local -a kept others=()
+# The service state the engine can't see from mounts: what services tell systemd they keep in
+# /var/lib, and what's left on /persist that nothing keeps. Prints findings as a JSON array.
+# EPHEMERAL_ROOT is for the tests.
+service_findings() {
+  local root=${EPHEMERAL_ROOT:-} p unit dyn rest dir dirs entry owner group mode d
+  local -a kept
   local -A seen=()
-  mapfile -t kept <"$list"
+  mapfile -t kept < <(jq -r '.entries[] | if .kind == "directory" then .path + "/" else .path end' \
+    "$root/etc/ephemeral/kept.json")
 
   is_kept() {
     local k
@@ -88,64 +89,180 @@ audit() {
     s=$(du -sh "$1" 2>/dev/null | cut -f1) || true
     echo "${s:-?}"
   }
+  found() {
+    jq -n --arg severity "$1" --arg path "$2" --arg finding "$3" --arg explanation "$4" \
+      --arg evidence "$5" --arg remediation "$6" \
+      '{severity: $severity, path: $path, finding: $finding, explanation: $explanation,
+        evidence: $evidence, remediation: $remediation}'
+  }
 
-  echo "This only looks at /var/lib and the folders services tell systemd about."
-  echo "Everything else that the next reboot removes: ephemeral-doctor lost"
-  echo
-
-  # "<unit> <DynamicUser> <state dirs...>" per service
-  dirs=$(systemctl list-units --type=service --all --no-legend --plain 2>/dev/null | awk '{ print $1 }' |
-    xargs -r systemctl show -p Id,DynamicUser,StateDirectory -- 2>/dev/null |
-    awk -F= '/^Id=/ { id = $2 } /^DynamicUser=/ { dyn = $2 } /^StateDirectory=/ { sd = $2 }
-      /^$/ { if (sd != "") print id, dyn, sd; id = dyn = sd = "" }
-      END { if (sd != "") print id, dyn, sd }') || dirs=
-  while read -r unit dyn rest; do
-    [[ -n ${unit:-} ]] || continue
-    for dir in $rest; do
-      dir=${dir%%:*}
-      p=/var/lib/$dir
-      [[ $dyn == yes ]] && p=/var/lib/private/$dir
-      [[ -z ${seen[$p]:-} ]] || continue
-      seen[$p]=1
-      if ! is_kept "$p" && ! is_kept "/var/lib/$dir" && [[ -e $root$p ]] && has_content "$root$p"; then
-        # preservation sets a kept folder's owner and mode at every boot, so they're spelled out
-        # unless they're its defaults; systemd refuses DynamicUser unless /var/lib/private is 0700
-        read -r owner group mode < <(stat -c '%U %G %a' "$root$p")
-        entry="\"$p\""
-        if [[ $dyn == yes ]]; then
-          entry="{ directory = \"$p\"; mode = \"0700\"; configureParent = true; parent.mode = \"0700\"; }"
-        elif [[ "$owner $group $mode" != "root root 755" ]]; then
-          entry="{ directory = \"$p\"; user = \"$owner\"; group = \"$group\"; mode = \"0$mode\"; }"
+  {
+    # "<unit> <DynamicUser> <state dirs...>" per service
+    dirs=$(systemctl list-units --type=service --all --no-legend --plain 2>/dev/null | awk '{ print $1 }' |
+      xargs -r systemctl show -p Id,DynamicUser,StateDirectory -- 2>/dev/null |
+      awk -F= '/^Id=/ { id = $2 } /^DynamicUser=/ { dyn = $2 } /^StateDirectory=/ { sd = $2 }
+        /^$/ { if (sd != "") print id, dyn, sd; id = dyn = sd = "" }
+        END { if (sd != "") print id, dyn, sd }') || dirs=
+    while read -r unit dyn rest; do
+      [[ -n ${unit:-} ]] || continue
+      for dir in $rest; do
+        dir=${dir%%:*}
+        p=/var/lib/$dir
+        [[ $dyn == yes ]] && p=/var/lib/private/$dir
+        [[ -z ${seen[$p]:-} ]] || continue
+        seen[$p]=1
+        if ! is_kept "$p" && ! is_kept "/var/lib/$dir" && [[ -e $root$p ]] && has_content "$root$p"; then
+          # preservation sets a kept folder's owner and mode at every boot, so they're spelled out
+          # unless they're its defaults; systemd refuses DynamicUser unless /var/lib/private is 0700
+          read -r owner group mode < <(stat -c '%U %G %a' "$root$p")
+          entry="\"$p\""
+          if [[ $dyn == yes ]]; then
+            entry="{ directory = \"$p\"; mode = \"0700\"; configureParent = true; parent.mode = \"0700\"; }"
+          elif [[ "$owner $group $mode" != "root root 755" ]]; then
+            entry="{ directory = \"$p\"; user = \"$owner\"; group = \"$group\"; mode = \"0$mode\"; }"
+          fi
+          found warning "$p" "$unit keeps its state in $p ($(size "$root$p")), which isn't kept, so it starts over at every boot" \
+            "the service tells systemd this is its state, and it has files in it now" \
+            "StateDirectory=$dir in $unit; it's on / and not in /etc/ephemeral/kept.json" \
+            "to keep it, add $entry to preservation.preserveAt.\"/persist\".directories, as in docs/persistence.md"
         fi
-        warn "$unit keeps its state in $p ($(size "$root$p")), which isn't kept, so it starts over at every boot" \
-          "to keep it, add $entry to preservation.preserveAt.\"/persist\".directories, as in docs/persistence.md"
-        found=1
-      fi
+      done
+    done <<<"$dirs"
+
+    for d in "$root"/var/lib/* "$root"/var/lib/private/*; do
+      p=${d#"$root"}
+      [[ -e $d && ! -L $d && $p != /var/lib/private ]] || continue
+      [[ -z ${seen[$p]:-} ]] || continue
+      is_kept "$p" || holds_kept "$p" || ! has_content "$d" ||
+        found informational "$p" "$p ($(size "$d")) isn't kept, so it's gone at the next boot, which is usually fine" \
+          "no service says it's its state, so it's most likely made again when needed" \
+          "it has files, and nothing in /etc/ephemeral/kept.json covers it" \
+          "nothing to do, unless you know it matters; then keep it as in docs/persistence.md"
     done
-  done <<<"$dirs"
-  ((found)) || ok "every service's declared state is kept"
 
-  for d in "$root"/var/lib/* "$root"/var/lib/private/*; do
-    p=${d#"$root"}
-    [[ -e $d && ! -L $d && $p != /var/lib/private ]] || continue
-    [[ -z ${seen[$p]:-} ]] || continue
-    is_kept "$p" || holds_kept "$p" || ! has_content "$d" || others+=("$p ($(size "$d"))")
+    for d in "$root"/persist/var/lib/* "$root"/persist/var/lib/private/*; do
+      p=${d#"$root"/persist}
+      [[ -e $d && $p != /var/lib/private ]] || continue
+      is_kept "$p" || holds_kept "$p" && continue
+      found warning "/persist$p" "/persist$p ($(size "$d")) is still on disk, but this system doesn't keep $p any more, so nothing sees it" \
+        "it was kept by a feature that's off now, or by an entry that's gone" \
+        "nothing in /etc/ephemeral/kept.json is $p or in it" \
+        "if you won't turn it back on: sudo rm -rf /persist$p"
+    done
+  } | jq -s .
+}
+
+persistence_usage() {
+  cat <<'USAGE'
+ephemeral-doctor persistence [--summary | --path PATH... | --audit] [--json]
+
+In a terminal, with nothing: an explorer of what survives a reboot. Otherwise, or with
+--summary: what the config keeps, and how this machine has it now.
+
+  --path PATH      what happens to PATH at a reboot, and whether it's backed up
+  --audit          what isn't set up as the config says, or isn't kept and may matter;
+                   exits 1 when something is wrong (CRITICAL)
+  --json           the same, as JSON (docs/persistence.md describes the fields)
+  --children DIR   DIR and what's directly in it, as JSON; what the explorer reads
+
+PERSISTENT  on /persist, mounted or linked from it, or on /nix, /var/log or /boot
+EPHEMERAL   reset at every boot, or held in memory
+MIXED       a folder that holds both kept and reset things
+UNKNOWN     another disk, a network share, firmware storage, or something it can't read
+UNVERIFIED  declared as kept, but not set up that way now
+
+It only reads. Run it with sudo to see into folders only root can read.
+USAGE
+}
+
+# the paths the summary and the audit look at: what's declared, the folders that hold it and
+# the configured file systems, and for the audit the copies on /persist too
+persist_overview_paths() {
+  jq -j --argjson audit "$2" '
+    ([.entries[].path] + [.filesystems[].mountPoint] + ["/"]) as $p
+    | ($p | map(. as $x | ($x | split("/")) as $s | range(1; $s | length) | $s[0:.] | join("/")
+        | if . == "" then "/" else . end)) as $up
+    | ($p + $up + (if $audit then [.entries[] | .path as $x | "/persist" + $x] else [] end))
+    | unique | .[] | . + "\u0000"' "$1/kept.json"
+}
+
+# DIR and up to 2000 of the paths directly in it, sorted; says in meta.json when there are more
+persist_children() {
+  local root=${EPHEMERAL_ROOT:-} dir=$1 work=$2 n
+  local -a kids=()
+  mapfile -d '' -t kids < <(find "$root$dir" -mindepth 1 -maxdepth 1 -print0 2>/dev/null | sort -z | head -z -n 2001)
+  n=${#kids[@]}
+  ((n <= 2000)) || kids=("${kids[@]:0:2000}")
+  jq --argjson t "$((n > 2000))" '.truncated = ($t == 1)' "$work/meta.json" >"$work/meta.new" &&
+    mv "$work/meta.new" "$work/meta.json"
+  printf '%s\0' "$dir"
+  ((${#kids[@]} == 0)) || printf '%s\0' "${kids[@]#"$root"}"
+}
+
+persistence() {
+  local root=${EPHEMERAL_ROOT:-} json=0 audit=0 summary=0 children="" work code
+  local -a paths=()
+  while (($#)); do
+    case $1 in
+      --audit) audit=1 ;;
+      --json) json=1 ;;
+      --summary) summary=1 ;;
+      --path)
+        (($# >= 2)) || usage_error
+        paths+=("$(realpath -ms -- "$2")")
+        shift
+        ;;
+      --children)
+        (($# >= 2)) || usage_error
+        children=$(realpath -ms -- "$2")
+        shift
+        ;;
+      -h | --help)
+        persistence_usage
+        exit 0
+        ;;
+      *) usage_error ;;
+    esac
+    shift
   done
-  if ((${#others[@]})); then
-    echo "· also in /var/lib and gone at the next boot, which is usually fine:"
-    printf '    %s\n' "${others[@]}"
+  if ((! json && ! audit && ! summary)) && [[ -z $children && ${#paths[@]} -eq 0 && -t 0 && -t 1 ]] &&
+    command -v ephemeral >/dev/null; then
+    exec ephemeral persistence --engine "$0"
   fi
+  [[ $EUID -eq 0 || $json -eq 1 || -n $children ]] || echo "Run it with sudo to see into folders only root can read." >&2
 
-  found=0
-  for d in "$root"/persist/var/lib/* "$root"/persist/var/lib/private/*; do
-    p=${d#"$root"/persist}
-    [[ -e $d && $p != /var/lib/private ]] || continue
-    is_kept "$p" || holds_kept "$p" && continue
-    warn "/persist$p ($(size "$d")) is still on disk, but this system doesn't keep $p any more, so nothing sees it" \
-      "if you won't turn it back on: sudo rm -rf /persist$p"
-    found=1
-  done
-  ((found)) || ok "everything in /persist/var/lib is in use"
+  work=$(persist_open)
+  # shellcheck disable=SC2064 # the folder is known now
+  trap "persist_close '$work'" EXIT
+  jq --arg now "$(date -Is)" --arg release "$(cat "$root/etc/ephemeral/release" 2>/dev/null || echo unknown)" \
+    --argjson audit "$audit" '. + {now: $now, release: $release, audit: ($audit == 1)}' \
+    "$work/meta.json" >"$work/meta.new" && mv "$work/meta.new" "$work/meta.json"
+  ((! audit)) || service_findings >"$work/extra.json"
+
+  if [[ -n $children ]]; then
+    persist_children "$children" "$work"
+  elif ((${#paths[@]})); then
+    printf '%s\0' "${paths[@]}"
+  else
+    persist_overview_paths "$work" "$( ((audit)) && echo true || echo false)"
+  fi | persist_classify "$work"
+
+  if ((json)) || [[ -n $children ]]; then
+    persist_run json "$work"
+    ((! audit)) || (($(persist_run critical "$work") == 0)) || exit 1
+  elif ((audit)); then
+    echo "✗ CRITICAL  ! WARNING  · INFORMATIONAL  ? UNKNOWN"
+    echo
+    persist_run audit "$work"
+    code=$(persist_run critical "$work")
+    ((code == 0)) || exit 1
+  elif ((${#paths[@]})); then
+    persist_run details "$work"
+  else
+    persist_run summary "$work"
+    echo
+    persist_run tree "$work"
+  fi
 }
 
 case ${1:-} in
@@ -154,7 +271,13 @@ case ${1:-} in
     exit 0
     ;;
   audit)
-    audit
+    shift
+    persistence --audit "$@"
+    exit 0
+    ;;
+  persistence)
+    shift
+    persistence "$@"
     exit 0
     ;;
   kept)

@@ -31,7 +31,7 @@ Every fact the two repos share has one owner. The other side reads it from a rel
 | the wallpaper and the snowflake logo | `assets/wallpaper.svg` and `modules/branding/_logo.sh` | the desktops, the splash, fastfetch, and the installer, through the `wallpaper` and `welcome-logo` packages |
 | the app catalog: ids, labels, categories, defaults, desktops | `ephemeral.apps`, one file per category in `modules/apps/` | `ephemeral-apps`, `host-builder.nix`, and the installer, through the `app-catalog` package |
 | the disk layout | `modules/_disko-layout.nix` | disko when installing, the rebuild, and the disk test |
-| what's kept across reboots | the feature that needs it, in `preservation.preserveAt."/persist"` | preservation, `ephemeral-doctor kept` and `audit`, and the boot test, which reads the same list |
+| what's kept across reboots | the feature that needs it, in `preservation.preserveAt."/persist"` | preservation; `ephemeral-doctor`, through `/etc/ephemeral/kept.json`, which `persist.nix` builds from it with the module that declares each path; and the boot test, which reads the same list |
 | the version | the newest heading in `CHANGELOG.md` | `modules/release.nix`, `ephemeral-update --list`, and the release scripts |
 | the installer's screens, their wording apart from the menus, disk checks and install steps | the installer | nothing here |
 
@@ -49,7 +49,7 @@ Where things go:
 - **`modules/` is what machines get.** Every `.nix` file in it is a flake-parts module, loaded by import-tree. Paths with `/_` are skipped, and that is the only exclusion.
 - **`flake/` is this repo's own outputs**: checks, VM tests, `lib.mkFlake` and this repo's host. Machines never load it.
 - **`tests/`** holds the machines CI evaluates: one per desktop and profile, and one per optional feature.
-- **`scripts/`** holds the helper commands' source; `modules/packages/packages.nix` builds them.
+- **`scripts/`** holds the helper commands' source; `modules/packages/packages.nix` builds them, each from its entry in the `tools` table, which also gives the words `ephemeral` reaches it by. The commands are shell. `scripts/ephemeral` is Go: the `ephemeral` command, which runs them, and the persistence explorer and the menu, which only display what `ephemeral-doctor persistence --json` says, so there is one place that classifies. Its look is `internal/style`, from the site's palette, and it uses the Bubble Tea and Lip Gloss versions the installer's screens do.
 
 ## Modules
 
@@ -114,7 +114,7 @@ Encrypted DNS and Control D have no plaintext fallback: `boot` checks it with Co
 
 ## Helper commands
 
-1. **One command per job.** `ephemeral-update` rebuilds, checks, rolls back and moves releases; `ephemeral-doctor` diagnoses. Nothing tells a user to type `nixos-rebuild` or `path:` for an everyday job.
+1. **One command per job.** `ephemeral-update` rebuilds, checks, rolls back and moves releases; `ephemeral-doctor` diagnoses. `ephemeral` is how a user reaches them, `ephemeral update` running `ephemeral-update` in its place with the same arguments, so it's one more name for each, never a second way of doing a job; it does nothing itself apart from displaying, and never adds sudo. Nothing tells a user to type `nixos-rebuild` or `path:` for an everyday job.
 2. **Every error says what to do next**, in plain words, with the command when there is one.
 3. **Commands that change the machine ask first** and say what they're about to change. Commands that only look don't need sudo.
 4. **`ephemeral-update` only offers a newer, well-formed release tag**, shows what changed, and names a new major version before asking.

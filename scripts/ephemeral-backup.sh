@@ -49,8 +49,10 @@ echo "Pick a passphrase, and keep it somewhere other than this machine."
 # written under another name until it's complete, so a stopped backup isn't mistaken for one
 partial=$out.partial
 trap 'rm -f "$partial"' EXIT
-# age reads the passphrase from the terminal, so the archive can come in on stdin
-sudo tar -C / -cf - "${paths[@]#/}" | age -p -o "$partial"
+# age reads the passphrase from the terminal, so the archive can come in on stdin. tar gets
+# /dev/null: sudo hands what's typed to the command it runs, and would take the passphrase
+# from age while tar is still going
+sudo tar -C / -cf - "${paths[@]#/}" </dev/null | age -p -o "$partial"
 sync -f "$partial"
 mv -f "$partial" "$out"
 
