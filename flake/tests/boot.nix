@@ -286,14 +286,16 @@ in
 
             # a reinstall depends on this file, so it's restored here as docs/backup.md says
             with subtest("an ephemeral-backup file opens with its passphrase only, and restores what it saved"):
-                # age asks on the terminal, twice when encrypting
-                machine.succeed("printf 'correct horse\\ncorrect horse\\n' | script -qec 'ephemeral-backup /mnt/usb' /dev/null >&2")
+                # age asks on the terminal, twice when encrypting. What's typed before it asks goes to
+                # the sudo calls before it, which pass the terminal on to what they run, so it waits
+                machine.succeed("{ sleep 10; printf 'correct horse\\n'; sleep 2; printf 'correct horse\\n'; sleep 5; }"
+                                " | timeout 60 script -qec 'ephemeral-backup /mnt/usb' /dev/null >&2")
                 saved = machine.succeed("ls /mnt/usb/ephemeral-backup-*.tar.age").strip()
                 # the age ephemeral-backup itself uses, from its PATH; the system may not have one
                 age = machine.succeed("grep -o '/nix/store/[a-z0-9]*-age-[^/:]*/bin' \"$(command -v ephemeral-backup)\" | head -n 1").strip() + "/age"
-                machine.fail(f"printf 'wrong\\n' | script -qec '{age} -d -o /tmp/wrong.tar {saved}' /dev/null")
+                machine.fail(f"printf 'wrong\\n' | timeout 30 script -qec '{age} -d -o /tmp/wrong.tar {saved}' /dev/null")
                 machine.fail("test -s /tmp/wrong.tar")
-                machine.succeed(f"printf 'correct horse\\n' | script -qec '{age} -d -o /tmp/restored.tar {saved}' /dev/null >&2")
+                machine.succeed(f"printf 'correct horse\\n' | timeout 30 script -qec '{age} -d -o /tmp/restored.tar {saved}' /dev/null >&2")
                 files = machine.succeed("tar -tf /tmp/restored.tar | grep -v '/$'").split()
                 assert files, "the backup saved nothing"
                 machine.succeed("install -d /tmp/restore && tar -C /tmp/restore -xf /tmp/restored.tar")

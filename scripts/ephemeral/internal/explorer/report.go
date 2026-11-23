@@ -93,12 +93,26 @@ func engineLoader(engine string) loader {
 	return func(dir string) (report, error) {
 		out, err := exec.Command(engine, "persistence", "--children", dir).Output()
 		if err != nil {
-			msg := err.Error()
-			if ee, ok := err.(*exec.ExitError); ok && len(ee.Stderr) > 0 {
-				msg = strings.TrimSpace(string(ee.Stderr))
-			}
-			return report{}, fmt.Errorf("ephemeral-doctor couldn't read %s: %s", dir, msg)
+			return report{}, engineError(dir, err)
 		}
 		return parseReport(out)
 	}
+}
+
+// engineError is one line, since it's shown in the tree: a doctor from before config 5.1.0
+// refuses persistence as an unknown command (exit 2), and anything else gives its first line
+func engineError(dir string, err error) error {
+	ee, ok := err.(*exec.ExitError)
+	if !ok {
+		return fmt.Errorf("couldn't run ephemeral-doctor: %v", err)
+	}
+	if ee.ExitCode() == 2 {
+		return fmt.Errorf("this machine's ephemeral-doctor is older than config 5.1.0, which it needs; ephemeral update gets it")
+	}
+	for _, l := range strings.Split(string(ee.Stderr), "\n") {
+		if l = strings.TrimSpace(l); l != "" {
+			return fmt.Errorf("ephemeral-doctor couldn't read %s: %s", dir, l)
+		}
+	}
+	return fmt.Errorf("ephemeral-doctor couldn't read %s: it exited %d", dir, ee.ExitCode())
 }

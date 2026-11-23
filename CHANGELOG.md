@@ -14,6 +14,7 @@ Breaking changes are listed first in each release, with what to do about them. R
 
 - `ephemeral-doctor audit` is now `persistence --audit`, so it says more, and exits 1 when something is CRITICAL instead of always 0.
 - `/var/lib/boltd` is kept with the mode `bolt.service` gives it, `0755`, instead of `0700`, which preservation set at every boot and the service changed straight back.
+- `ephemeral-backup` could lose the passphrase you typed while it was still reading the files, so it asked again or waited. sudo hands what's typed on to the command it runs, here `tar`, which now reads nothing from the terminal.
 - [When something breaks](docs/troubleshooting.md) has the steps to install the boot loader again from the installer USB, when the boot menu doesn't come up.
 
 

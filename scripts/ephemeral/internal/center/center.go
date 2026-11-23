@@ -18,6 +18,7 @@ type item struct {
 	argv        []string // what runs; the first is the command's name
 	ask         string   // set when it needs one argument first, and what to call it
 	show        bool     // its output is shown here rather than given the terminal
+	quit        bool     // leaves the menu, as q does
 }
 
 type section struct {
@@ -132,6 +133,8 @@ func New(cs []commands.Command, self, release string, lookPath func(string) (str
 			m.rows = append(m.rows, row{it: it})
 		}
 	}
+	// the way out, as an entry too, below the rest
+	m.rows = append(m.rows, row{it: &item{title: "Quit", help: "leave the menu; q does the same", quit: true}})
 	m.cursor = m.next(0, 1)
 	return m
 }
@@ -248,6 +251,9 @@ func (m Model) key(k tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		it := m.rows[m.cursor].it
+		if it.quit {
+			return m, tea.Quit
+		}
 		if it.ask != "" {
 			m.asking = it
 			return m, nil
@@ -298,6 +304,9 @@ func (m Model) View() string {
 				}
 				body = append(body, "  "+style.Label(r.header))
 				continue
+			}
+			if r.it.quit {
+				body = append(body, "")
 			}
 			line := "    " + r.it.title
 			if i == m.cursor {

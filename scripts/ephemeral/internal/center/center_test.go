@@ -86,7 +86,7 @@ var all = []string{"ephemeral-doctor", "ephemeral-update", "ephemeral-backup", "
 func TestListsWhatsInstalledInItsSection(t *testing.T) {
 	m, _ := start(t, 100, 30, all...)
 	got := strings.Join(titlesOf(m), " | ")
-	want := "[SYSTEM] | Check this machine | Update | Apps | [DATA] | What survives a reboot | Save settings and secrets for a reinstall | Scheduled backups | [MACHINE] | Details for a bug report"
+	want := "[SYSTEM] | Check this machine | Update | Apps | [DATA] | What survives a reboot | Save settings and secrets for a reinstall | Scheduled backups | [MACHINE] | Details for a bug report | Quit"
 	if got != want {
 		t.Fatalf("menu\n got %s\nwant %s", got, want)
 	}
@@ -95,7 +95,7 @@ func TestListsWhatsInstalledInItsSection(t *testing.T) {
 func TestTheSmallInstallLeavesOutWhatItHasnt(t *testing.T) {
 	m, _ := start(t, 100, 30, "ephemeral-doctor", "ephemeral-update")
 	got := strings.Join(titlesOf(m), " | ")
-	if got != "[SYSTEM] | Check this machine | Update | [DATA] | What survives a reboot" {
+	if got != "[SYSTEM] | Check this machine | Update | [DATA] | What survives a reboot | Quit" {
 		t.Fatalf("small install menu: %s", got)
 	}
 	if !strings.Contains(m.View(), "4 more come with the full system") {
@@ -180,7 +180,7 @@ func TestEveryLineFitsAtAnySize(t *testing.T) {
 func TestTheSelectionStaysInViewInAShortWindow(t *testing.T) {
 	m, _ := start(t, 80, 8, all...)
 	m = press(m, "end")
-	if !strings.Contains(ansi.Strip(m.View()), "› Details for a bug report") {
+	if !strings.Contains(ansi.Strip(m.View()), "› Quit") {
 		t.Fatalf("the last entry isn't in view:\n%s", ansi.Strip(m.View()))
 	}
 }
@@ -199,5 +199,20 @@ func TestTheSelectionShowsWithoutColour(t *testing.T) {
 	}
 	if !strings.HasPrefix(ansi.Strip(m.View()), "EPHEMERAL NIX / MENU") {
 		t.Fatalf("header: %q", strings.Split(ansi.Strip(m.View()), "\n")[0])
+	}
+}
+
+func TestQuitIsAnEntryToo(t *testing.T) {
+	m, rec := start(t, 100, 30, all...)
+	m = press(m, "end")
+	if m.rows[m.cursor].it.title != "Quit" {
+		t.Fatalf("the last entry is %q", m.rows[m.cursor].it.title)
+	}
+	_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	if cmd == nil {
+		t.Fatalf("Quit did nothing")
+	}
+	if _, ok := cmd().(tea.QuitMsg); !ok || len(rec.ran) != 0 {
+		t.Fatalf("Quit didn't quit, or ran %v", rec.ran)
 	}
 }

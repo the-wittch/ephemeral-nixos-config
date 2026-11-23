@@ -202,7 +202,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		n := msg.n
 		n.loading = false
 		if msg.err != nil {
+			// the tree has room for the start of it; the footer and the details show it all
 			n.err = msg.err.Error()
+			m.status = n.err
 			m.target = ""
 			return m, nil
 		}

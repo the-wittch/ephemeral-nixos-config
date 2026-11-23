@@ -125,7 +125,7 @@ func (m model) footer() string {
 		return "go to: " + shown(m.typed) + "▏ " + style.Keys(m.width, "enter", "go", "esc", "cancel")
 	}
 	if m.status != "" {
-		return sError.Render(m.status)
+		return sError.Render(shown(m.status))
 	}
 	if !m.wide() {
 		return style.Keys(m.width, "↑↓", "move", "→", "open", "←", "close", "tab", "details", "/", "search",
@@ -174,7 +174,7 @@ func (m model) treeView(w, h int) []string {
 			case n.loading && len(n.children) == 0:
 				out = append(out, pad+sFaint.Render("reading…"))
 			case n.err != "":
-				out = append(out, pad+sError.Render(n.err))
+				out = append(out, pad+sError.Render(shown(n.err)))
 			case n.loaded && len(n.children) == 0 && n.entry.Exists == "yes" && n.entry.Classification != "unknown":
 				out = append(out, pad+sFaint.Render("empty, or nothing it can read"))
 			case n.partial:
@@ -320,6 +320,9 @@ func (m model) detailView(w, h int) []string {
 			listed += sFaint.Render("  (not all of it)")
 		}
 		add("directly in it", listed)
+	}
+	if n.err != "" {
+		add("couldn't read", shown(n.err))
 	}
 	for _, note := range e.Notes {
 		add("note", shown(note))

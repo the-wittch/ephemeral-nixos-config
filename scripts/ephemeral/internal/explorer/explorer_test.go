@@ -2,6 +2,7 @@ package explorer
 
 import (
 	"errors"
+	"os"
 	"strings"
 	"testing"
 
@@ -268,5 +269,36 @@ func TestTheHeaderNamesTheScreenAndTheRelease(t *testing.T) {
 	head := strings.Split(ansi.Strip(m.View()), "\n")[0]
 	if !strings.HasPrefix(head, "EPHEMERAL NIX / PERSISTENCE") || !strings.HasSuffix(head, "v5.1.0") {
 		t.Fatalf("header %q", head)
+	}
+}
+
+func TestAnOlderDoctorSaysSoInOneLine(t *testing.T) {
+	dir := t.TempDir()
+	old := dir + "/ephemeral-doctor"
+	// what a doctor from before 5.1.0 does with persistence: its usage, many lines, and exit 2
+	script := "#!/bin/sh\nprintf 'ephemeral-doctor [kept | lost | audit]\\n\\nWith nothing: check\\n' >&2\nexit 2\n"
+	if err := os.WriteFile(old, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	m := newModel(engineLoader(old))
+	next, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 20})
+	m = run(t, next.(model), next.(model).Init())
+	v := ansi.Strip(m.View())
+	if !strings.Contains(v, "older than config 5.1.0") || strings.Contains(v, "With nothing") {
+		t.Fatalf("the view:\n%s", v)
+	}
+	if lines := strings.Split(m.View(), "\n"); len(lines) > 20 || !strings.HasPrefix(ansi.Strip(lines[0]), "EPHEMERAL NIX") {
+		t.Fatalf("the error pushed the header off: %d lines, first %q", len(lines), ansi.Strip(lines[0]))
+	}
+}
+
+func TestAnErrorWithNewlinesStaysOneLine(t *testing.T) {
+	m, _ := start(t, 120, 20)
+	m.root.children = append(m.root.children, &node{entry: dir("/gone", "unknown"), parent: m.root})
+	m = run(t, m, nil, "end", "right")
+	gone := m.selected()
+	gone.err = "first\nsecond\nthird"
+	if lines := strings.Split(m.View(), "\n"); len(lines) > 20 || !strings.HasPrefix(ansi.Strip(lines[0]), "EPHEMERAL NIX") {
+		t.Fatalf("%d lines, first %q", len(lines), ansi.Strip(lines[0]))
 	}
 }
