@@ -174,7 +174,9 @@ in
                 for ipt in ["iptables", "ip6tables"]:
                     rules = machine.succeed(f"{ipt} -S nixos-fw").splitlines()
                     assert rules[-1] == "-A nixos-fw -j nixos-fw-log-refuse", f"{ipt} nixos-fw doesn't end in a refusal:\n" + "\n".join(rules)
-                    opened = [r for r in rules if "-p tcp" in r and "nixos-fw-accept" in r]
+                    # Podman's DNS for its containers, on its own bridge, as exposure-eval allows
+                    podman_dns = "-A nixos-fw -i podman+ -p tcp -m tcp --dport 53 -j nixos-fw-accept"
+                    opened = [r for r in rules if "-p tcp" in r and "nixos-fw-accept" in r and r != podman_dns]
                     assert opened == [], f"{ipt} accepts TCP ports:\n" + "\n".join(opened)
                 machine.fail("systemctl is-active --quiet sshd.service")
 
@@ -240,7 +242,7 @@ in
                 ).strip()
                 assert "appindicatorsupport@rgcjonas.gmail.com" in ext, f"enabled-extensions is {ext!r}"
                 assert "caffeine@patapon.info" in ext, f"enabled-extensions is {ext!r}"
-                machine.succeed("grep -qx NoDisplay=true /run/current-system/sw/share/applications/org.gnome.Extensions.desktop")
+                machine.fail("test -e /run/current-system/sw/share/applications/org.gnome.Extensions.desktop")
                 machine.succeed("test -e /run/current-system/sw/share/applications/com.mattjakeman.ExtensionManager.desktop")
                 machine.succeed("test -d /run/current-system/sw/share/gnome-shell/extensions/appindicatorsupport@rgcjonas.gmail.com")
 
