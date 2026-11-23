@@ -1,11 +1,19 @@
 {
   flake.modules.nixos.full =
-    { config, pkgs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     let
       user = config.ephemeral.settings.username;
       group = config.users.users.${user}.group;
       dir = "/persist/etc/syncthing";
       passwordFile = "${dir}/gui-password";
+      gui = lib.splitString ":" config.services.syncthing.guiAddress;
+      guiIp = lib.head gui;
+      guiPort = lib.last gui;
     in
     {
       services.syncthing = {
@@ -21,6 +29,39 @@
         # can read.
         guiPasswordFile = passwordFile;
         settings.gui.user = user;
+      };
+
+      # syncthing-init sets the user and password through Syncthing's API with curl at every start,
+      # and OpenSnitch holds back loopback connections too
+      services.opensnitch.rules.syncthing-init = {
+        name = "syncthing-init";
+        enabled = true;
+        action = "allow";
+        duration = "always";
+        operator = {
+          type = "list";
+          operand = "list";
+          list = [
+            {
+              type = "simple";
+              sensitive = false;
+              operand = "process.path";
+              data = "${pkgs.curl}/bin/curl";
+            }
+            {
+              type = "simple";
+              sensitive = false;
+              operand = "dest.ip";
+              data = guiIp;
+            }
+            {
+              type = "simple";
+              sensitive = false;
+              operand = "dest.port";
+              data = guiPort;
+            }
+          ];
+        };
       };
 
       systemd.tmpfiles.rules = [
