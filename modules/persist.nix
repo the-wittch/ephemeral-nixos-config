@@ -83,6 +83,34 @@
         };
       };
 
+      # A running system can't move from impermanence's mounts to these: the old ones are taken
+      # down before anything puts the initrd's back, /etc/machine-id among them, and the desktop
+      # stops. Systems with this key are already on preservation.
+      system.switch.inhibitors.ephemeral-persistence = "preservation";
+      system.preSwitchChecks.ephemeral-persistence = ''
+        case ''${2-} in
+          switch | test) ;;
+          *) exit 0 ;;
+        esac
+        running=/run/current-system/switch-inhibitors
+        if [[ -e /run/current-system ]] &&
+          ! ${lib.getExe pkgs.jq} -e '."ephemeral-persistence"' "$running" >/dev/null 2>&1; then
+          cat <<'EOF'
+
+        This release keeps files with preservation instead of impermanence, and a running
+        system can't be moved over. Nothing has been changed. Set it up for the next boot
+        instead, then reboot:
+
+          nh os boot path:/persist/etc/nixos --hostname nixos
+          systemctl reboot
+
+        The release itself is fine, so there's no need to go back to the old one.
+
+        EOF
+          exit 1
+        fi
+      '';
+
       boot.initrd.systemd.tmpfiles.settings.preservation."/sysroot/persist/etc/machine-id".f = {
         argument = "uninitialized";
       };
