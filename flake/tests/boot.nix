@@ -346,14 +346,15 @@ in
                 assert children["paths"][0]["path"] == "/var/lib" and len(children["paths"]) > 1, children
                 # a healthy machine has nothing critical, and the command says so with its exit code
                 machine.succeed("ephemeral-doctor persistence --audit >&2")
-                machine.succeed("ephemeral-doctor persistence | grep -q 'set up now'")
+                # the whole output: grep -q stops reading early, and the doctor's next line then fails
+                assert "set up now" in machine.succeed("ephemeral-doctor persistence")
 
             with subtest("ephemeral reaches the same commands, and passes their exit codes back"):
-                machine.succeed("ephemeral --help | grep -q 'ephemeral persistence'")
+                assert "ephemeral persistence" in machine.succeed("ephemeral --help")
                 exported = json.loads(machine.succeed("ephemeral persistence export /var/lib/nixos"))
                 assert exported["paths"][0]["classification"] == "persistent", exported
                 machine.succeed("ephemeral persistence audit >&2")
-                machine.succeed("ephemeral doctor kept | grep -qx /home/")
+                assert "/home/" in machine.succeed("ephemeral doctor kept").splitlines()
                 status, _ = machine.execute("ephemeral no-such-command")
                 assert status == 2, f"an unknown command exited {status}"
           '';
