@@ -242,6 +242,16 @@ func (m model) detailView(w, h int) []string {
 	var out []string
 	add := func(k, v string) { out = append(out, field(k, v)...) }
 	out = append(out, badge(e.Classification)+" "+sBold.Render(shown(e.Path)), "")
+	// nothing has been read for it yet, so there's nothing to say but why
+	if e.Mechanism == "" {
+		switch {
+		case n.err != "":
+			add("couldn't read", shown(n.err))
+		case n.loading:
+			out = append(out, sFaint.Render("reading…"))
+		}
+		return out
+	}
 	class := word(e.Classification)
 	if (e.Classification == "mixed" || e.Classification == "unverified") && e.OwnClassification != "" {
 		class += sDim.Render(" · what holds it now is " + strings.ToLower(style.Classes()[e.OwnClassification].Word))

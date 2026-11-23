@@ -302,3 +302,27 @@ func TestAnErrorWithNewlinesStaysOneLine(t *testing.T) {
 		t.Fatalf("%d lines, first %q", len(lines), ansi.Strip(lines[0]))
 	}
 }
+
+func TestAFolderNeverReadShowsOnlyWhy(t *testing.T) {
+	asked := &[]string{}
+	broken := func(d string) (report, error) {
+		*asked = append(*asked, d)
+		return report{}, errors.New("this machine's ephemeral-doctor is older than config 5.1.0")
+	}
+	m := newModel(broken)
+	next, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 20})
+	m = next.(model)
+	if v := ansi.Strip(m.View()); !strings.Contains(v, "reading…") || strings.Contains(v, "CLASS") {
+		t.Fatalf("before the first read:\n%s", v)
+	}
+	m = run(t, m, m.Init())
+	v := ansi.Strip(m.View())
+	for _, made := range []string{"CLASS", "EXISTS", "needs sudo", "? (?)", "BACKUPS"} {
+		if strings.Contains(v, made) {
+			t.Fatalf("it shows %q for a folder it never read:\n%s", made, v)
+		}
+	}
+	if !strings.Contains(v, "COULDN'T READ") {
+		t.Fatalf("it doesn't say why:\n%s", v)
+	}
+}
