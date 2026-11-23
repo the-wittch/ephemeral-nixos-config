@@ -22,7 +22,6 @@
   "server": false,
   "sshKeys": [],
   "useOpenSnitch": true,
-  "useFlakePassCli": false,
   "usePassSettings": false,
   "passSettingsVault": "Personal",
   "passSettingsItem": "nixos-settings",

@@ -24,8 +24,7 @@ in
 + "backup_label_re=${lib.escapeShellArg backup.label}\n"
 + "backup_repo_re=${lib.escapeShellArg backup.repository}\n"
 + array "app_categories" categories
-+ array "pass_string_keys" pass.strings
-+ array "pass_bool_keys" pass.bools
++ array "pass_keys" pass
 # menu_<setting> lists a menu's values in order; menu_label has "<setting>/<value>"
 + lib.concatStrings (
   lib.mapAttrsToList (key: entries: array "menu_${key}" (map (c: c.value) entries)) choices

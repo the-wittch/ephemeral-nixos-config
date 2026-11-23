@@ -23,9 +23,9 @@
 | `server` | a server: SSH on for the keys in `sshKeys`, no sleep, and the disk unlocked over SSH after a reboot. See [Servers](servers.md) |
 | `sshKeys` | SSH public keys that may log in, such as `"ssh-ed25519 AAAA… you@laptop"`; a server needs at least one |
 | `useOpenSnitch` | OpenSnitch asks before programs connect out (on by default) |
+| `flatpakUpdates` | update the Flatpak apps once a week (on by default; full system with a desktop) |
 | `usePassSettings`, `passSettingsVault`, `passSettingsItem` | merge settings from Proton Pass |
 | `usePassSshAgent`, `passSshVault` | the Proton Pass SSH agent at login, serving the keys in that vault |
-| `useFlakePassCli` | build pass-cli from the pinned release here instead of nixpkgs |
 
 Every key but `username` has a default. Rebuild after changing it. Values are checked on the rebuild: a disk has to be a `/dev/` path, swap a size like `16G`, and vault names can't contain quotes, `$`, backticks or backslashes, since some of them end up in shell scripts. Since v4.0.0, the older `settings.nix`, `settings.from-pass.nix` and `smb-shares.nix` aren't read. If one is still there without its `.json`, the rebuild stops and prints the command that converts it, for example:
 

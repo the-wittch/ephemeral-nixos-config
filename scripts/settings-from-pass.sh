@@ -53,10 +53,10 @@ echo
 obj={}
 found=0
 
-# pass_string_keys and pass_bool_keys come from modules/settings/_pass-keys.nix, by way of
+# pass_keys comes from modules/settings/_pass-keys.nix, by way of
 # modules/packages/_prelude.nix
 # shellcheck disable=SC2154
-for key in "${pass_string_keys[@]}"; do
+for key in "${pass_keys[@]}"; do
   val=$(get_field "$key" || true)
   if [[ -n ${val:-} ]]; then
     obj=$(jq --arg k "$key" --arg v "$val" '.[$k] = $v' <<<"$obj")
@@ -65,25 +65,6 @@ for key in "${pass_string_keys[@]}"; do
   else
     echo "  · $key (missing, using settings.json / defaults)"
   fi
-done
-
-# shellcheck disable=SC2154
-for key in "${pass_bool_keys[@]}"; do
-  val=$(get_field "$key" || true)
-  val=$(printf '%s' "${val:-}" | tr '[:upper:]' '[:lower:]')
-  case $val in
-    true | false)
-      obj=$(jq --arg k "$key" --argjson v "$val" '.[$k] = $v' <<<"$obj")
-      echo "  + $key"
-      found=$((found + 1))
-      ;;
-    "")
-      echo "  · $key (missing, using settings.json / defaults)"
-      ;;
-    *)
-      echo "  ! $key ignored (want true/false, got: $val)" >&2
-      ;;
-  esac
 done
 
 resolver=$(get_field controldResolver || true)

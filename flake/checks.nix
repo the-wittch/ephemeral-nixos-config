@@ -196,9 +196,7 @@ in
         config-eval = pkgs.runCommand "config-eval" { } ''
           echo ${lib.escapeShellArg nixos.config.networking.hostName} > "$out"
         '';
-        scripts = pkgs.linkFarmFromDrvs "scripts" (
-          lib.attrValues (removeAttrs config.packages [ "pass-cli" ])
-        );
+        scripts = pkgs.linkFarmFromDrvs "scripts" (lib.attrValues config.packages);
         extras-eval = pkgs.writeText "extras-eval" (
           builtins.unsafeDiscardStringContext withExtras.config.system.build.toplevel.drvPath
         );

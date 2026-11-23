@@ -309,14 +309,14 @@ if grep -q -- '--vault-name other ' "$calls"; then
 else fail "ssh-pubs-from-pass: PASS_SSH_VAULT"; fi
 
 frompass=$(tool settings-from-pass)
-fake pass-cli 'key=${3##*/}; case $key in useFlakePassCli) echo TRUE ;; controldResolver) exit 1 ;; *) echo "from-pass-$key" ;; esac'
+fake pass-cli 'key=${3##*/}; case $key in controldResolver) exit 1 ;; *) echo "from-pass-$key" ;; esac'
 mkdir -p "$work/frompass"
 : >"$work/frompass/flake.nix"
 printf '{"username": "alice", "usePassSettings": true}\n' >"$work/frompass/settings.json"
 FLAKE_DIR=$work/frompass bash "$frompass" >"$work/out" 2>&1 || true
-want=$(bash -c "$(cat "$PRELUDE")"'; printf "%s\n" "${pass_string_keys[@]}" "${pass_bool_keys[@]}"' | sort)
+want=$(bash -c "$(cat "$PRELUDE")"'; printf "%s\n" "${pass_keys[@]}"' | sort)
 if [[ $(jq -r 'keys[]' "$work/frompass/settings.from-pass.json" 2>/dev/null | sort) == "$want" ]] &&
-  [[ $(jq -r '.hostname, .useFlakePassCli' "$work/frompass/settings.from-pass.json") == $'from-pass-hostname\ntrue' ]]; then
+  [[ $(jq -r .hostname "$work/frompass/settings.from-pass.json") == from-pass-hostname ]]; then
   pass "settings-from-pass: copies every key the loader takes from the Pass item"
 else fail "settings-from-pass: wrote $(cat "$work/frompass/settings.from-pass.json" 2>/dev/null || cat "$work/out")"; fi
 
@@ -459,10 +459,18 @@ echo x >"$bk/persist/etc/borg/ssh_key"
 echo x >"$bk/persist/etc/borg/passphrase"
 fine=$(doctor_bk "scheduled backups are on$")
 failed=$(FAKE_FAILED=0 doctor_bk "the last scheduled backup failed")
-rm "$fakes/systemctl"
 if ((nokey == 1 && fine == 1 && failed == 1)); then
   pass "doctor: scheduled backups without their passphrase, working, and after a failed run"
 else fail "doctor: scheduled backups ($nokey $fine $failed)"; fi
+off=$(doctor_bk "Flatpak")
+mkdir -p "$bk/etc/systemd/user"
+: >"$bk/etc/systemd/user/flatpak-update.timer"
+fine=$(doctor_bk "Flatpak apps are updated once a week")
+failed=$(FAKE_FAILED=0 doctor_bk "the last weekly Flatpak update failed")
+rm "$fakes/systemctl"
+if ((off == 0 && fine == 1 && failed == 1)); then
+  pass "doctor: weekly Flatpak updates, off, working, and after a failed run"
+else fail "doctor: Flatpak updates ($off $fine $failed)"; fi
 
 if lib 'valid_controld_id abc-1_2 && ! valid_controld_id "a b" && ! valid_controld_id "x;y" && ! valid_controld_id ""'; then
   pass "lib: valid_controld_id takes the rule from the settings rules"
@@ -578,7 +586,7 @@ rm "$fakes/gum"
 fake gum 'exit 0'
 export CATALOG=$work/catalog.json
 for name in ephemeral-update ephemeral-doctor ephemeral-setup ephemeral-apps ephemeral-backup ephemeral-passwd \
-  ephemeral-report ephemeral-restore controld-setup smb-setup backup-setup luks-header-backup settings-from-pass ssh-pubs-from-pass update-pass-cli; do
+  ephemeral-report ephemeral-restore controld-setup smb-setup backup-setup luks-header-backup settings-from-pass ssh-pubs-from-pass; do
   cmd=$(tool "$name")
   if bash "$cmd" --help >"$work/out" 2>&1 </dev/null && [[ -s $work/out ]]; then
     pass "$name --help"

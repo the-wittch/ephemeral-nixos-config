@@ -21,7 +21,7 @@ let
     let
       pass = import ./_pass-keys.nix;
     in
-    lib.genAttrs (pass.strings ++ pass.bools ++ [ "useControlD" ]) (_: null);
+    lib.genAttrs (pass ++ [ "useControlD" ]) (_: null);
   fromPass =
     let
       read = builtins.intersectAttrs passKeys (readData (flakeRoot + "/settings.from-pass") { });
@@ -44,6 +44,7 @@ let
     useChezmoi = "chezmoi was dropped in v3.0.0; Home Manager writes the dotfiles";
     chezmoiRepo = "chezmoi was dropped in v3.0.0";
     chezmoiRev = "chezmoi was dropped in v3.0.0";
+    useFlakePassCli = "pass-cli always comes from nixpkgs now";
   };
   stale = lib.filter (key: merged ? ${key}) (lib.attrNames removed);
   merged' =

@@ -1,4 +1,4 @@
-{ config, withSystem, ... }:
+{ config, ... }:
 let
   inherit (config.ephemeral.aspects) nixos;
 in
@@ -12,20 +12,15 @@ in
       pkgs,
       ...
     }:
-    let
-      packages = withSystem pkgs.stdenv.hostPlatform.system ({ config, ... }: config.packages);
-    in
     {
       options.ephemeral.passCli = lib.mkOption {
         type = lib.types.package;
         readOnly = true;
-        description = "The pass-cli build in use, picked by useFlakePassCli.";
+        default = pkgs.proton-pass-cli;
+        description = "The pass-cli package, for the SSH agent and its OpenSnitch rule.";
       };
 
       config = {
-        ephemeral.passCli =
-          if config.ephemeral.settings.useFlakePassCli then packages.pass-cli else pkgs.proton-pass-cli;
-
         environment.systemPackages = [ config.ephemeral.passCli ];
 
         environment.sessionVariables = {
