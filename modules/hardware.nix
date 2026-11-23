@@ -30,10 +30,8 @@
           mode = "0700";
         }
       ]
-      ++ lib.optional config.services.hardware.bolt.enable {
-        directory = "/var/lib/boltd";
-        mode = "0700";
-      }
+      # bolt.service sets 0755 itself, the default
+      ++ lib.optional config.services.hardware.bolt.enable "/var/lib/boltd"
       ++ lib.optional config.services.power-profiles-daemon.enable "/var/lib/power-profiles-daemon"
       ++ lib.optional config.services.upower.enable "/var/lib/upower"
       ++ lib.optional config.services.colord.enable {

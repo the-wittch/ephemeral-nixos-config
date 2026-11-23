@@ -15,13 +15,13 @@ The installer sets up the full system by default. Next to a plain desktop, it ad
 
 - Home Manager dotfiles: zsh, git, starship, zoxide, neovim and ghostty.
 - A dark Catppuccin Mocha theme everywhere, through [Stylix](https://github.com/nix-community/stylix), with the snowflake as the default user picture.
-- Hourly snapper snapshots of `/persist`, and desktop warnings when a disk starts failing. Backups to a storage box, BorgBase or a disk every 6 hours, once `backup-setup` has been run.
+- Hourly snapper snapshots of `/persist`, and desktop warnings when a disk starts failing. Backups to a storage box, BorgBase or a disk every 6 hours, once `ephemeral backup setup` has been run.
 - OpenSnitch, Syncthing, Podman, Flatpak with Flathub, and scanning.
 - Rebuilds through [nh](https://github.com/nix-community/nh), with a summary of what changed.
 - Laptop extras (thermald, battery reporting, fingerprint login) when the hardware is there.
 - Optional NVIDIA drivers, Tailscale, encrypted DNS (Cloudflare, Quad9, AdGuard, Control D or your own servers), SMB mounts, and machine settings pulled from Proton Pass.
 
-Apps come from `ephemeral-apps`. It starts with an everyday set ticked (Firefox, VLC, 7-Zip, htop and a few more), and Steam, VS Code, Brave, Nerd Fonts and over 100 others are there to pick. `"extras": true` adds shell tools:
+Apps come from `ephemeral apps`. It starts with an everyday set ticked (Firefox, VLC, 7-Zip, htop and a few more), and Steam, VS Code, Brave, Nerd Fonts and over 100 others are there to pick. `"extras": true` adds shell tools:
 
 - atuin, fzf, bat, tealdeer, yazi, btop and fastfetch; fastfetch greets each new Ghostty window with the wallpaper's snowflake.
 - `,` to run any program once without installing it, and command-not-found suggestions.
@@ -52,14 +52,14 @@ The installer asks what you want and installs it: the full system with the optio
 ### Change what's installed
 
 ```bash
-ephemeral-setup
+ephemeral setup
 ```
 
 It switches between the full system and the small install (`"profile": "full"` or `"minimal"`), asks which options you want (extras, OpenSnitch, the Proton Pass SSH agent) and where DNS goes, and rebuilds. After a small install, this is how you get the rest. Log out and back in when it's done.
 
 `extras`, `useControlD`, `usePassSshAgent` and the apps in `apps.json` only apply to the full system; on the small install the rebuild warns that they're ignored.
 
-To add or remove apps without touching Nix, run `ephemeral-apps` and tick the ones you want. They're saved to `apps.json` and installed at the next rebuild.
+To add or remove apps without touching Nix, run `ephemeral apps` and tick the ones you want. They're saved to `apps.json` and installed at the next rebuild.
 
 ### Keep it in git
 
@@ -70,24 +70,24 @@ git add -A
 git commit -m "my machine"
 ```
 
-Push it to a private repo. `settings.json` and `hardware-configuration.nix` are gitignored, so they stay on the machine; `ephemeral-update` still sees them, and [`ephemeral-backup`](docs/backup.md) saves them.
+Push it to a private repo. `settings.json` and `hardware-configuration.nix` are gitignored, so they stay on the machine; `ephemeral update` still sees them, and [`ephemeral backup save`](docs/backup.md) saves them.
 
 ## Rebuild and update
 
 ```bash
-ephemeral-update
+ephemeral update
 ```
 
 It rebuilds from `/persist/etc/nixos` and switches to the result, with readable progress and a list of what changed at the end. The same command takes you back when something goes wrong:
 
 | | |
 |---|---|
-| `ephemeral-update --check` | build a change without switching to it, to see whether it works |
-| `ephemeral-update --previous` | go back to the system before the last rebuild |
-| `ephemeral-update --list` | the systems you can go back to, with their dates and config releases |
-| `ephemeral-update --as-installed` | the system exactly as it was installed; your files stay |
+| `ephemeral update --check` | build a change without switching to it, to see whether it works |
+| `ephemeral update --previous` | go back to the system before the last rebuild |
+| `ephemeral update --list` | the systems you can go back to, with their dates and config releases |
+| `ephemeral update --as-installed` | the system exactly as it was installed; your files stay |
 
-`ephemeral-doctor` checks the machine: that `/` was wiped, what failed, free space, snapshots, whether a newer release or firmware update is out, and each problem with the command that fixes it.
+`ephemeral doctor` checks the machine: that `/` was wiped, what failed, free space, snapshots, whether a newer release or firmware update is out, and each problem with the command that fixes it.
 
 `flake.nix` pins a release of this repo:
 
@@ -98,13 +98,13 @@ It rebuilds from `/persist/etc/nixos` and switches to the result, with readable 
 }
 ```
 
-`ephemeral-update` checks for a newer release before it rebuilds. If there is one, it links the changelog and asks whether to move to it, then changes the tag and updates the lock for you. After an install, `/persist/etc/nixos` belongs to root; `ephemeral-update` and `ephemeral-setup` both offer to make it yours, so it can be edited and kept in git.
+`ephemeral update` checks for a newer release before it rebuilds. If there is one, it links the changelog and asks whether to move to it, then changes the tag and updates the lock for you. After an install, `/persist/etc/nixos` belongs to root; `ephemeral update` and `ephemeral setup` both offer to make it yours, so it can be edited and kept in git.
 
 To do it by hand instead, change the tag, then:
 
 ```bash
 nix flake update ephemeral --flake /persist/etc/nixos
-ephemeral-update
+ephemeral update
 ```
 
 While the folder still belongs to root, the first command needs `sudo` in front.
@@ -121,26 +121,27 @@ and update it with `nix flake update nixpkgs --flake /persist/etc/nixos`. That c
 
 ## Commands
 
-`ephemeral-help` lists these:
+`ephemeral` reaches all of them. In a terminal, `ephemeral tui` opens a menu of what's on the machine, and `ephemeral --help` lists them:
 
-| command | what |
-|---------|------|
-| `ephemeral-update` | rebuild after a change and get new releases; `--check`, `--previous`, `--list` and `--as-installed` as above |
-| `ephemeral-doctor` | check the machine and say how to fix what isn't right; `kept` and `lost` show what survives a reboot, and `audit` finds service data a reboot throws away |
-| `ephemeral-setup` | switch between the full system and the small install, and turn the main options on or off |
-| `ephemeral-passwd` | change your login password |
-| `ephemeral-backup <folder>` | save the settings and secrets a reinstall needs, encrypted |
-| `backup-setup` | set up scheduled backups of your home folder and the config, to a storage box, BorgBase or a disk |
-| `ephemeral-restore <path>` | bring back a file or folder as it was in an hourly snapshot |
-| `ephemeral-report` | system details to paste into a bug report |
-| `controld-setup` | set or turn off the Control D resolver id |
-| `smb-setup` | add or remove SMB shares |
-| `ephemeral-apps` | pick apps by category or search for them, then rebuild |
-| `luks-header-backup <file>` | copy the LUKS header to a USB stick |
-| `settings-from-pass` | pull settings from Proton Pass |
-| `ssh-pubs-from-pass` | write SSH public keys from Proton Pass to `~/.ssh` |
+| command | its own name | what |
+|---------|--------------|------|
+| `ephemeral update` | `ephemeral-update` | rebuild after a change and get new releases; `--check`, `--previous`, `--list` and `--as-installed` as above |
+| `ephemeral doctor` | `ephemeral-doctor` | check the machine and say how to fix what isn't right |
+| `ephemeral persistence` | `ephemeral-doctor persistence` | what survives a reboot and what's backed up: an explorer in a terminal, and `inspect <path>`, `audit` and `export` |
+| `ephemeral setup` | `ephemeral-setup` | switch between the full system and the small install, and turn the main options on or off |
+| `ephemeral apps` | `ephemeral-apps` | pick apps by category or search for them, then rebuild |
+| `ephemeral password` | `ephemeral-passwd` | change your login password |
+| `ephemeral backup save <folder>` | `ephemeral-backup` | save the settings and secrets a reinstall needs, encrypted |
+| `ephemeral backup setup` | `backup-setup` | set up scheduled backups of your home folder and the config, to a storage box, BorgBase or a disk |
+| `ephemeral backup header <file>` | `luks-header-backup` | copy the LUKS header to a USB stick |
+| `ephemeral snapshot restore <path>` | `ephemeral-restore` | bring back a file or folder as it was in an hourly snapshot |
+| `ephemeral report` | `ephemeral-report` | system details to paste into a bug report |
+| `ephemeral dns` | `controld-setup` | set or turn off the Control D resolver id |
+| `ephemeral shares` | `smb-setup` | add or remove SMB shares |
+| `ephemeral pass settings` | `settings-from-pass` | pull settings from Proton Pass |
+| `ephemeral pass ssh-keys` | `ssh-pubs-from-pass` | write SSH public keys from Proton Pass to `~/.ssh` |
 
-Most of them ask what to do; `--help` on one shows its options. The small install has `ephemeral-update`, `ephemeral-doctor`, `ephemeral-setup`, `ephemeral-passwd`, `ephemeral-backup`, `backup-setup`, `ephemeral-report` and `luks-header-backup`; `ephemeral-help` lists the ones a machine has.
+Each runs the command on the right, with its own options, questions and exit code, and the names on the right work as before. Most of them ask what to do; `--help` on one shows its options. The small install has `update`, `doctor`, `persistence`, `setup`, `password`, `backup save`, `backup setup`, `backup header` and `report`; the others say so, and that `ephemeral setup` adds them.
 
 ## Documentation
 

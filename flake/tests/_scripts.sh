@@ -232,6 +232,23 @@ mkdir -p "$fs/etc/ephemeral" "$fs/var/lib/private/i2pd" "$fs/var/lib/private/foo
   "$fs/var/lib/bluetooth" "$fs/var/lib/geoclue" "$fs/var/lib/systemd/timers" \
   "$fs/persist/var/lib/bluetooth" "$fs/persist/var/lib/docker" "$fs/persist/var/lib/systemd/timers"
 printf '/var/lib/bluetooth/\n/var/lib/systemd/timers/\n/var/lib/private/i2pd/\n/etc/machine-id\n' >"$fs/etc/ephemeral/kept"
+# the same list as kept.json, everything set up as it says, so only the service checks speak
+jq -n --arg u "$(id -un)" --arg g "$(id -gn)" '{version: 1, persistRoot: "/persist", resetSubvolume: "/root",
+  filesystems: [{mountPoint: "/", fsType: "btrfs", subvolume: "/root"}],
+  entries: ([["directory", "/var/lib/bluetooth"], ["directory", "/var/lib/systemd/timers"],
+             ["directory", "/var/lib/private/i2pd"]]
+            | map({kind: .[0], path: .[1], how: "bindmount", inInitrd: false, user: $u, group: $g, mode: "0755", declaredIn: []}))
+    + [{kind: "file", path: "/etc/machine-id", how: "symlink", inInitrd: true, user: $u, group: $g, mode: "0644", declaredIn: []}]}' \
+  >"$fs/etc/ephemeral/kept.json"
+ln -s /persist/etc/machine-id "$fs/etc/machine-id"
+mkdir -p "$fs/persist/var/lib/private/i2pd" "$fs/persist/etc"
+jq -n '[{target: "/", source: "/dev/mapper/cryptroot[/root]", fsroot: "/root", fstype: "btrfs"},
+    {target: "/persist", source: "/dev/mapper/cryptroot[/persist]", fsroot: "/persist", fstype: "btrfs"}]
+  + (["/var/lib/bluetooth", "/var/lib/systemd/timers", "/var/lib/private/i2pd"]
+     | map({target: ., source: "/dev/mapper/cryptroot[/persist\(.)]", fsroot: "/persist\(.)", fstype: "btrfs"}))
+  | {filesystems: .}' >"$work/mounts.json"
+fake findmnt '[[ $1 == -J ]] || exit 1; cat "$FAKE_MOUNTS"'
+export FAKE_MOUNTS=$work/mounts.json
 for f in private/i2pd/router private/foo/db upower/history bluetooth/keys systemd/timers/stamp lastlog; do
   echo x >"$fs/var/lib/$f"
 done
@@ -262,6 +279,154 @@ if audit_says "{ directory = \"/var/lib/private/foo\"; mode = \"0700\"; configur
   audit_says "{ directory = \"/var/lib/upower\"; user = \"$(id -un)\"; group = \"$(id -gn)\"; mode = \"0755\"; }"; then
   pass "audit: the advice gives a folder's owner and mode, and /var/lib/private's for DynamicUser"
 else fail "audit: advice $(grep -F 'to keep it' "$work/out")"; fi
+rm "$fakes/findmnt"
+
+# ephemeral-doctor persistence, on a machine made of files and a fake findmnt: kept /home, a
+# bluetooth folder with the wrong mode, a libvirt folder that isn't mounted, a mount nothing
+# declares, a kept link and a broken one, a share, firmware storage, and some awkward names
+pf=$work/pf
+u=$(id -un) g=$(id -gn)
+mkdir -p "$pf/etc/ephemeral" "$pf/home/alice/Documents" "$pf/home/alice/.cache" "$pf/home/alice/Videos" \
+  "$pf/persist/home/alice" "$pf/persist/etc" "$pf/persist/var/lib/bluetooth" "$pf/persist/var/lib/libvirt" \
+  "$pf/persist/var/lib/docker" "$pf/var/lib/bluetooth" "$pf/var/lib/libvirt" "$pf/var/lib/docker" \
+  "$pf/var/lib/systemd" "$pf/var/lib/locked/inside" "$pf/tmp" "$pf/mnt/nas" "$pf/srv/my files" \
+  "$pf/persist/srv/my files" "$pf/sys/firmware/efi/efivars" "$pf/var/lib/borgmatic/checks/r1"
+echo x >"$pf/home/alice/Documents/a"
+: >"$pf/home/alice/Videos/.nobackup"
+echo id >"$pf/persist/etc/machine-id"
+ln -s /persist/etc/machine-id "$pf/etc/machine-id"
+ln -s /persist/var/lib/systemd/random-seed "$pf/var/lib/systemd/random-seed"
+: >"$pf/tmp/new"$'\n'"line"
+: >"$pf/var/lib/borgmatic/checks/r1/repository"
+chmod 755 "$pf/var/lib/bluetooth"
+printf 'P sh\nR /home\nR /persist/etc\n! home/*/.cache\n' >"$pf/etc/ephemeral/backup-patterns.lst"
+echo v5.1.0 >"$pf/etc/ephemeral/release"
+jq -n --arg u "$u" --arg g "$g" '
+  def dir($p; $mode; $from): {kind: "directory", path: $p, how: "bindmount", inInitrd: false, user: $u, group: $g, mode: $mode, declaredIn: [$from]};
+  {version: 1, persistRoot: "/persist", resetSubvolume: "/root",
+   filesystems: [{mountPoint: "/", fsType: "btrfs", subvolume: "/root"}, {mountPoint: "/persist", fsType: "btrfs", subvolume: "/persist"},
+                 {mountPoint: "/nix", fsType: "btrfs", subvolume: "/nix"}, {mountPoint: "/var/log", fsType: "btrfs", subvolume: "/log"},
+                 {mountPoint: "/boot", fsType: "vfat", subvolume: null}],
+   entries: [dir("/home"; "0755"; "modules/persist.nix"), dir("/var/lib/bluetooth"; "0700"; "modules/hardware.nix"),
+             dir("/var/lib/libvirt"; "0755"; "this machine'"'"'s flake: modules/virt.nix"), dir("/srv/my files"; "0755"; "modules/x.nix"),
+             {kind: "file", path: "/etc/machine-id", how: "symlink", inInitrd: true, user: $u, group: $g, mode: "0644", declaredIn: ["modules/persist.nix"]},
+             {kind: "file", path: "/var/lib/systemd/random-seed", how: "symlink", inInitrd: true, user: $u, group: $g, mode: "0644", declaredIn: ["modules/persist.nix"]}]}' \
+  >"$pf/etc/ephemeral/kept.json"
+mounts() {
+  jq -n --arg root "$1" '
+    def sub($t; $r): {target: $t, source: "/dev/mapper/cryptroot[\($r)]", fsroot: $r, fstype: "btrfs"};
+    {filesystems: [sub("/"; $root), sub("/persist"; "/persist"), sub("/nix"; "/nix"), sub("/var/log"; "/log"),
+      {target: "/boot", source: "/dev/vda1", fsroot: "/", fstype: "vfat"},
+      sub("/home"; "/persist/home"), sub("/var/lib/bluetooth"; "/persist/var/lib/bluetooth"),
+      sub("/var/lib/docker"; "/persist/var/lib/docker"), sub("/srv/my files"; "/persist/srv/my files"),
+      {target: "/tmp", source: "tmpfs", fsroot: "/", fstype: "tmpfs"},
+      {target: "/mnt/nas", source: "//nas/files", fsroot: "/", fstype: "cifs"},
+      {target: "/sys/firmware/efi/efivars", source: "efivarfs", fsroot: "/", fstype: "efivarfs"}]}' >"$FAKE_MOUNTS"
+}
+mounts /root
+fake findmnt '[[ $1 == -J ]] || exit 1; cat "$FAKE_MOUNTS"'
+fake systemctl '[[ $* == "show -p Result --value borgmatic.service" ]] && echo success; exit 0'
+fake journalctl 'echo "2026-11-23T10:00:00+0000 host systemd[1]: Finished borgmatic."'
+chmod 000 "$pf/var/lib/locked"
+before=$({ find "$pf" -printf "%p %m %s %T@\n" 2>/dev/null || true; } | sort)
+persist() { EPHEMERAL_ROOT=$pf bash "$doctor" persistence "$@"; }
+at() { jq -c --arg p "$1" '.paths[] | select(.path == $p)' "$work/p.json"; }
+is() { [[ $(at "$1" | jq -r "$2") == "$3" ]]; }
+code=0
+persist --json --path /home/alice/Documents --path /home/alice/.cache --path /home/alice/Videos --path /tmp \
+  --path / --path /var --path /var/lib/libvirt --path /var/lib/libvirt/images --path /mnt/nas \
+  --path /sys/firmware/efi/efivars --path /etc/machine-id --path /var/lib/systemd/random-seed \
+  --path "/srv/my files" --path "/tmp/new"$'\n'"line" --path /var/lib/locked/inside --path /nope \
+  >"$work/p.json" 2>"$work/err" || code=$?
+if ((code == 0)) && jq -e '.version == 1 and (.paths | length) == 16' "$work/p.json" >/dev/null; then
+  pass "persistence --json: valid, version 1, a path each, exit 0"
+else fail "persistence --json exited $code: $(head -c 300 "$work/err")"; fi
+if is /home/alice/Documents .classification persistent && is /home/alice/Documents .inside_declared /home &&
+  is /home/alice/Documents .survives_reboot true && is "/srv/my files" .classification persistent &&
+  is "/srv/my files" .verified true; then
+  pass "persistence: inside a kept bind mount is persistent, a name with a space too"
+else fail "persistence: persistent paths $(at /home/alice/Documents)"; fi
+if is /tmp .classification ephemeral && is /tmp .survives_reboot false && is /nope .classification ephemeral &&
+  is /nope .exists no && is "/tmp/new"$'\n'"line" .classification ephemeral; then
+  pass "persistence: tmpfs and the reset root are ephemeral, a missing path and a newline in a name too"
+else fail "persistence: ephemeral paths $(at /tmp) $(at /nope)"; fi
+if is / .classification mixed && is /var .classification mixed && is /var .own_classification ephemeral &&
+  [[ $(at /var | jq '.kept_inside | length') == 3 ]]; then
+  pass "persistence: a folder holding kept paths is mixed, and says which"
+else fail "persistence: mixed $(at /var)"; fi
+if is /var/lib/libvirt .classification unverified && is /var/lib/libvirt .verified false &&
+  is /var/lib/libvirt/images .classification unverified && is /var/lib/libvirt .declared_in[0] "this machine's flake: modules/virt.nix"; then
+  pass "persistence: declared but not mounted is unverified, inside it too, with the module that declared it"
+else fail "persistence: unverified $(at /var/lib/libvirt)"; fi
+if is /mnt/nas .classification unknown && is /sys/firmware/efi/efivars .classification unknown &&
+  is /mnt/nas .survives_reboot null && is /var/lib/locked/inside .exists unknown; then
+  pass "persistence: a share, firmware storage and an unreadable path are unknown, not guessed"
+else fail "persistence: unknown $(at /mnt/nas) $(at /var/lib/locked/inside)"; fi
+if is /etc/machine-id .classification persistent && is /etc/machine-id .verified true &&
+  is /var/lib/systemd/random-seed .classification persistent && is /var/lib/systemd/random-seed .type link; then
+  pass "persistence: a kept link is persistent, a broken one too, without following it"
+else fail "persistence: links $(at /etc/machine-id) $(at /var/lib/systemd/random-seed)"; fi
+if is /home/alice/Documents .backup_coverage included && is /home/alice/.cache .backup_coverage excluded &&
+  is /home/alice/Videos .backup_coverage excluded && is /tmp .backup_coverage excluded &&
+  is /etc/machine-id .backup_coverage included && is /etc/machine-id .backup_via /persist/etc/machine-id &&
+  is /home/alice/.cache .classification persistent; then
+  pass "persistence: backups are told apart from persistence: a ! line, a .nobackup, and a link's target"
+else fail "persistence: backups $(at /home/alice/.cache) $(at /home/alice/Videos) $(at /etc/machine-id)"; fi
+if jq -e '.backup == {configured: true, last_result: "success", last_success: "2026-11-23T10:00:00+0000", last_check: (.backup.last_check)}
+    and (.backup.last_check | test("repository"))' "$work/p.json" >/dev/null; then
+  pass "persistence: the last backup and check come from systemd and borgmatic"
+else fail "persistence: backup status $(jq -c .backup "$work/p.json")"; fi
+# the fields other tools can count on; a change here is a new version
+if [[ $(jq -c 'keys' "$work/p.json") == '["as_root","backup","generated_at","paths","summary","system","truncated","version"]' ]] &&
+  [[ $(jq -c '.paths[0] | keys' "$work/p.json") == '["backing","backup_coverage","backup_reason","backup_via","classification","declaration","declared","declared_in","exists","group","inside_declared","kept_inside","link","mechanism","mode","notes","own_classification","owner","path","survives_reboot","type","unknown_inside","verified"]' ]] &&
+  jq -e '.summary | .persistent + .ephemeral + .mixed + .unknown + .unverified == .paths' "$work/p.json" >/dev/null; then
+  pass "persistence --json: the documented fields, and a summary that adds up"
+else fail "persistence --json fields: $(jq -c 'keys, (.paths[0] | keys)' "$work/p.json")"; fi
+code=0
+persist --audit >"$work/out" 2>&1 || code=$?
+if ((code == 1)) && audit_says "✗ /var/lib/libvirt is declared, but isn't set up" &&
+  audit_says "! /var/lib/bluetooth's owner or mode isn't what the config says" &&
+  audit_says "! /var/lib/docker is kept, but the config doesn't say so" &&
+  ! audit_says "random-seed's owner"; then
+  pass "persistence --audit: critical, warnings and exit 1; a link's mode isn't compared"
+else fail "persistence --audit exited $code: $(cat "$work/out")"; fi
+persist --audit --json >"$work/a.json" 2>/dev/null || true
+if jq -e '[.findings[].severity] | unique - ["critical", "warning", "informational", "unknown"] == []' "$work/a.json" >/dev/null &&
+  jq -e '[.findings[] | select(.path == "/var/lib/libvirt" and .severity == "critical") | .evidence] | length == 1 and all(test("no mount"))' "$work/a.json" >/dev/null &&
+  jq -e '[.findings[].severity] | . == (sort_by({critical: 0, warning: 1, informational: 2, unknown: 3}[.]))' "$work/a.json" >/dev/null &&
+  jq -e '.findings[] | select(.path == "/var/lib/libvirt" and .severity == "informational") | .remediation | test("/persist/var/lib/libvirt")' "$work/a.json" >/dev/null &&
+  jq -e '.findings[0] | keys == ["evidence", "explanation", "finding", "path", "remediation", "severity"]' "$work/a.json" >/dev/null; then
+  pass "persistence --audit --json: each finding has its severity, evidence and fix"
+else fail "persistence --audit --json: $(jq -c '.findings' "$work/a.json")"; fi
+mounts /root-old
+code=0
+persist --audit >"$work/out" 2>&1 || code=$?
+if ((code == 1)) && audit_says "✗ / is mounted from /root-old, not /root" && audit_says "--fix-root-reset"; then
+  pass "persistence --audit: / from the wrong subvolume is critical"
+else fail "persistence --audit with / moved: $(cat "$work/out")"; fi
+# as test machines have it: / in memory, and /persist a disk of its own, mounted from its root
+jq -n 'def bind($t): {target: $t, source: "/dev/vdb[\($t)]", fsroot: $t, fstype: "btrfs"};
+  {filesystems: [{target: "/", source: "tmpfs", fsroot: "/", fstype: "tmpfs"},
+    {target: "/persist", source: "/dev/vdb", fsroot: "/", fstype: "btrfs"},
+    bind("/home"), bind("/var/lib/bluetooth")]}' >"$FAKE_MOUNTS"
+persist --json --path /home/alice/Documents --path /var/lib/bluetooth --path / --path /tmp \
+  --path /persist/home/alice >"$work/p.json" 2>/dev/null || true
+if is /home/alice/Documents .classification persistent && is /var/lib/bluetooth .verified true &&
+  is / .classification mixed && is /tmp .classification ephemeral &&
+  is /persist/home/alice .backup_via /home/alice; then
+  pass "persistence: /persist on a disk of its own is read from what's mounted there"
+else fail "persistence with /persist on its own disk: $(at /var/lib/bluetooth) $(at /persist/home/alice)"; fi
+mounts /root
+persist --summary >"$work/out" 2>&1 || true
+if audit_says "declared       6 (4 folders, 2 files)" && audit_says "set up now     5 of them; not: /var/lib/libvirt" &&
+  audit_says "◐ MIXED       var/" && audit_says "  ● PERSISTENT  home/"; then
+  pass "persistence: the summary counts what's declared and set up, and draws the tree"
+else fail "persistence --summary: $(cat "$work/out")"; fi
+if [[ $({ find "$pf" -printf "%p %m %s %T@\n" 2>/dev/null || true; } | sort) == "$before" ]]; then
+  pass "persistence: nothing was changed by any of it"
+else fail "persistence changed the files it read"; fi
+chmod 755 "$pf/var/lib/locked"
+rm "$fakes/findmnt" "$fakes/systemctl" "$fakes/journalctl"
 
 sb=$work/sb
 vars=$sb/sys/firmware/efi/efivars

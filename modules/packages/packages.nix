@@ -45,9 +45,35 @@ in
     { pkgs, ... }:
     let
       catalogJson = pkgs.writeText "app-catalog.json" (builtins.toJSON catalog);
+      # the words that reach each command, for ephemeral
+      commandsJson = pkgs.writeText "ephemeral-commands.json" (
+        builtins.toJSON (
+          lib.mapAttrsToList (name: tool: {
+            inherit name;
+            inherit (tool) words description;
+            minimal = tool.minimal or false;
+          }) tools
+        )
+      );
+      # the one command, and the persistence explorer and menu; the commands it runs stay shell
+      ephemeral = pkgs.buildGoModule {
+        pname = "ephemeral";
+        version = "1";
+        src = ../../scripts/ephemeral;
+        ldflags = [ "-X main.manifest=${commandsJson}" ];
+        vendorHash = "sha256-rp0wYd9JLN3KL3W++Sjcebsbbo7Ru8OsTi70nbiO6AI=";
+        # the tests run as part of the build; these fail it on unformatted code or vet's findings
+        preCheck = ''
+          unformatted=$(gofmt -l ./*.go)
+          [[ -z $unformatted ]] || { echo "not gofmt-formatted: $unformatted"; exit 1; }
+          go vet ./...
+        '';
+        meta.mainProgram = "ephemeral";
+      };
       tools = with pkgs; {
         ephemeral-report = {
           description = "system details to paste into a bug report";
+          words = [ "report" ];
           minimal = true;
           deps = [
             coreutils
@@ -60,6 +86,7 @@ in
         };
         ephemeral-doctor = {
           description = "check the machine and say how to fix what isn't right";
+          words = [ "doctor" ];
           minimal = true;
           deps = [
             btrfs-progs
@@ -71,11 +98,16 @@ in
             gnugrep
             gnused
             jq
+            ephemeral
             util-linux
           ];
         };
         ephemeral-backup = {
           description = "save the settings and secrets a reinstall needs, encrypted";
+          words = [
+            "backup"
+            "save"
+          ];
           minimal = true;
           deps = [
             age
@@ -89,6 +121,7 @@ in
         };
         ephemeral-setup = {
           description = "switch between the full system and the small install, and turn the main options on or off";
+          words = [ "setup" ];
           minimal = true;
           deps = [
             gum
@@ -103,6 +136,7 @@ in
         };
         ephemeral-passwd = {
           description = "change your login password";
+          words = [ "password" ];
           minimal = true;
           deps = [
             mkpasswd
@@ -112,6 +146,7 @@ in
         };
         ephemeral-update = {
           description = "rebuild after a change and get new releases; also --check, --previous, --list and --as-installed";
+          words = [ "update" ];
           minimal = true;
           deps = [
             nh
@@ -127,6 +162,7 @@ in
         };
         controld-setup = {
           description = "set or turn off the Control D resolver id";
+          words = [ "dns" ];
           deps = [
             gum
             coreutils
@@ -135,6 +171,7 @@ in
         };
         smb-setup = {
           description = "add or remove SMB shares";
+          words = [ "shares" ];
           deps = [
             gum
             coreutils
@@ -145,6 +182,10 @@ in
         };
         backup-setup = {
           description = "set up scheduled backups: root's SSH key, the passphrase and where they go";
+          words = [
+            "backup"
+            "setup"
+          ];
           minimal = true;
           deps = [
             coreutils
@@ -155,6 +196,7 @@ in
         };
         ephemeral-apps = {
           description = "pick apps by category or search for them, then rebuild";
+          words = [ "apps" ];
           deps = [
             gum
             jq
@@ -164,6 +206,10 @@ in
         };
         ephemeral-restore = {
           description = "bring back a file or folder from an hourly snapshot";
+          words = [
+            "snapshot"
+            "restore"
+          ];
           deps = [
             coreutils
             findutils
@@ -173,6 +219,10 @@ in
         };
         luks-header-backup = {
           description = "copy the LUKS header to a USB stick";
+          words = [
+            "backup"
+            "header"
+          ];
           minimal = true;
           deps = [
             coreutils
@@ -184,6 +234,10 @@ in
         };
         settings-from-pass = {
           description = "pull settings from Proton Pass";
+          words = [
+            "pass"
+            "settings"
+          ];
           deps = [
             coreutils
             gnused
@@ -192,6 +246,10 @@ in
         };
         ssh-pubs-from-pass = {
           description = "write SSH public keys from Proton Pass to ~/.ssh";
+          words = [
+            "pass"
+            "ssh-keys"
+          ];
           deps = [
             coreutils
             jq
@@ -235,6 +293,7 @@ in
           '';
         };
       commands = lib.mapAttrs script tools // {
+        inherit ephemeral;
         ephemeral-help = helpFor tools;
       };
       smallTools = lib.filterAttrs (_: tool: tool.minimal or false) tools;
@@ -243,6 +302,7 @@ in
       # what machines install; packages a machine flake defines itself stay out
       legacyPackages.ephemeralTools = commands;
       legacyPackages.ephemeralToolsSmall = lib.mapAttrs script smallTools // {
+        inherit ephemeral;
         ephemeral-help = helpFor smallTools;
       };
 

@@ -2,7 +2,7 @@
 
 Bug reports and pull requests are welcome. This is a personal project, so replies can take a few days.
 
-- **Bugs:** use the issue form, with the output of `ephemeral-report`.
+- **Bugs:** use the issue form, with the output of `ephemeral report`.
 - **Security problems:** see [SECURITY.md](SECURITY.md), not an issue.
 - **Changes:** open an issue first for anything bigger than a fix, so we can agree on it before you spend the time.
 

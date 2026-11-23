@@ -90,6 +90,8 @@
         ];
 
         systemd.tmpfiles.rules = [ "d ${dir} 0700 root root -" ];
+        # what ephemeral-doctor persistence reads to say what the backups cover
+        environment.etc."ephemeral/backup-patterns.lst".source = patterns;
 
         preservation.preserveAt."/persist".directories = [
           {
