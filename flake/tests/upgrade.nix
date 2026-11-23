@@ -124,39 +124,20 @@ in
           is_clean("${pin.tag}")
           machine.succeed("echo kept > /persist/upgrade-marker && runuser -u alice -- sh -c 'echo kept > ~/upgrade-marker'")
 
-          ${
-            if previous.inputs ? preservation then
-              ''
-                with subtest("switch from ${pin.tag} to this code"):
-                    # "test" skips the bootloader; the VM has no boot disk to install one on
-                    machine.succeed("${next}/bin/switch-to-configuration test >&2")
-                    assert machine.succeed("readlink -f /run/current-system").strip() == "${next}"
-                    is_clean("after the switch")
-                    machine.succeed("grep -qx kept /persist/upgrade-marker")
-                    machine.succeed("grep -qx kept /home/alice/upgrade-marker")
+          with subtest("switch from ${pin.tag} to this code"):
+              # "test" skips the bootloader; the VM has no boot disk to install one on
+              machine.succeed("${next}/bin/switch-to-configuration test >&2")
+              assert machine.succeed("readlink -f /run/current-system").strip() == "${next}"
+              is_clean("after the switch")
+              machine.succeed("grep -qx kept /persist/upgrade-marker")
+              machine.succeed("grep -qx kept /home/alice/upgrade-marker")
 
-                with subtest("switch back to ${pin.tag}, as the boot menu's previous entry would"):
-                    machine.succeed("/run/booted-system/bin/switch-to-configuration test >&2")
-                    assert machine.succeed("readlink -f /run/current-system").strip() == machine.succeed("readlink -f /run/booted-system").strip()
-                    is_clean("after switching back")
-                    machine.succeed("grep -qx kept /persist/upgrade-marker")
-                    machine.succeed("grep -qx kept /home/alice/upgrade-marker")
-              ''
-            else
-              # moving from impermanence takes a reboot, which upgrade-boot tests
-              ''
-                with subtest("a live switch from ${pin.tag}'s impermanence is refused and changes nothing"):
-                    before = machine.succeed("readlink -f /run/current-system").strip()
-                    status, out = machine.execute("${next}/bin/switch-to-configuration test 2>&1")
-                    print(out)
-                    assert status != 0, "the switch to preservation went ahead on a running system"
-                    assert "nh os boot" in out, f"the refusal doesn't say what to do:\n{out}"
-                    assert machine.succeed("readlink -f /run/current-system").strip() == before
-                    is_clean("after the refused switch")
-                    machine.succeed("test -s /etc/machine-id")
-                    machine.succeed("grep -qx kept /home/alice/upgrade-marker")
-              ''
-          }
+          with subtest("switch back to ${pin.tag}, as the boot menu's previous entry would"):
+              machine.succeed("/run/booted-system/bin/switch-to-configuration test >&2")
+              assert machine.succeed("readlink -f /run/current-system").strip() == machine.succeed("readlink -f /run/booted-system").strip()
+              is_clean("after switching back")
+              machine.succeed("grep -qx kept /persist/upgrade-marker")
+              machine.succeed("grep -qx kept /home/alice/upgrade-marker")
         '';
       };
     };

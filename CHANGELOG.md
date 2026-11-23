@@ -2,6 +2,14 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 5.0.1
+
+### Changed
+
+- nixpkgs updated to 2026-11-21. It brings PipeWire 1.6.11, which fixes the login screen's PipeWire crashing at every login, and Linux 6.18.64.
+- The firewall check allows Podman's DNS over TCP as well as UDP on its container bridges, as nixpkgs now opens both.
+- The weekly release starts at 06:17 UTC instead of 06:00, when GitHub delays or drops many scheduled runs.
+
 ## 5.0.0
 
 ### Breaking

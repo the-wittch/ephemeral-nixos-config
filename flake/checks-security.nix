@@ -28,10 +28,12 @@ let
       lib.filterAttrs (
         name: i:
         let
-          ports = i.allowedTCPPorts ++ i.allowedTCPPortRanges ++ i.allowedUDPPortRanges;
+          ports = i.allowedTCPPorts ++ i.allowedUDPPorts;
+          ranges = i.allowedTCPPortRanges ++ i.allowedUDPPortRanges;
         in
-        !(lib.hasPrefix "podman" name && ports == [ ] && lib.all (p: p == 53) i.allowedUDPPorts)
-        && (ports ++ i.allowedUDPPorts) != [ ]
+        # DNS over UDP and TCP, the second for answers too big for one packet
+        !(lib.hasPrefix "podman" name && ranges == [ ] && lib.all (p: p == 53) ports)
+        && (ports ++ ranges) != [ ]
       ) interfaces
     );
 
