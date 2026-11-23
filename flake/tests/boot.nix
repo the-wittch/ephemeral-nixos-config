@@ -192,6 +192,18 @@ in
                 assert "+DNSOverTLS" in status, status
                 assert "Fallback DNS" not in status, status
 
+            with subtest("Syncthing's web page has a password, readable by alice alone"):
+                machine.wait_for_unit("syncthing-init.service")
+                assert machine.succeed("stat -c '%U %a' /persist/etc/syncthing/gui-password").strip() == "alice 600"
+                password = machine.succeed("cat /persist/etc/syncthing/gui-password")
+                assert len(password) == 24 and "\n" not in password, repr(password)
+                gui = machine.succeed("sed -n '/<gui /,/<\\/gui>/p' /home/alice/.config/syncthing/config.xml")
+                assert "<user>alice</user>" in gui, gui
+                assert "<password>$2" in gui, gui
+                # made once; a reboot or rebuild keeps it
+                machine.succeed("systemctl restart syncthing-gui-password.service")
+                assert machine.succeed("cat /persist/etc/syncthing/gui-password") == password
+
             with subtest("Flathub was added offline"):
                 machine.succeed("flatpak remotes --system --columns=name | grep -qx flathub")
 
