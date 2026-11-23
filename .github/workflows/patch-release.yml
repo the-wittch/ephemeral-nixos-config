@@ -50,6 +50,22 @@ jobs:
             echo "release/$next is already open"
             exit 0
           fi
+          # release.sh labels its PRs boot-test; one open means a release is going out by hand,
+          # and this one would take the same version
+          busy=$(gh pr list --base main --state open --label boot-test --json number -q '.[].number' | head -n 1)
+          if [[ -n $busy ]]; then
+            echo "::notice::#$busy is releasing by hand; next week's run picks up nixpkgs"
+            exit 0
+          fi
+          # Once nixpkgs has branched off, unstable gets changes the stable release never will,
+          # so shipping it would make the move to stable a downgrade
+          locked=$(jq -r .nodes.nixpkgs.locked.rev flake.lock)
+          version=$(curl -fsS "https://raw.githubusercontent.com/NixOS/nixpkgs/$locked/lib/.version")
+          if grep -q 'nixpkgs/nixos-unstable"' flake.nix &&
+            git ls-remote --exit-code https://github.com/NixOS/nixpkgs "refs/heads/release-$version" >/dev/null; then
+            echo "::warning::nixpkgs has branched off release-$version; move the config to nixos-$version before shipping more nixpkgs"
+            exit 0
+          fi
 
           nix flake update nixpkgs
           # against the last release, so a merged update of the other inputs ships too
