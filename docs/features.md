@@ -116,6 +116,10 @@ GNOME and Plasma set a proxy in their network settings, for the apps that follow
 }
 ```
 
+## Syncthing
+
+The full system runs Syncthing as you, with its web page at http://127.0.0.1:8384 and new folders in `~/Syncthing`. The page asks you to log in with your username and the password in `/persist/etc/syncthing/gui-password`, which is made the first time Syncthing starts; let the browser remember it. Syncthing Tray's setup reads the API key from Syncthing's own config, so the tray works without it. The firewall keeps Syncthing's listening port, 22000, closed.
+
 ## Tailscale
 
 Set `"useTailscale": true`, rebuild, then sign in once with `sudo tailscale up`. Its state stays on `/persist`, and OpenSnitch gets a rule that lets `tailscaled` through.
