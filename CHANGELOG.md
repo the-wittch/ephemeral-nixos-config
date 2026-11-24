@@ -2,6 +2,13 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 5.2.0
+
+### Changed
+
+- `,` (comma) and the package suggestions when a command isn't installed are on the full system by default, desktops and servers both, instead of with `extras`. `extras` keeps atuin, fzf, bat, tealdeer, yazi, btop and fastfetch.
+- `jq`, `tree`, `rsync` and `lsof` are on every machine, with `git`, `curl` and the rest.
+
 ## 5.1.0
 
 ### Added
