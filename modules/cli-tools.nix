@@ -12,6 +12,10 @@
         file
         usbutils
         pciutils
+        jq
+        tree
+        rsync
+        lsof
       ];
     };
 

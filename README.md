@@ -18,13 +18,11 @@ The installer sets up the full system by default. Next to a plain desktop, it ad
 - Hourly snapper snapshots of `/persist`, and desktop warnings when a disk starts failing. Backups to a storage box, BorgBase or a disk every 6 hours, once `ephemeral backup setup` has been run.
 - OpenSnitch, Syncthing, Podman, Flatpak with Flathub, and scanning.
 - Rebuilds through [nh](https://github.com/nix-community/nh), with a summary of what changed.
+- `,` to run any program once without installing it, and the package to install when a command isn't there.
 - Laptop extras (thermald, battery reporting, fingerprint login) when the hardware is there.
 - Optional NVIDIA drivers, Tailscale, encrypted DNS (Cloudflare, Quad9, AdGuard, Control D or your own servers), SMB mounts, and machine settings pulled from Proton Pass.
 
-Apps come from `ephemeral apps`. It starts with an everyday set ticked (Firefox, VLC, 7-Zip, htop and a few more), and Steam, VS Code, Brave, Nerd Fonts and over 100 others are there to pick. `"extras": true` adds shell tools:
-
-- atuin, fzf, bat, tealdeer, yazi, btop and fastfetch; fastfetch greets each new Ghostty window with the wallpaper's snowflake.
-- `,` to run any program once without installing it, and command-not-found suggestions.
+Apps come from `ephemeral apps`. It starts with an everyday set ticked (Firefox, VLC, 7-Zip, htop and a few more), and Steam, VS Code, Brave, Nerd Fonts and over 100 others are there to pick. `"extras": true` adds shell tools: atuin, fzf, bat, tealdeer, yazi, btop and fastfetch, which greets each new Ghostty window with the wallpaper's snowflake.
 
 ![A new Ghostty window with extras: fastfetch, with btop and areofyl's fetch below it](docs/images/terminal.gif)
 

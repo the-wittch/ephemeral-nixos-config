@@ -166,7 +166,7 @@ On the full system, SANE and Document Scanner are installed on every desktop. SA
 
 ## Running things without installing them
 
-With `extras` on: type a command that isn't installed and the shell names the package that has it. `, cowsay hello` runs it once without installing anything. Both use a prebuilt package index from [nix-index-database](https://github.com/nix-community/nix-index-database).
+On the full system, type a command that isn't installed and the shell names the package that has it. `, cowsay hello` runs it once without installing anything. Both use a prebuilt package index from [nix-index-database](https://github.com/nix-community/nix-index-database).
 
 ## Shell
 
