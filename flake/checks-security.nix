@@ -10,6 +10,8 @@ let
     "niri-minimal"
     "umbriel-full"
     "umbriel-minimal"
+    "handheld-full"
+    "handheld-minimal"
     "none-full"
     "none-minimal"
     "feat-all"

@@ -60,7 +60,7 @@ in
   perSystem =
     { pkgs, ... }:
     {
-      checks = lib.genAttrs' [ "plasma" "niri" "umbriel" ] (
+      checks = lib.genAttrs' [ "plasma" "niri" "umbriel" "handheld" ] (
         desktop: lib.nameValuePair "desktop-boot-${desktop}" (test pkgs desktop)
       );
     };

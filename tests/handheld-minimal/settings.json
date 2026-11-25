@@ -1,0 +1,8 @@
+{
+  "hostname": "handheld-minimal",
+  "username": "alice",
+  "desktop": "handheld",
+  "profile": "minimal",
+  "extras": true,
+  "usePassSshAgent": true
+}

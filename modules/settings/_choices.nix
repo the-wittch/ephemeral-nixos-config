@@ -30,6 +30,12 @@
       label = "None";
       description = "no screen, for a server reached over SSH";
     }
+    {
+      value = "handheld";
+      label = "Handheld";
+      description = "Steam's Game Mode and Plasma, for a Steam Deck or ROG Ally";
+      tag = "beta";
+    }
   ];
   nvidia = [
     {

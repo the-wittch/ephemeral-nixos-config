@@ -210,7 +210,7 @@ jobs:
       github.event_name == 'workflow_dispatch'
       || (github.event.action != 'opened' && contains(github.event.pull_request.labels.*.name, 'boot-test'))
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 110
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -243,9 +243,9 @@ jobs:
           cp hardware-configuration.example.nix hardware-configuration.nix
       - name: desktops
         if: steps.changes.outputs.code == 'true'
-        timeout-minutes: 25
+        timeout-minutes: 32
         run: |
-          for desktop in plasma niri umbriel; do
+          for desktop in plasma niri umbriel handheld; do
             nix build "path:.#checks.x86_64-linux.desktop-boot-$desktop" -L --no-link
           done
       - name: boot this code on the previous release's /persist
@@ -264,6 +264,10 @@ jobs:
         if: steps.changes.outputs.code == 'true'
         timeout-minutes: 15
         run: nix build path:.#checks.x86_64-linux.tpm-unlock -L --no-link
+      - name: unlock the disk with a controller
+        if: steps.changes.outputs.code == 'true'
+        timeout-minutes: 20
+        run: nix build path:.#checks.x86_64-linux.handheld-unlock -L --no-link
       - name: unlock a server over SSH from a second machine
         if: steps.changes.outputs.code == 'true'
         timeout-minutes: 35

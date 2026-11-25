@@ -147,6 +147,7 @@ Each runs the command on the right, with its own options, questions and exit cod
 - [Features](docs/features.md): snapshots, encrypted DNS, SMB, NVIDIA, Proton Pass and the rest
 - [settings.json](docs/settings.md): every setting
 - [Servers](docs/servers.md): SSH with keys and no sleep, with a desktop or none
+- [Handheld](docs/handheld.md): a Steam Deck or ROG Ally in Steam's Game Mode, in beta
 - [Customizing](docs/customizing.md): your own modules, and how this repo is organized
 - [Keeping things across reboots](docs/persistence.md)
 - [Backups](docs/backup.md): what to copy off the machine, scheduled backups, and restoring after a reinstall

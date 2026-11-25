@@ -2,6 +2,16 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 5.3.0
+
+### Added
+
+- A handheld desktop, in beta: `"desktop": "handheld"` starts a Steam Deck or ROG Ally in Steam's Game Mode, with Plasma as desktop mode, and the disk passphrase can be pressed on the controller at boot. Wired Xbox and PlayStation pads work at the prompt too. See [Handheld](docs/handheld.md).
+
+### Changed
+
+- Plasma's login screen keeps its state and theme only where it's on, so a desktop built on Plasma can do without it.
+
 ## 5.2.0
 
 ### Changed
