@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # What Steam runs for "Switch to Desktop", and the Return to Game Mode launcher runs to go back:
 # say which session is next, then end this one, and the session loop starts it.
 
