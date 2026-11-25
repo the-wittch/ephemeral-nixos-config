@@ -6,7 +6,12 @@
     in
     {
       boot.initrd = {
-        kernelModules = [ "uinput" ];
+        # evdev gives each controller the /dev/input node the program reads; the initrd doesn't load
+        # it on its own
+        kernelModules = [
+          "evdev"
+          "uinput"
+        ];
         # the Deck's and the Ally X's own controllers, which work without Handheld Daemon, and wired
         # Xbox and PlayStation pads
         availableKernelModules = [
