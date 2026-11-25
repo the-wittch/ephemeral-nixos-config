@@ -161,6 +161,7 @@ let
     "niri"
     "plasma"
     "umbriel"
+    "handheld"
   ];
   # for .github/drv-diff.sh: a refactor that only moves code leaves all of these unchanged
   systemDrvs =

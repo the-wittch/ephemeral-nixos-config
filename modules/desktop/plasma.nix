@@ -4,24 +4,32 @@ let
   inherit (config.ephemeral.aspects) nixos;
 
   common =
-    { pkgs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     {
       imports = [ nixos.graphical ];
 
       # the greeter writes its state there, as the package's own tmpfiles rule sets it up
-      preservation.preserveAt."/persist".directories = [
-        {
-          directory = "/var/lib/plasmalogin";
-          user = "plasmalogin";
-          group = "plasmalogin";
-          mode = "0750";
-        }
-      ];
+      preservation.preserveAt."/persist".directories =
+        lib.mkIf config.services.displayManager.plasma-login-manager.enable
+          [
+            {
+              directory = "/var/lib/plasmalogin";
+              user = "plasmalogin";
+              group = "plasmalogin";
+              mode = "0750";
+            }
+          ];
 
       services.xserver.enable = true;
 
       services.desktopManager.plasma6.enable = true;
-      services.displayManager.plasma-login-manager.enable = true;
+      # the handheld logs straight into Game Mode instead
+      services.displayManager.plasma-login-manager.enable = lib.mkDefault true;
 
       environment.systemPackages = with pkgs.kdePackages; [
         kate
@@ -34,7 +42,12 @@ let
 in
 {
   flake.modules.nixos.plasma =
-    { lib, pkgs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     let
       kdeDark = import ./_kde-dark.nix { inherit lib; };
     in
@@ -45,7 +58,7 @@ in
       ];
 
       # stylix doesn't theme the login screen
-      systemd.tmpfiles.rules = [
+      systemd.tmpfiles.rules = lib.mkIf config.services.displayManager.plasma-login-manager.enable [
         "d /var/lib/plasmalogin/.config 0755 plasmalogin plasmalogin -"
         "L+ /var/lib/plasmalogin/.config/kdeglobals - - - - ${pkgs.writeText "plasmalogin-kdeglobals" kdeDark}"
       ];

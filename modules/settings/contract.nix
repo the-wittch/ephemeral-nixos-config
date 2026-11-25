@@ -18,6 +18,8 @@ in
           rules = import ./_rules.nix;
           choices = import ./_choices.nix;
           appCategories = import ../apps/_categories.nix;
+          # what a handheld's buttons type, for its disk passphrase
+          handheldButtons = import ../handheld/_buttons.nix;
           defaults = lib.mapAttrs (_: option: option.default) (
             lib.filterAttrs (_: option: option ? default) options
           );

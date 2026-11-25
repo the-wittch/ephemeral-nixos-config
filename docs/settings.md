@@ -8,7 +8,7 @@
 | `locale` | language, e.g. `de_DE.UTF-8` |
 | `keyboardLayout`, `keyboardVariant` | e.g. `de` and `nodeadkeys`; also used at the LUKS prompt |
 | `diskDevice`, `swapSize` | the whole disk (not a partition) and the swap file size |
-| `desktop` | `plasma`, `gnome`, `niri` or `umbriel`, or `none` for a headless server, which needs `server` |
+| `desktop` | `plasma`, `gnome`, `niri` or `umbriel`; `none` for a headless server, which needs `server`; or `handheld` for a Steam Deck or ROG Ally, in beta ([Handheld](handheld.md)) |
 | `profile` | `full` (everything in these docs) or `minimal` (the installer's small install) |
 | `nvidia` | `none`, `open` (RTX 20 / GTX 16 series and newer) or `legacy` (GTX 900 / 10 series) |
 | `extras` | the extra shell tools listed in the [README](../README.md): atuin, fzf, bat, fastfetch and more |
