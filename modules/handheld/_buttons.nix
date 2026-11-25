@@ -1,7 +1,9 @@
 # What each controller button types for the disk passphrase on a handheld. Disks are locked with
 # these, so a character never changes. The installer shows this table through the settings
 # contract and checks a handheld's passphrase against it; handheld-input's build checks the
-# program types the same. Start is Enter and Select is Backspace.
+# program types the same. Start is Enter and Select is Backspace. A button only some handhelds
+# have names them, and the installer counts it only where /sys/class/dmi/id/sys_vendor is
+# dmiVendor: the Deck LCD and OLED both say Valve.
 [
   {
     button = "A";
@@ -63,20 +65,24 @@
     button = "L4";
     character = "1";
     only = "Steam Deck";
+    dmiVendor = "Valve";
   }
   {
     button = "L5";
     character = "2";
     only = "Steam Deck";
+    dmiVendor = "Valve";
   }
   {
     button = "R4";
     character = "3";
     only = "Steam Deck";
+    dmiVendor = "Valve";
   }
   {
     button = "R5";
     character = "4";
     only = "Steam Deck";
+    dmiVendor = "Valve";
   }
 ]

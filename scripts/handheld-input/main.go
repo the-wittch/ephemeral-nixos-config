@@ -1,7 +1,7 @@
-// Command handheld-input lets a handheld's controller type on a virtual keyboard, for the disk
-// passphrase at boot and the installer's screens, where there's no Steam to do it.
+// Command handheld-input lets a handheld's controller type the disk passphrase at boot, on a
+// virtual keyboard, where there's no Steam to do it.
 //
-// It prints nothing about what's pressed: in passphrase mode the presses are the passphrase.
+// It prints nothing about what's pressed: the presses are the passphrase.
 package main
 
 import (
@@ -20,17 +20,12 @@ type press struct {
 }
 
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Fprintln(os.Stderr, "usage: handheld-input passphrase|menu")
-		os.Exit(2)
-	}
-	m, ok := modes[os.Args[1]]
-	if !ok {
-		fmt.Fprintf(os.Stderr, "handheld-input: no mode %q; it's passphrase or menu\n", os.Args[1])
+	if len(os.Args) != 1 {
+		fmt.Fprintln(os.Stderr, "usage: handheld-input")
 		os.Exit(2)
 	}
 
-	kb, err := newKeyboard(m.repeat)
+	kb, err := newKeyboard()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "handheld-input: can't make the virtual keyboard: %v\n", err)
 		os.Exit(1)
@@ -50,7 +45,7 @@ func main() {
 	for {
 		select {
 		case p := <-presses:
-			if err := handle(kb, km, m, held, p); err != nil {
+			if err := handle(kb, km, passphrase, held, p); err != nil {
 				fmt.Fprintf(os.Stderr, "handheld-input: %v\n", err)
 			}
 		case <-stop:
@@ -60,7 +55,7 @@ func main() {
 	}
 }
 
-func handle(kb *keyboard, km keymap, m mode, held map[button]stroke, p press) error {
+func handle(kb *keyboard, km keymap, actions map[button]action, held map[button]stroke, p press) error {
 	if !p.down {
 		s, ok := held[p.b]
 		if !ok {
@@ -76,7 +71,7 @@ func handle(kb *keyboard, km keymap, m mode, held map[button]stroke, p press) er
 		return nil
 	}
 
-	a, ok := m.actions[p.b]
+	a, ok := actions[p.b]
 	if _, already := held[p.b]; !ok || already {
 		return nil
 	}

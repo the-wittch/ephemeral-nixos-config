@@ -41,7 +41,7 @@
           unitConfig.DefaultDependencies = false;
           # nothing that needs a mount namespace, which the initrd's root can't always give
           serviceConfig = {
-            ExecStart = "${input}/bin/handheld-input passphrase";
+            ExecStart = "${input}/bin/handheld-input";
             DevicePolicy = "closed";
             DeviceAllow = [
               "/dev/uinput w"

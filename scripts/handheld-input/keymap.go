@@ -90,7 +90,7 @@ type usKeymap struct{}
 var usKeys = map[rune]uint16{
 	'a': 30, 'b': 48, 'c': 46, 'd': 32, 'e': 18, 'l': 38, 'q': 16, 'r': 19,
 	's': 31, 't': 20, 'u': 22, 'x': 45, 'y': 21, 'z': 44,
-	'1': 2, '2': 3, '3': 4, '4': 5, '/': 53,
+	'1': 2, '2': 3, '3': 4, '4': 5,
 }
 
 func (usKeymap) find(r rune) (stroke, bool) {

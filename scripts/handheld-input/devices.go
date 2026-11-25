@@ -43,9 +43,11 @@ type device struct {
 
 var devices = []device{
 	{
-		// hid_asus, on kernel 6.18. The back buttons send nothing until Handheld Daemon has
-		// set the controller up, and the Xbox button is left out on purpose.
-		name:    "ROG Xbox Ally X",
+		// hid_asus, on kernel 6.18, read off a ROG Xbox Ally X. The 2024 Ally X and the Xbox Ally
+		// have the same IDs, as Handheld Daemon has them, and should send the same. The back
+		// buttons send nothing until Handheld Daemon has set the controller up, and the Xbox
+		// button is left out on purpose.
+		name:    "ROG Ally X",
 		vendor:  0x0b05,
 		product: 0x1b4c,
 		buttons: map[uint16]button{
