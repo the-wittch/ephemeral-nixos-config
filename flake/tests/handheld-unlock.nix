@@ -156,10 +156,12 @@ in
                 boot()
                 wait_for_prompt()
                 machine.wait_for_unit("handheld-input.service")
-                machine.succeed("(evemu-device /etc/fake-pad >/tmp/fake-pad 2>&1 &)")
-                pad = machine.wait_until_succeeds(
-                    "grep -o '/dev/input/event[0-9]*' /tmp/fake-pad", timeout=30
+                machine.succeed("(evemu-device /etc/fake-pad >/dev/null 2>&1 &)")
+                # evemu-device prints the node it made, but holds the line in its buffer while it runs
+                name = machine.wait_until_succeeds(
+                    "grep -lx 'Fake ROG Xbox Ally X' /sys/class/input/event*/device/name", timeout=30
                 ).strip()
+                pad = "/dev/input/" + name.split("/")[4]
                 # it looks for new controllers four times a second
                 time.sleep(2)
 
