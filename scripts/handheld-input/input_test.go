@@ -11,7 +11,7 @@ func allyPad(t *testing.T) (*pad, *[]press) {
 	t.Helper()
 	dev := findDevice(0x0b05, 0x1b4c, "asus")
 	if dev == nil {
-		t.Fatal("no table for the ROG Xbox Ally X")
+		t.Fatal("no table for the ROG Ally X")
 	}
 	var got []press
 	trig := axisRange{0, 1023}
@@ -68,7 +68,7 @@ func TestPassphraseCharactersNeverChange(t *testing.T) {
 		btnLB: 'q', btnRB: 'e', btnLT: 'z', btnRT: 'c', btnLS: 's', btnRS: 't',
 		btnL4: '1', btnL5: '2', btnR4: '3', btnR5: '4',
 	}
-	acts := modes["passphrase"].actions
+	acts := passphrase
 	for b, r := range want {
 		if acts[b].char != r {
 			t.Errorf("button %d types %q, want %q", b, acts[b].char, r)
@@ -79,9 +79,6 @@ func TestPassphraseCharactersNeverChange(t *testing.T) {
 	}
 	if len(acts) != len(want)+2 {
 		t.Errorf("%d buttons type something, want %d", len(acts), len(want)+2)
-	}
-	if modes["passphrase"].repeat {
-		t.Error("a held button must not repeat in a passphrase")
 	}
 }
 
@@ -118,14 +115,12 @@ func TestKeymapLookup(t *testing.T) {
 }
 
 func TestEveryCharacterHasAUSKey(t *testing.T) {
-	for _, m := range modes {
-		for b, a := range m.actions {
-			if a.char == 0 {
-				continue
-			}
-			if _, ok := (usKeymap{}).find(a.char); !ok {
-				t.Errorf("button %d: no US key for %q", b, a.char)
-			}
+	for b, a := range passphrase {
+		if a.char == 0 {
+			continue
+		}
+		if _, ok := (usKeymap{}).find(a.char); !ok {
+			t.Errorf("button %d: no US key for %q", b, a.char)
 		}
 	}
 }
@@ -196,7 +191,7 @@ func TestMatchesTheConfigTable(t *testing.T) {
 		"left stick press": btnLS, "right stick press": btnRS,
 		"L4": btnL4, "L5": btnL5, "R4": btnR4, "R5": btnR5,
 	}
-	acts := modes["passphrase"].actions
+	acts := passphrase
 	for _, r := range rows {
 		b, ok := names[r.Button]
 		if !ok {

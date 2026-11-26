@@ -56,6 +56,22 @@ let
       && !(lib.any (lib.hasPrefix "/.initrd-secrets") (lib.attrNames c.boot.initrd.systemd.contents));
   };
   missing = lib.filter (name: !(expect.${name} (host name))) hosts;
+  # the desktop hosts come from checks.nix
+  handheld =
+    c:
+    c.services.handheld-daemon.enable
+    && c.services.handheld-daemon.adjustor.enable
+    && !lib.elem "acpi_call" c.boot.kernelModules
+    && lib.elem "/etc/hhd" (map (d: d.directory) c.preservation.preserveAt."/persist".directories)
+    && c.services.logind.settings.Login.HandlePowerKey == "suspend"
+    && c.boot.initrd.systemd.services ? handheld-input
+    && c.services.greetd.enable
+    && !c.services.displayManager.plasma-login-manager.enable;
+  notHandheld =
+    c:
+    !c.services.handheld-daemon.enable
+    && !(c.boot.initrd.systemd.services ? handheld-input)
+    && !lib.elem "uinput" c.boot.initrd.kernelModules;
   refused =
     name: change:
     !(builtins.tryEval
@@ -98,6 +114,17 @@ in
             lib.elem "htop" picked && !lib.elem "firefox" picked
           )
           "without a desktop, the terminal apps ticked by default should be picked, and the desktop ones not";
+        assert lib.assertMsg
+          (lib.all (n: handheld (host n)) [
+            "handheld-full"
+            "handheld-minimal"
+          ])
+          "a handheld is missing Handheld Daemon, its kept settings, the power button or the controller unlock";
+        assert lib.assertMsg (lib.all (n: notHandheld (host n)) [
+          "plasma-full"
+          "plasma-minimal"
+          "feat-all"
+        ]) "a machine that isn't a handheld has the handheld's services";
         pkgs.writeText "features-eval" (
           builtins.unsafeDiscardStringContext (
             lib.concatMapStrings (name: (host name).system.build.toplevel.drvPath + "\n") hosts

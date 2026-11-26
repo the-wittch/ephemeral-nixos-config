@@ -42,7 +42,6 @@ const (
 	uiDevCreate  = 0x5501
 	uiDevDestroy = 0x5502
 
-	evRep      = 0x14
 	busVirtual = 0x06
 
 	// struct input_event on 64-bit Linux, the only kind of machine this runs on
@@ -135,7 +134,7 @@ type uinputSetup struct {
 	ffEffectsMax uint32
 }
 
-func newKeyboard(repeat bool) (*keyboard, error) {
+func newKeyboard() (*keyboard, error) {
 	f, err := os.OpenFile("/dev/uinput", os.O_WRONLY|syscall.O_CLOEXEC, 0)
 	if err != nil {
 		return nil, err
@@ -146,11 +145,6 @@ func newKeyboard(repeat bool) (*keyboard, error) {
 	}
 	if err := ioctlInt(f.Fd(), uiSetEvbit, evKey); err != nil {
 		return fail(err)
-	}
-	if repeat {
-		if err := ioctlInt(f.Fd(), uiSetEvbit, evRep); err != nil {
-			return fail(err)
-		}
 	}
 	// every key a keymap can put a character on
 	for code := uintptr(1); code < 256; code++ {

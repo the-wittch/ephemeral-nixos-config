@@ -2,6 +2,19 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 5.4.0
+
+### Fixed
+
+- Handheld: Handheld Daemon's settings, such as the stick lights and the controller layout, are kept across reboots. They're in `/etc/hhd`, which was wiped at every boot.
+- Handheld: a short press of the power button suspends, and a long one powers off. On the Steam Deck, where Handheld Daemon leaves the button alone, a press powered it off.
+- Handheld: the desktop no longer locks the screen on its own or on waking, since its lock screen wants the login password, which the controller can't type there.
+
+### Added
+
+- Handheld: power limits (TDP) in Handheld Daemon's overlay on the ROG Ally. Its `acpi_call` module, which some other handhelds need for this, isn't loaded.
+- Handheld: Steam starts in the background on the desktop, so the controller works as a mouse and Steam and X bring up its on-screen keyboard.
+
 ## 5.3.0
 
 ### Added
