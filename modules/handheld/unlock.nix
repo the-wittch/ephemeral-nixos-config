@@ -1,10 +1,22 @@
 {
+  # the installer's live system runs it for its own screens, from the release it pins
+  perSystem =
+    { pkgs, ... }:
+    {
+      packages.handheld-input = pkgs.callPackage ./_handheld-input.nix { };
+    };
+
   flake.modules.nixos.handheld-unlock =
     { pkgs, ... }:
     let
       input = pkgs.callPackage ./_handheld-input.nix { };
     in
     {
+      # Without it the Deck's controller is a mouse and a few keys until its menu button is
+      # held, and sends no button presses at all. Steam reads the controller itself, so this
+      # changes nothing in Game Mode.
+      boot.kernelParams = [ "hid_steam.lizard_mode=0" ];
+
       boot.initrd = {
         # evdev gives each controller the /dev/input node the program reads; the initrd doesn't load
         # it on its own

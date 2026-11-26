@@ -693,7 +693,8 @@ cat >"$work/catalog.json" <<'JSON'
   "discover": {"label": "Discover", "category": "Utilities", "default": false, "desktops": ["plasma"]},
   "steam": {"label": "Steam", "category": "Gaming", "default": false, "desktops": []},
   "htop": {"label": "htop", "category": "Terminal", "default": true, "desktops": []},
-  "keepassxc": {"label": "KeePassXC", "category": "Passwords", "default": false, "desktops": []}
+  "keepassxc": {"label": "KeePassXC", "category": "Passwords", "default": false, "desktops": []},
+  "heroic": {"label": "Heroic", "category": "Gaming", "default": false, "defaultOn": ["handheld"], "desktops": []}
 }
 JSON
 printf '["-firefox", "discover", "steam"]\n' >"$work/apps.json"
@@ -709,6 +710,9 @@ else fail "lib: apps_offered and apps_categories"; fi
 if lib "[[ \$(printf 'steam\ntweaks\n' | apps_file '$work/catalog.json' | jq -c .) == '[\"-firefox\",\"-htop\",\"steam\",\"tweaks\"]' ]]"; then
   pass "lib: apps_file writes the picks, and -<name> for an unticked default"
 else fail "lib: apps_file: $(cat "$work/out")"; fi
+if lib "[[ \$(apps_picked '$work/catalog.json' '$work/none.json' handheld | paste -sd ' ') == 'firefox heroic htop tweaks' && \$(apps_picked '$work/catalog.json' '$work/none.json' plasma | paste -sd ' ') == 'firefox htop tweaks' && \$(printf 'firefox\nhtop\n' | apps_file '$work/catalog.json' handheld | jq -c .) == '[\"-heroic\",\"-tweaks\",\"firefox\",\"htop\"]' ]]"; then
+  pass "lib: an app ticked by default on one desktop is picked there and nowhere else, and unticking it there is kept"
+else fail "lib: defaultOn: $(cat "$work/out")"; fi
 # without a desktop: only the terminal apps, and only those among the defaults
 if lib "[[ \$(apps_picked '$work/catalog.json' '$work/none.json' none) == htop && \$(apps_categories '$work/catalog.json' none) == Terminal && \$(apps_offered '$work/catalog.json' none) == htop && \$(printf 'htop\n' | apps_file '$work/catalog.json' none | jq -c .) == '[\"htop\"]' && \$(printf '' | apps_file '$work/catalog.json' none | jq -c .) == '[\"-htop\"]' ]]"; then
   pass "lib: without a desktop, only terminal apps are offered, and only the terminal defaults are picked"

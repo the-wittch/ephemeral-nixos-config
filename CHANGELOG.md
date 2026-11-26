@@ -2,6 +2,21 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 5.5.0
+
+### Fixed
+
+- Handheld: OpenSnitch is off, as without a desktop. Game Mode can't show its questions, so on the full profile it blocked Steam and everything else from connecting out.
+- Handheld: the Steam Deck's controller unlocks the disk. Until its menu button was held it was a mouse and a few keys, and sent no button presses at the prompt. `hid_steam.lizard_mode=0` keeps it a gamepad; on the desktop, Steam makes it a mouse again.
+
+### Added
+
+- Handheld: the Apps screen offers Decky Loader, and Heroic, Lutris and Prism Launcher show up in Game Mode as non-Steam games. Heroic, Lutris and Decky Loader are ticked by default on a handheld, through a new `defaultOn` in the app catalog: an app ticked by default on the desktops it names only. Lutris also brings Battle.net, the EA app, Ubisoft Connect and the Rockstar Games Launcher, installed by Lutris the first time. See [Handheld](docs/handheld.md#launchers-and-decky).
+- Handheld: the Ally's stick lights start as a rainbow.
+- Handheld: Discover and Partition Manager on the desktop, as on Plasma.
+- `handheld-input` is a package the installer uses, so a Deck or an Ally can be installed with its controller.
+- `sandbox-eval` checks the handheld's services and the initrd's too.
+
 ## 5.4.0
 
 ### Fixed

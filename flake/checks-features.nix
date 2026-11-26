@@ -66,12 +66,17 @@ let
     && c.services.logind.settings.Login.HandlePowerKey == "suspend"
     && c.boot.initrd.systemd.services ? handheld-input
     && c.services.greetd.enable
-    && !c.services.displayManager.plasma-login-manager.enable;
+    && !c.services.displayManager.plasma-login-manager.enable
+    # nobody in Game Mode to answer it
+    && !c.services.opensnitch.enable
+    && lib.elem "hid_steam.lizard_mode=0" c.boot.kernelParams
+    && lib.any (lib.hasPrefix "C /etc/hhd/state.yml ") c.systemd.tmpfiles.rules;
   notHandheld =
     c:
     !c.services.handheld-daemon.enable
     && !(c.boot.initrd.systemd.services ? handheld-input)
-    && !lib.elem "uinput" c.boot.initrd.kernelModules;
+    && !lib.elem "uinput" c.boot.initrd.kernelModules
+    && !lib.elem "hid_steam.lizard_mode=0" c.boot.kernelParams;
   refused =
     name: change:
     !(builtins.tryEval
@@ -119,7 +124,7 @@ in
             "handheld-full"
             "handheld-minimal"
           ])
-          "a handheld is missing Handheld Daemon, its kept settings, the power button or the controller unlock";
+          "a handheld is missing Handheld Daemon, its kept settings and lights, the power button or the controller unlock, or has OpenSnitch";
         assert lib.assertMsg (lib.all (n: notHandheld (host n)) [
           "plasma-full"
           "plasma-minimal"

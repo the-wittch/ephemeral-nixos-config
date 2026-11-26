@@ -22,7 +22,7 @@
 | `useTailscale` | the Tailscale VPN |
 | `server` | a server: SSH on for the keys in `sshKeys`, no sleep, and the disk unlocked over SSH after a reboot. See [Servers](servers.md) |
 | `sshKeys` | SSH public keys that may log in, such as `"ssh-ed25519 AAAA… you@laptop"`; a server needs at least one |
-| `useOpenSnitch` | OpenSnitch asks before programs connect out (on by default) |
+| `useOpenSnitch` | OpenSnitch asks before programs connect out (on by default; always off without a desktop and on a handheld, where nobody could answer it) |
 | `flatpakUpdates` | update the Flatpak apps once a week (on by default; full system with a desktop) |
 | `usePassSettings`, `passSettingsVault`, `passSettingsItem` | merge settings from Proton Pass |
 | `usePassSshAgent`, `passSshVault` | the Proton Pass SSH agent at login, serving the keys in that vault |

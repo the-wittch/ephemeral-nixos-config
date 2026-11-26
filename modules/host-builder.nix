@@ -29,7 +29,9 @@ let
       defaults = lib.attrNames (
         lib.filterAttrs (
           id: app:
-          app.default && !lib.elem id unpicked && (settings.desktop != "none" || app.category == "Terminal")
+          (app.default || lib.elem settings.desktop app.defaultOn)
+          && !lib.elem id unpicked
+          && (settings.desktop != "none" || app.category == "Terminal")
         ) catalog
       );
       onThisDesktop =
@@ -102,8 +104,14 @@ let
                 tailscale = settings.useTailscale;
                 inherit (settings) server;
                 encrypted-dns = settings.encryptedDns != "none";
-                # nobody could answer its questions without a screen
-                opensnitch = full && settings.useOpenSnitch && settings.desktop != "none";
+                # nobody could answer its questions without a screen, or in Game Mode
+                opensnitch =
+                  full
+                  && settings.useOpenSnitch
+                  && !lib.elem settings.desktop [
+                    "none"
+                    "handheld"
+                  ];
               }
               // lib.mapAttrs (_: key: full && settings.${key}) fullOnly
             )

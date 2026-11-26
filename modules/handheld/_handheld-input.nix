@@ -1,4 +1,4 @@
-# The controller as a keyboard for the disk passphrase at boot
+# The controller as a keyboard: the disk passphrase at boot, and the installer's screens
 { buildGoModule, writeText }:
 buildGoModule {
   pname = "handheld-input";

@@ -168,6 +168,13 @@ func (k *keyboard) key(code uint16, down bool) error {
 	if down {
 		value = 1
 	}
+	return k.send(code, value)
+}
+
+// 2 is a held key repeating, as a real keyboard sends it
+func (k *keyboard) repeat(code uint16) error { return k.send(code, 2) }
+
+func (k *keyboard) send(code uint16, value uint32) error {
 	var b [2 * eventSize]byte
 	binary.LittleEndian.PutUint16(b[16:], evKey)
 	binary.LittleEndian.PutUint16(b[18:], code)

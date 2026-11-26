@@ -2,9 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
+	"time"
 )
 
 func allyPad(t *testing.T) (*pad, *[]press) {
@@ -68,7 +71,7 @@ func TestPassphraseCharactersNeverChange(t *testing.T) {
 		btnLB: 'q', btnRB: 'e', btnLT: 'z', btnRT: 'c', btnLS: 's', btnRS: 't',
 		btnL4: '1', btnL5: '2', btnR4: '3', btnR5: '4',
 	}
-	acts := passphrase
+	acts := passphrase.actions
 	for b, r := range want {
 		if acts[b].char != r {
 			t.Errorf("button %d types %q, want %q", b, acts[b].char, r)
@@ -115,12 +118,14 @@ func TestKeymapLookup(t *testing.T) {
 }
 
 func TestEveryCharacterHasAUSKey(t *testing.T) {
-	for b, a := range passphrase {
-		if a.char == 0 {
-			continue
-		}
-		if _, ok := (usKeymap{}).find(a.char); !ok {
-			t.Errorf("button %d: no US key for %q", b, a.char)
+	for _, m := range []mode{passphrase, menu} {
+		for b, a := range m.actions {
+			if a.char == 0 {
+				continue
+			}
+			if _, ok := (usKeymap{}).find(a.char); !ok {
+				t.Errorf("button %d: no US key for %q", b, a.char)
+			}
 		}
 	}
 }
@@ -191,7 +196,7 @@ func TestMatchesTheConfigTable(t *testing.T) {
 		"left stick press": btnLS, "right stick press": btnRS,
 		"L4": btnL4, "L5": btnL5, "R4": btnR4, "R5": btnR5,
 	}
-	acts := passphrase
+	acts := passphrase.actions
 	for _, r := range rows {
 		b, ok := names[r.Button]
 		if !ok {
@@ -216,5 +221,69 @@ func TestDeck(t *testing.T) {
 	want := []press{{btnUp, true}, {btnX, true}, {btnL4, true}, {btnR5, true}, {btnLT, true}}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("got %v, want %v", got, want)
+	}
+}
+
+// what a test keyboard was sent, as code+ or code- or code*, for a repeat
+type fakeKeys struct{ sent []string }
+
+func (f *fakeKeys) key(code uint16, down bool) error {
+	f.sent = append(f.sent, fmt.Sprintf("%d%s", code, map[bool]string{true: "+", false: "-"}[down]))
+	return nil
+}
+
+func (f *fakeKeys) repeat(code uint16) error {
+	f.sent = append(f.sent, fmt.Sprintf("%d*", code))
+	return nil
+}
+
+func newState(m mode) (*state, *fakeKeys) {
+	kb := &fakeKeys{}
+	return &state{kb: kb, km: usKeymap{}, mode: m, held: map[button]stroke{}}, kb
+}
+
+func TestPassphraseNeverRepeats(t *testing.T) {
+	s, kb := newState(passphrase)
+	now := time.Now()
+	s.handle(press{btnUp, true}, now)
+	s.tick(now.Add(2 * time.Second))
+	if got := strings.Join(kb.sent, " "); got != "22+" {
+		t.Errorf("sent %s, want only u pressed", got)
+	}
+}
+
+func TestMenuRepeatsTheDpad(t *testing.T) {
+	s, kb := newState(menu)
+	now := time.Now()
+	s.handle(press{btnDown, true}, now)
+	s.tick(now.Add(repeatDelay / 2))
+	s.tick(now.Add(repeatDelay))
+	s.tick(now.Add(repeatDelay + repeatEvery))
+	s.handle(press{btnDown, false}, now)
+	s.tick(now.Add(10 * time.Second))
+	want := "108+ 108* 108* 108-"
+	if got := strings.Join(kb.sent, " "); got != want {
+		t.Errorf("sent %s, want %s", got, want)
+	}
+}
+
+func TestMenuShiftTab(t *testing.T) {
+	s, kb := newState(menu)
+	s.handle(press{btnLB, true}, time.Now())
+	s.handle(press{btnLB, false}, time.Now())
+	if got, want := strings.Join(kb.sent, " "), "42+ 15+ 15- 42-"; got != want {
+		t.Errorf("sent %s, want %s", got, want)
+	}
+}
+
+// switching mode lets go of what's held, so no key is left down on the other side
+func TestSwitchingReleasesHeldKeys(t *testing.T) {
+	s, kb := newState(menu)
+	s.handle(press{btnA, true}, time.Now())
+	s.releaseAll()
+	s.mode = passphrase
+	s.handle(press{btnA, false}, time.Now())
+	if got, want := strings.Join(kb.sent, " "), "28+ 28-"; got != want {
+		t.Errorf("sent %s, want %s", got, want)
 	}
 }

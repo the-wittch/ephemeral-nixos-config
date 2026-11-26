@@ -46,7 +46,7 @@ On every pull request, CI runs the secret scan, the link check (`scripts/check-l
 
 - `features-eval` evaluates a machine with each optional feature on by itself, and one with all of them, and checks each really is on.
 - `exposure-eval` checks every desktop and profile for an open port, SSH, a root password, users that can change outside the config, and OpenSnitch turned off where it should be on. A server may have port 22 open, and only with keys.
-- `sandbox-eval` finds each root service a file in `modules/` defines, and fails on one without the sandbox unless `flake/checks-security.nix` says why.
+- `sandbox-eval` finds each root service a file in `modules/` defines, the initrd's too, on a machine with every app and on the handheld, and fails on one without the sandbox unless `flake/checks-security.nix` says why.
 - `settings-reject` checks that bad `settings.json` values stay refused: an unknown desktop, a disk path with `..`, a vault name with `$`, an old `settings.nix`.
 - `docs-examples` loads every `nix` block in `docs/` into a GNOME machine on the full profile and evaluates it. So each block has to be a whole module for `modules/`, and they can't contradict each other; show a fragment in a `text` block instead.
 - `scripts` builds every command, and with them `scripts/ephemeral`, whose Go tests run in the build: every word in the `tools` table reaching its command with its arguments untouched, exit codes, mistakes, the small install, the explorer and the menu driven without a terminal (folders, filters, search, going to a path, errors, help, every line fitting at any size), and the colours' contrast. `gofmt` and `go vet` run there too. To work on it: `nix shell nixpkgs#go -c go test ./...` in `scripts/ephemeral`.
