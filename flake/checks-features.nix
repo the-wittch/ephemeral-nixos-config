@@ -65,6 +65,8 @@ let
     && lib.elem "/etc/hhd" (map (d: d.directory) c.preservation.preserveAt."/persist".directories)
     && c.services.logind.settings.Login.HandlePowerKey == "suspend"
     && c.boot.initrd.systemd.services ? handheld-input
+    # it reads Caps Lock back from its own keyboard
+    && lib.elem "/dev/uinput rw" c.boot.initrd.systemd.services.handheld-input.serviceConfig.DeviceAllow
     && c.services.greetd.enable
     && !c.services.displayManager.plasma-login-manager.enable
     # nobody in Game Mode to answer it
