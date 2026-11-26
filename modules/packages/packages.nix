@@ -13,6 +13,7 @@ let
       flatpak
       warn
       default
+      defaultOn
       desktops
       ;
     unfree = app.unfree != [ ];

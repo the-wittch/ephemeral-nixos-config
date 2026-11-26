@@ -38,6 +38,19 @@ in
               default = false;
               description = "Picked unless apps.json has -<name>, so an older apps.json keeps it.";
             };
+            defaultOn = mkOption {
+              type = types.listOf (
+                types.enum [
+                  "gnome"
+                  "plasma"
+                  "niri"
+                  "umbriel"
+                  "handheld"
+                ]
+              );
+              default = [ ];
+              description = "Picked unless apps.json has -<name>, as with default, but only on these desktops.";
+            };
             desktops = mkOption {
               type = types.listOf (
                 types.enum [
@@ -45,10 +58,27 @@ in
                   "plasma"
                   "niri"
                   "umbriel"
+                  "handheld"
                 ]
               );
               default = [ ];
               description = "Only offered and installed on these desktops; empty for all of them.";
+            };
+            steamShortcuts = mkOption {
+              type = types.listOf (
+                types.submodule {
+                  options = {
+                    name = mkOption { type = text; };
+                    args = mkOption {
+                      type = types.str;
+                      default = "";
+                      description = "Added after `flatpak run <id>`.";
+                    };
+                  };
+                }
+              );
+              default = [ ];
+              description = "On a handheld, non-Steam games in Steam for this Flatpak, so it can be started from Game Mode.";
             };
             warn = mkOption {
               type = types.nullOr text;

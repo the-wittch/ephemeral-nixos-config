@@ -17,12 +17,26 @@ Other handhelds that [Handheld Daemon](https://github.com/hhd-dev/hhd) supports 
 
 ## Installing
 
-1. Plug in a USB keyboard. The installer can't be used with the controller yet.
-2. On the Desktop screen, pick **Handheld**.
-3. For the disk passphrase, use only the characters in the table below, so you can type it with the controller at boot. The installer won't take any other characters, or the Deck's back buttons on anything but a Deck.
+You can install with the controller alone. On a Steam Deck or an Ally the installer starts on **Handheld**; on anything else, pick it on the Desktop screen.
 
-The installer takes eight presses at the least, but make it longer. Fourteen buttons give each press less than four bits, so eight presses are about 30 bits, which a determined offline attack on a stolen disk can get through. Twelve presses are about 46 bits, sixteen about 61. On a Deck the back buttons add four more characters.
+| on the controller | in the installer |
+|---|---|
+| d-pad | move |
+| A or Start | choose, or go on |
+| B | back |
+| X | tick or untick |
+| Y | on-screen keyboard, in a text field |
+| LB, RB | previous and next field |
+| Select | delete |
 
+1. Boot the installer from USB. On an Ally, hold volume down while it starts, pick **Boot Menu**, and pick the USB stick there, or its buttons won't work until the installer is up.
+2. **Connect to Wi-Fi** on the first screen: pick your network, and type its password with the on-screen keyboard.
+3. On the passphrase screen the controller types the passphrase the way it will at boot. Press your buttons, then **Start**; **Select** deletes. Use only the characters in the table below; the installer won't take any others, or the Deck's back buttons on anything but a Deck.
+4. The login password and the rest are typed with the on-screen keyboard (Y).
+
+A USB keyboard works throughout too.
+
+The passphrase has to be at least twelve presses. Fourteen buttons give each press less than four bits, so twelve presses are about 46 bits and sixteen about 61; eight would be about 30, which an offline attack on a stolen disk can get through. On a Deck the back buttons add four more characters.
 ## Unlocking the disk
 
 At boot, the passphrase prompt takes your controller's buttons as you'd type the passphrase. Press your buttons in order, then **Start**. **Select** deletes the last press. A keyboard works too.
@@ -40,7 +54,7 @@ At boot, the passphrase prompt takes your controller's buttons as you'd type the
 
 Buttons go by where they sit, as on an Xbox pad: on a PlayStation pad, cross is A, circle B, square X and triangle Y.
 
-So A, Y, up, up, LB, down, RT, B is the passphrase `ayuuqdcb`.
+So A, Y, up, up, LB, down, RT, B, X, Y, right, left is the passphrase `ayuuqdcbxyrl`. Caps Lock on a plugged-in keyboard doesn't change what the controller types.
 
 These controllers work at the prompt:
 
@@ -58,8 +72,22 @@ Bluetooth pads, and Xbox One and Series pads through the Xbox Wireless Adapter, 
 - **On the desktop**, Steam runs in the background, so the controller works as a mouse, and Steam and X together bring up its on-screen keyboard, for `sudo` and anything else you have to type.
 - **Updates**: Steam's own system update button does nothing here. Update from the desktop with `ephemeral update`, as on any other install.
 - **Power button**: a short press suspends, a long one powers off.
+- **On a Deck** the controller is a gamepad from the start rather than a mouse, which is what lets it unlock the disk. On the desktop, Steam in the background makes it a mouse again.
 
 On an Ally, Handheld Daemon runs the back buttons, the gyro, the stick lights and the power limits (TDP), from its overlay: double-tap the Armoury Crate button. Its settings are kept across reboots. On a Deck, Steam reads the controller itself, and Handheld Daemon only adds its overlay and power profiles.
+
+## Launchers and Decky
+
+On the full profile, the Apps screen has these for Game Mode. Heroic, Lutris and Decky Loader are ticked already; untick any you don't want:
+
+- **Heroic**: Epic, GOG and Amazon games.
+- **Lutris**: in Game Mode it also brings **Battle.net**, the **EA app**, **Ubisoft Connect** and the **Rockstar Games Launcher**. The first time, each one runs Lutris's installer for it. After that, Lutris asks whether to play or install again, and A on Play starts it.
+- **Prism Launcher**: Minecraft.
+- **Decky Loader**: plugins for Game Mode's quick menu, from the Decky store. It runs as root, as upstream has it, and a plugin can ask to run as root too, so add only plugins you trust. It also turns on Steam's remote debugging, which is how it gets into Steam's menus, and any program on the handheld can reach that while Steam runs. The firewall keeps it from the network.
+
+The launchers you pick show up in Steam's library as non-Steam games after the next switch into Game Mode or boot. Delete one in Steam and it stays deleted. Heroic and Lutris can each add single games to Steam too.
+
+On an Ally the stick lights start as a rainbow; change them in Handheld Daemon's overlay and the change stays.
 
 ## What to expect
 
@@ -73,7 +101,7 @@ These come from the kernel and firmware every install has, not from anything mad
 
 ## When something goes wrong
 
-- **The boot menu needs a keyboard.** To start an older build after a bad update, plug one in, press a key while the boot menu shows, and pick it, as [When something breaks](troubleshooting.md) says.
+- **An older build, after a bad update**: on a Deck, the d-pad and A should work in the boot menu, as the Deck's firmware passes them on. On an Ally, hold volume down at power-on, pick **Boot Menu** and then Ephemeral Nix; started that way, its d-pad should work in the boot menu too. Neither has been tried yet; a keyboard always works. Press a key while the menu shows and pick the older build, as [When something breaks](troubleshooting.md) says.
 - **The emergency shell**, and anything else typed while the system can't start, needs a keyboard too.
 - **Game Mode keeps restarting**: plug in a keyboard and switch to another console with Ctrl, Alt and F2, log in, and run `journalctl -b --user` to see why Steam stopped.
 - **The controller does nothing at the passphrase prompt**: use a keyboard to unlock, then run `journalctl -b -u handheld-input` and include its output in a report.
@@ -93,8 +121,5 @@ The disk passphrase is what protects a handheld when it's off. Once it's unlocke
 - you're logged in at boot without a password, and the desktop doesn't lock, on its own or on waking. Anyone holding it while it's on or asleep is in your account. Steam's own lock screen (Settings, Security) can ask for a PIN on waking in Game Mode.
 - Handheld Daemon runs as root, as nixpkgs sets it up, outside the sandbox this config's own services get. Its settings API listens only on `127.0.0.1:5335`, with a token, and the firewall is closed to it either way.
 - `acpi_call`, which lets root run any ACPI method and some handhelds need for power limits, isn't loaded.
+- OpenSnitch is off, whatever `useOpenSnitch` says: Game Mode can't show its questions, so it would block Steam. [Decky Loader](#launchers-and-decky), if you pick it, runs as root.
 
-## Not done yet
-
-- Using the installer with the controller, and an on-screen keyboard in it.
-- Decky Loader and NonSteamLaunchers as apps to pick.

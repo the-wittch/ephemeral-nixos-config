@@ -4,6 +4,7 @@
 { config, ... }:
 let
   inherit (config.ephemeral.aspects) nixos;
+  catalog = config.ephemeral.apps;
 
   handheld =
     {
@@ -15,10 +16,35 @@ let
     let
       user = config.ephemeral.settings.username;
 
+      # the picked launchers' entries in Game Mode; only the full profile installs catalog apps
+      launchers =
+        lib.concatMap
+          (
+            id:
+            map (s: {
+              inherit (s) name;
+              exe = "/run/current-system/sw/bin/flatpak";
+              args = lib.concatStringsSep " " (
+                [
+                  "run"
+                  catalog.${id}.flatpak
+                ]
+                ++ lib.optional (s.args != "") s.args
+              );
+            }) catalog.${id}.steamShortcuts
+          )
+          (
+            lib.optionals (config.ephemeral.settings.profile == "full") (
+              builtins.filter (id: catalog ? ${id} && catalog.${id}.flatpak != null) config.ephemeral.pickedApps
+            )
+          );
+
       session = pkgs.writeShellApplication {
         name = "ephemeral-handheld-session";
         text = ''
           plasma_run=${pkgs.kdePackages.plasma-workspace}/libexec/plasma-dbus-run-session-if-needed
+          steam_shortcuts=${lib.getExe (pkgs.callPackage ../handheld/_steam-shortcuts.nix { })}
+          launchers=${pkgs.writeText "steam-shortcuts.json" (builtins.toJSON launchers)}
         ''
         + builtins.readFile ../handheld/_session.sh;
       };
@@ -100,6 +126,17 @@ let
       };
       # its settings, profiles and API token
       preservation.preserveAt."/persist".directories = [ "/etc/hhd" ];
+      # The stick lights start as a rainbow. Handheld Daemon fills in the rest of its settings
+      # around this, and C writes it only where there's no state.yml yet, so a change made in its
+      # overlay stays.
+      systemd.tmpfiles.rules = [
+        "C /etc/hhd/state.yml 0644 root root - ${pkgs.writeText "hhd-state.yml" ''
+          rgb:
+            handheld:
+              mode:
+                mode: rainbow
+        ''}"
+      ];
 
       # Handheld Daemon leaves the Deck's power button alone, and logind's default is to power off
       services.logind.settings.Login = {

@@ -1,7 +1,11 @@
-// Command handheld-input lets a handheld's controller type the disk passphrase at boot, on a
-// virtual keyboard, where there's no Steam to do it.
+// Command handheld-input lets a handheld's controller type, on a virtual keyboard, where there's
+// no Steam to do it: the disk passphrase at boot, and the installer's screens.
 //
-// It prints nothing about what's pressed: the presses are the passphrase.
+// With no argument it types the passphrase; with menu it starts in the installer's keys.
+// SIGUSR1 switches to the passphrase and SIGUSR2 back to menu, which the installer sends around
+// its passphrase fields, so the passphrase is pressed there as it will be at boot.
+//
+// It prints nothing about what's pressed: in passphrase mode the presses are the passphrase.
 package main
 
 import (
@@ -19,9 +23,36 @@ type press struct {
 	down bool
 }
 
+// how long a d-pad press waits before repeating, and how often it repeats after
+const (
+	repeatDelay = 400 * time.Millisecond
+	repeatEvery = 80 * time.Millisecond
+)
+
+// what the virtual keyboard does, so the presses can be tested without one
+type keySender interface {
+	key(code uint16, down bool) error
+	repeat(code uint16) error
+	capsLock() bool
+}
+
+type state struct {
+	kb   keySender
+	km   keymap
+	mode mode
+	held map[button]stroke
+	// the repeating button and when it next repeats
+	rep     button
+	repNext time.Time
+}
+
 func main() {
-	if len(os.Args) != 1 {
-		fmt.Fprintln(os.Stderr, "usage: handheld-input")
+	start := passphrase
+	switch {
+	case len(os.Args) == 2 && os.Args[1] == "menu":
+		start = menu
+	case len(os.Args) != 1:
+		fmt.Fprintln(os.Stderr, "usage: handheld-input [menu]")
 		os.Exit(2)
 	}
 
@@ -40,54 +71,99 @@ func main() {
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
+	switchTo := make(chan os.Signal, 1)
+	signal.Notify(switchTo, syscall.SIGUSR1, syscall.SIGUSR2)
+	tick := time.NewTicker(20 * time.Millisecond)
 
-	held := map[button]stroke{}
+	s := &state{kb: kb, km: km, mode: start, held: map[button]stroke{}}
 	for {
+		var err error
 		select {
 		case p := <-presses:
-			if err := handle(kb, km, passphrase, held, p); err != nil {
-				fmt.Fprintf(os.Stderr, "handheld-input: %v\n", err)
+			err = s.handle(p, time.Now())
+		case <-tick.C:
+			err = s.tick(time.Now())
+		case sig := <-switchTo:
+			err = s.releaseAll()
+			s.mode = menu
+			if sig == syscall.SIGUSR1 {
+				s.mode = passphrase
 			}
 		case <-stop:
+			s.releaseAll()
 			kb.close()
 			return
+		}
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "handheld-input: %v\n", err)
 		}
 	}
 }
 
-func handle(kb *keyboard, km keymap, actions map[button]action, held map[button]stroke, p press) error {
+func (s *state) handle(p press, now time.Time) error {
 	if !p.down {
-		s, ok := held[p.b]
-		if !ok {
-			return nil
-		}
-		delete(held, p.b)
-		if err := kb.key(s.code, false); err != nil {
-			return err
-		}
-		if s.shift {
-			return kb.key(keyLeftShift, false)
-		}
+		return s.release(p.b)
+	}
+	a, ok := s.mode.actions[p.b]
+	if _, already := s.held[p.b]; !ok || already {
 		return nil
 	}
-
-	a, ok := actions[p.b]
-	if _, already := held[p.b]; !ok || already {
-		return nil
-	}
-	s := stroke{code: a.key}
+	st := stroke{code: a.key, shift: a.shift}
 	if a.char != 0 {
-		if s, ok = km.find(a.char); !ok {
+		if st, ok = s.km.find(a.char); !ok {
 			return nil
 		}
+		// with Caps Lock on, Shift is what gives the small letter
+		if st.letter && s.kb.capsLock() {
+			st.shift = !st.shift
+		}
 	}
-	held[p.b] = s
-	if s.shift {
-		if err := kb.key(keyLeftShift, true); err != nil {
+	s.held[p.b] = st
+	if s.mode.repeat[p.b] {
+		s.rep, s.repNext = p.b, now.Add(repeatDelay)
+	}
+	if st.shift {
+		if err := s.kb.key(keyLeftShift, true); err != nil {
 			return err
 		}
 	}
-	return kb.key(s.code, true)
+	return s.kb.key(st.code, true)
+}
+
+func (s *state) release(b button) error {
+	st, ok := s.held[b]
+	if !ok {
+		return nil
+	}
+	delete(s.held, b)
+	if s.rep == b {
+		s.rep = 0
+	}
+	if err := s.kb.key(st.code, false); err != nil {
+		return err
+	}
+	if st.shift {
+		return s.kb.key(keyLeftShift, false)
+	}
+	return nil
+}
+
+func (s *state) releaseAll() error {
+	var first error
+	for b := range s.held {
+		if err := s.release(b); err != nil && first == nil {
+			first = err
+		}
+	}
+	return first
+}
+
+func (s *state) tick(now time.Time) error {
+	if s.rep == 0 || now.Before(s.repNext) {
+		return nil
+	}
+	s.repNext = now.Add(repeatEvery)
+	return s.kb.repeat(s.held[s.rep].code)
 }
 
 // watch opens each controller it knows as it appears, and passes on its presses.

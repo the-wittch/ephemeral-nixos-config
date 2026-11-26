@@ -52,7 +52,10 @@
       category = "Utilities";
       description = "KDE's app store for Flathub apps";
       package = "kdePackages.discover";
-      desktops = [ "plasma" ];
+      desktops = [
+        "plasma"
+        "handheld"
+      ];
       default = true;
     };
     partitionmanager = {
@@ -60,7 +63,10 @@
       category = "Utilities";
       description = "KDE's disk and partition editor";
       package = "kdePackages.partitionmanager";
-      desktops = [ "plasma" ];
+      desktops = [
+        "plasma"
+        "handheld"
+      ];
       default = true;
     };
     syncthingtray = {

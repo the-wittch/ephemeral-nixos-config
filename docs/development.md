@@ -46,7 +46,7 @@ On every pull request, CI runs the secret scan, the link check (`scripts/check-l
 
 - `features-eval` evaluates a machine with each optional feature on by itself, and one with all of them, and checks each really is on.
 - `exposure-eval` checks every desktop and profile for an open port, SSH, a root password, users that can change outside the config, and OpenSnitch turned off where it should be on. A server may have port 22 open, and only with keys.
-- `sandbox-eval` finds each root service a file in `modules/` defines, and fails on one without the sandbox unless `flake/checks-security.nix` says why.
+- `sandbox-eval` finds each root service a file in `modules/` defines, the initrd's too, on a machine with every app and on the handheld, and fails on one without the sandbox unless `flake/checks-security.nix` says why.
 - `settings-reject` checks that bad `settings.json` values stay refused: an unknown desktop, a disk path with `..`, a vault name with `$`, an old `settings.nix`.
 - `docs-examples` loads every `nix` block in `docs/` into a GNOME machine on the full profile and evaluates it. So each block has to be a whole module for `modules/`, and they can't contradict each other; show a fragment in a `text` block instead.
 - `scripts` builds every command, and with them `scripts/ephemeral`, whose Go tests run in the build: every word in the `tools` table reaching its command with its arguments untouched, exit codes, mistakes, the small install, the explorer and the menu driven without a terminal (folders, filters, search, going to a path, errors, help, every line fitting at any size), and the colours' contrast. `gofmt` and `go vet` run there too. To work on it: `nix shell nixpkgs#go -c go test ./...` in `scripts/ephemeral`.
@@ -65,7 +65,7 @@ Beside them:
 
 - `desktop-build` builds every desktop and most feature hosts.
 - `desktop-boot-plasma`, `-niri`, `-umbriel` and `-handheld` boot those desktops to their login screen, or for the handheld, its session.
-- `handheld-unlock` unlocks a LUKS root with a virtual controller made inside the initrd, on a French layout, and checks a keyboard still works and nothing pressed is logged.
+- `handheld-unlock` unlocks a LUKS root with a virtual controller made inside the initrd, on a French layout and with Caps Lock on, and checks a keyboard still works and nothing pressed is logged.
 - `upgrade-boot` boots the current code on the `/persist` a VM of the previous release wrote.
 - `profile-switch` switches a running small install to the full system, as `ephemeral-setup` does, then back.
 - `network-filter` checks OpenSnitch against a second machine: what it blocks, what the guard holds back at boot and after a crash, and that a requested stop lets traffic through, even when the daemon dies on the way out.

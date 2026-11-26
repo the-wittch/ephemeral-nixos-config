@@ -6,10 +6,11 @@ import (
 	"unsafe"
 )
 
-// A key, with Shift or without.
+// A key, with Shift or without. A letter is one Caps Lock changes.
 type stroke struct {
-	code  uint16
-	shift bool
+	code   uint16
+	shift  bool
+	letter bool
 }
 
 // The console's layout decides which key types which character: on AZERTY the key US keyboards
@@ -64,7 +65,7 @@ func findIn(entry entryFunc, r rune) (stroke, bool) {
 				return stroke{}, false
 			}
 			if keysymIs(v, r) {
-				return stroke{code: uint16(i), shift: t.shift}, true
+				return stroke{code: uint16(i), shift: t.shift, letter: isLetter(v)}, true
 			}
 		}
 	}
@@ -73,6 +74,8 @@ func findIn(entry entryFunc, r rune) (stroke, bool) {
 
 // A keysym's high byte is its type: 0x00 a plain character, 0x0b a letter that Caps Lock
 // affects, and the same with 0xf0 on top in a Unicode keymap.
+func isLetter(v uint16) bool { return v>>8 == 0x0b || v>>8 == 0xfb }
+
 func keysymIs(v uint16, r rune) bool {
 	if r > 0x7f {
 		return false
@@ -95,7 +98,7 @@ var usKeys = map[rune]uint16{
 
 func (usKeymap) find(r rune) (stroke, bool) {
 	c, ok := usKeys[r]
-	return stroke{code: c}, ok
+	return stroke{code: c, letter: r >= 'a' && r <= 'z'}, ok
 }
 
 // The console's keymap, falling back to US positions for a character it doesn't have.

@@ -1,8 +1,9 @@
 # shellcheck shell=bash
 # The rules for apps.json, with no screens. host-builder.nix applies the same ones at a rebuild,
-# and the installer when it writes the file: an app ticked by default is picked unless apps.json
-# has it as -<name>, and an app for one desktop is only offered on that one. Without a desktop
-# (desktop "none") only the terminal apps are offered, and only those among the defaults.
+# and the installer when it writes the file: an app ticked by default, on every desktop or on the
+# ones defaultOn names, is picked unless apps.json has it as -<name>, and an app for one desktop
+# is only offered on that one. Without a desktop (desktop "none") only the terminal apps are
+# offered, and only those among the defaults.
 
 # called on its own, not in $( ), so a bad file stops the command
 # shellcheck disable=SC2329 # not every command calls it
@@ -21,7 +22,7 @@ apps_picked() {
   jq -rn --argjson e "$entries" --slurpfile c "$1" --arg d "${3:-}" '
     ($e | map(select(startswith("-") | not))) as $listed
     | ($e | map(select(startswith("-")) | .[1:])) as $unpicked
-    | ($c[0] | to_entries | map(select(.value.default and ($d != "none" or .value.category == "Terminal")) | .key)) - $unpicked
+    | ($c[0] | to_entries | map(select((.value.default or ((.value.defaultOn // []) | index($d) != null)) and ($d != "none" or .value.category == "Terminal")) | .key)) - $unpicked
     | $listed + . | unique | .[]'
 }
 
@@ -55,6 +56,6 @@ apps_categories() {
 apps_file() {
   # shellcheck disable=SC2016
   jq -Rn --slurpfile c "$1" --arg d "${2:-}" '[inputs | select(. != "")] as $picked
-    | ($c[0] | to_entries | map(select(.value.default and ($d != "none" or .value.category == "Terminal")) | .key)) as $defaults
+    | ($c[0] | to_entries | map(select((.value.default or ((.value.defaultOn // []) | index($d) != null)) and ($d != "none" or .value.category == "Terminal")) | .key)) as $defaults
     | $picked + ($defaults - $picked | map("-" + .)) | unique'
 }

@@ -152,7 +152,7 @@ in
                     " && ${onLuks}/bin/switch-to-configuration boot >&2"
                 )
 
-            with subtest("the controller unlocks the disk, after a wrong try and a press taken back"):
+            with subtest("the controller unlocks the disk, after a wrong try, a press taken back and Caps Lock"):
                 boot()
                 wait_for_prompt()
                 machine.wait_for_unit("handheld-input.service")
@@ -174,6 +174,9 @@ in
                 time.sleep(2)
                 wait_for_prompt()
 
+                # Caps Lock on, from the keyboard, mustn't make the controller type capitals
+                machine.send_key("caps_lock")
+                time.sleep(1)
                 # X typed, then deleted with View
                 press_all(pad, ["X", "View", "A", "LT", "up", "LB", "down", "left", "RT", "B", "Menu"])
                 machine.switch_root()

@@ -66,43 +66,68 @@ let
     ++ lib.optional (
       c.ephemeral.settings.profile == "full"
       && c.ephemeral.settings.useOpenSnitch
-      && c.ephemeral.settings.desktop != "none"
+      && !lib.elem c.ephemeral.settings.desktop [
+        "none"
+        "handheld"
+      ]
       && !c.services.opensnitch.enable
     ) "OpenSnitch is off";
   exposed = lib.concatMap (name: map (p: "${name}: ${p}") (exposure name)) hosts;
 
   # Every system service a file in modules/ defines a program for, as root, has to use
-  # ephemeral.sandbox or at least what it promises. Found from where each definition comes from,
-  # so a new service is checked without being listed here.
-  everything = config.flake.nixosConfigurations.feat-all.extendModules {
-    modules = [
-      { ephemeral.pickedApps = lib.attrNames config.ephemeral.apps; }
-    ]
-    ++ map (app: app.nixos) (lib.attrValues config.ephemeral.apps);
-  };
+  # ephemeral.sandbox or at least what it promises; the initrd's, which can't have a mount
+  # namespace, everything else. Found from where each definition comes from, so a new service is
+  # checked without being listed here. The handheld is a machine of its own, as its desktop and
+  # apps are in no other.
+  withAllApps =
+    name:
+    config.flake.nixosConfigurations.${name}.extendModules {
+      modules = [
+        { ephemeral.pickedApps = lib.attrNames config.ephemeral.apps; }
+      ]
+      ++ map (app: app.nixos) (lib.attrValues config.ephemeral.apps);
+    };
+  machines = map withAllApps [
+    "feat-all"
+    "handheld-full"
+  ];
   unsandboxed = {
     credential-secret-setup = "it bind-mounts the credential key into the running system";
     opensnitch-boot-guard = "it adds nftables rules to the system's network, so it can't have a private one; the rest of the sandbox applies";
     systemd-machine-id-commit = "systemd's own unit; persist.nix only points it at /persist, as preservation's first-boot setup does";
+    rollback = "it swaps the btrfs root for root-blank in the initrd, which takes the block device and CAP_SYS_ADMIN";
+    decky-loader = "upstream only supports it as root: it installs plugins and runs the ones that ask for root, and drops to the user for the rest";
   };
-  ours = lib.filter (
-    d: lib.hasPrefix (toString ../modules) d.file
-  ) everything.options.systemd.services.definitionsWithLocations;
-  defined = lib.unique (
-    lib.concatMap (
-      d:
-      lib.attrNames (
-        lib.filterAttrs (
-          _: s: lib.isAttrs s && (s ? script || (s.serviceConfig or { }) ? ExecStart)
-        ) d.value
-      )
-    ) ours
-  );
+  definedIn =
+    machine: path:
+    lib.unique (
+      lib.concatMap
+        (
+          d:
+          lib.attrNames (
+            lib.filterAttrs (
+              _: s: lib.isAttrs s && (s ? script || (s.serviceConfig or { }) ? ExecStart)
+            ) d.value
+          )
+        )
+        (
+          lib.filter (
+            d: lib.hasPrefix (toString ../modules) d.file
+          ) (lib.getAttrFromPath path machine.options).definitionsWithLocations
+        )
+    );
+  system = [
+    "systemd"
+    "services"
+  ];
+  initrd = [
+    "boot"
+    "initrd"
+    "systemd"
+    "services"
+  ];
   sandboxed =
-    name:
-    let
-      s = everything.config.systemd.services.${name}.serviceConfig;
-    in
+    s:
     (s.User or "root") != "root"
     || s.DynamicUser or false
     || (
@@ -113,7 +138,27 @@ let
       && s ? CapabilityBoundingSet
       && s ? SystemCallFilter
     );
-  loose = lib.filter (name: !(unsandboxed ? ${name}) && !sandboxed name) defined;
+  initrdSandboxed =
+    s:
+    s.CapabilityBoundingSet or null == [ "" ]
+    && s.NoNewPrivileges or false
+    && s ? SystemCallFilter
+    && s.DevicePolicy or null == "closed"
+    && s.RestrictAddressFamilies or null == [ "none" ];
+  looseIn =
+    machine:
+    lib.filter (
+      name:
+      !(unsandboxed ? ${name})
+      && !sandboxed (lib.getAttrFromPath system machine.config).${name}.serviceConfig
+    ) (definedIn machine system)
+    ++ lib.filter (
+      name:
+      !(unsandboxed ? ${name})
+      && !initrdSandboxed (lib.getAttrFromPath initrd machine.config).${name}.serviceConfig
+    ) (definedIn machine initrd);
+  defined = lib.unique (lib.concatMap (m: definedIn m system ++ definedIn m initrd) machines);
+  loose = lib.unique (lib.concatMap looseIn machines);
   stale = lib.filter (name: !lib.elem name defined) (lib.attrNames unsandboxed);
 in
 {
@@ -132,6 +177,9 @@ in
           "root-reset-check"
           "controld-resolver"
           "snapper-persist-setup"
+          "rollback"
+          "handheld-input"
+          "decky-loader"
         ]) "sandbox-eval found only: ${toString defined}";
         assert lib.assertMsg (loose == [ ]) ''
           root services from modules/ without the sandbox: ${toString loose}

@@ -35,7 +35,7 @@ Every fact the two repos share has one owner. The other side reads it from a rel
 | the version | the newest heading in `CHANGELOG.md` | `modules/release.nix`, `ephemeral-update --list`, and the release scripts |
 | the installer's screens, their wording apart from the menus, disk checks and install steps | the installer | nothing here |
 
-`settings-contract`, `settings`, `wallpaper` and `welcome-logo` are a public interface, like the aspect names: renaming or removing what they hold is a breaking change for the installer.
+`settings-contract`, `settings`, `wallpaper`, `welcome-logo` and `handheld-input`, which the installer's live system runs for the controller, are a public interface, like the aspect names: renaming or removing what they hold, or `handheld-input`'s `menu` argument and signals, is a breaking change for the installer.
 
 Where things go:
 
@@ -90,7 +90,7 @@ These hold on every machine, in every profile:
 3. **Secret permissions are set again at every boot**, by tmpfiles rules next to the feature that owns the secret.
 4. **Root has no password. sudo is for `wheel`, with a password. The Nix daemon is for `wheel` only. Users are declared by the config** (`mutableUsers = false`).
 5. **The firewall is on, SSH is off, and no port opens without an explicit setting.** `server` is that setting for SSH: port 22, for the keys in `sshKeys` only, with passwords and root refused, and port 2222 in the initrd, for the same keys, only until the disk is unlocked. Its host key reaches the initrd through the boot loader, never the Nix store, sealed to the TPM with Secure Boot on. On the full profile, OpenSnitch denies outgoing connections that haven't been allowed, except without a desktop, where nobody could answer it.
-6. **Root services this repo adds run in `config.ephemeral.sandbox`**, unless `unsandboxed` in `flake/checks-security.nix` says why they can't.
+6. **Root services this repo adds run in `config.ephemeral.sandbox`**, or in the initrd, which can't give them a mount namespace, with no capabilities, no network and only the devices they name; unless `unsandboxed` in `flake/checks-security.nix` says why they can't.
 7. **Anything a user typed reaches a shell only through a validator, `escapeShellArg`, an environment variable or `jq --arg`.** Never through string concatenation.
 8. **Every value in `settings.json` that ends up in a script or a path has a type that refuses what would break it.** `settings-reject` checks the refusals.
 9. **Kernel hardening only gets stronger.** Turning something off needs a changelog entry saying how to undo it.
