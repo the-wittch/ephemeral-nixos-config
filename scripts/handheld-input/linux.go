@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sync/atomic"
 	"syscall"
 	"unsafe"
 )
@@ -39,14 +38,11 @@ const (
 
 	uiSetEvbit   = 0x40045564
 	uiSetKeybit  = 0x40045565
-	uiSetLedbit  = 0x40045569
 	uiDevSetup   = 0x405c5503
 	uiDevCreate  = 0x5501
 	uiDevDestroy = 0x5502
 
-	evLed       = 0x11
-	ledCapsLock = 0x01
-	busVirtual  = 0x06
+	busVirtual = 0x06
 
 	// struct input_event on 64-bit Linux, the only kind of machine this runs on
 	eventSize = 24
@@ -129,12 +125,8 @@ func (g *gamepad) read(p *pad) error {
 	}
 }
 
-// The virtual keyboard the presses come out of. It has a Caps Lock light, which the splash and
-// the console set on every keyboard they read, so it knows when Caps Lock is on.
-type keyboard struct {
-	f    *os.File
-	caps atomic.Bool
-}
+// The virtual keyboard the presses come out of.
+type keyboard struct{ f *os.File }
 
 type uinputSetup struct {
 	id           inputID
@@ -143,7 +135,7 @@ type uinputSetup struct {
 }
 
 func newKeyboard() (*keyboard, error) {
-	f, err := os.OpenFile("/dev/uinput", os.O_RDWR|syscall.O_CLOEXEC, 0)
+	f, err := os.OpenFile("/dev/uinput", os.O_WRONLY|syscall.O_CLOEXEC, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -152,12 +144,6 @@ func newKeyboard() (*keyboard, error) {
 		return nil, err
 	}
 	if err := ioctlInt(f.Fd(), uiSetEvbit, evKey); err != nil {
-		return fail(err)
-	}
-	if err := ioctlInt(f.Fd(), uiSetEvbit, evLed); err != nil {
-		return fail(err)
-	}
-	if err := ioctlInt(f.Fd(), uiSetLedbit, ledCapsLock); err != nil {
 		return fail(err)
 	}
 	// every key a keymap can put a character on
@@ -174,29 +160,8 @@ func newKeyboard() (*keyboard, error) {
 	if err := ioctlInt(f.Fd(), uiDevCreate, 0); err != nil {
 		return fail(err)
 	}
-	k := &keyboard{f: f}
-	go k.lights()
-	return k, nil
+	return &keyboard{f}, nil
 }
-
-// lights follows the Caps Lock light until the keyboard is closed.
-func (k *keyboard) lights() {
-	buf := make([]byte, eventSize*16)
-	for {
-		n, err := k.f.Read(buf)
-		if err != nil {
-			return
-		}
-		for o := 0; o+eventSize <= n; o += eventSize {
-			e := buf[o : o+eventSize]
-			if binary.LittleEndian.Uint16(e[16:]) == evLed && binary.LittleEndian.Uint16(e[18:]) == ledCapsLock {
-				k.caps.Store(binary.LittleEndian.Uint32(e[20:]) != 0)
-			}
-		}
-	}
-}
-
-func (k *keyboard) capsLock() bool { return k.caps.Load() }
 
 func (k *keyboard) key(code uint16, down bool) error {
 	var value uint32

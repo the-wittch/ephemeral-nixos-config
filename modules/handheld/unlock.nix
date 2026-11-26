@@ -56,8 +56,7 @@
             ExecStart = "${input}/bin/handheld-input";
             DevicePolicy = "closed";
             DeviceAllow = [
-              # read too: the splash sets the Caps Lock light on it
-              "/dev/uinput rw"
+              "/dev/uinput w"
               "/dev/tty0 r"
               "char-input r"
             ];

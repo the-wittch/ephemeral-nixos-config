@@ -54,7 +54,7 @@ At boot, the passphrase prompt takes your controller's buttons as you'd type the
 
 Buttons go by where they sit, as on an Xbox pad: on a PlayStation pad, cross is A, circle B, square X and triangle Y.
 
-So A, Y, up, up, LB, down, RT, B, X, Y, right, left is the passphrase `ayuuqdcbxyrl`. Caps Lock on a plugged-in keyboard doesn't change what the controller types.
+So A, Y, up, up, LB, down, RT, B, X, Y, right, left is the passphrase `ayuuqdcbxyrl`. If a keyboard is plugged in, make sure its Caps Lock is off: with it on, the controller's presses come out as capitals and the passphrase is refused.
 
 These controllers work at the prompt:
 

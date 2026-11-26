@@ -33,7 +33,6 @@ const (
 type keySender interface {
 	key(code uint16, down bool) error
 	repeat(code uint16) error
-	capsLock() bool
 }
 
 type state struct {
@@ -112,10 +111,6 @@ func (s *state) handle(p press, now time.Time) error {
 	if a.char != 0 {
 		if st, ok = s.km.find(a.char); !ok {
 			return nil
-		}
-		// with Caps Lock on, Shift is what gives the small letter
-		if st.letter && s.kb.capsLock() {
-			st.shift = !st.shift
 		}
 	}
 	s.held[p.b] = st

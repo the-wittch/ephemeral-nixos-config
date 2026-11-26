@@ -65,7 +65,7 @@ Beside them:
 
 - `desktop-build` builds every desktop and most feature hosts.
 - `desktop-boot-plasma`, `-niri`, `-umbriel` and `-handheld` boot those desktops to their login screen, or for the handheld, its session.
-- `handheld-unlock` unlocks a LUKS root with a virtual controller made inside the initrd, on a French layout and with Caps Lock on, and checks a keyboard still works and nothing pressed is logged.
+- `handheld-unlock` unlocks a LUKS root with a virtual controller made inside the initrd, on a French layout, and checks a keyboard still works and nothing pressed is logged.
 - `upgrade-boot` boots the current code on the `/persist` a VM of the previous release wrote.
 - `profile-switch` switches a running small install to the full system, as `ephemeral-setup` does, then back.
 - `network-filter` checks OpenSnitch against a second machine: what it blocks, what the guard holds back at boot and after a crash, and that a requested stop lets traffic through, even when the daemon dies on the way out.

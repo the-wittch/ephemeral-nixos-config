@@ -100,11 +100,11 @@ func TestKeymapLookup(t *testing.T) {
 		r    rune
 		want stroke
 	}{
-		{'a', stroke{16, false, true}},
-		{'q', stroke{30, false, true}},
-		{'z', stroke{17, false, true}},
-		{'1', stroke{2, true, false}},
-		{'/', stroke{52, true, false}},
+		{'a', stroke{16, false}},
+		{'q', stroke{30, false}},
+		{'z', stroke{17, false}},
+		{'1', stroke{2, true}},
+		{'/', stroke{52, true}},
 	}
 	for _, c := range cases {
 		got, ok := findIn(azerty, c.r)
@@ -225,10 +225,7 @@ func TestDeck(t *testing.T) {
 }
 
 // what a test keyboard was sent, as code+ or code- or code*, for a repeat
-type fakeKeys struct {
-	sent []string
-	caps bool
-}
+type fakeKeys struct{ sent []string }
 
 func (f *fakeKeys) key(code uint16, down bool) error {
 	f.sent = append(f.sent, fmt.Sprintf("%d%s", code, map[bool]string{true: "+", false: "-"}[down]))
@@ -240,26 +237,9 @@ func (f *fakeKeys) repeat(code uint16) error {
 	return nil
 }
 
-func (f *fakeKeys) capsLock() bool { return f.caps }
-
 func newState(m mode) (*state, *fakeKeys) {
 	kb := &fakeKeys{}
 	return &state{kb: kb, km: usKeymap{}, mode: m, held: map[button]stroke{}}, kb
-}
-
-func TestCapsLockStillTypesSmallLetters(t *testing.T) {
-	s, kb := newState(passphrase)
-	kb.caps = true
-	now := time.Now()
-	s.handle(press{btnA, true}, now)
-	s.handle(press{btnA, false}, now)
-	s.handle(press{btnL4, true}, now)
-	s.handle(press{btnL4, false}, now)
-	// Shift around a, as Caps Lock is on; none around 1, which Caps Lock doesn't change
-	want := "42+ 30+ 30- 42- 2+ 2-"
-	if got := strings.Join(kb.sent, " "); got != want {
-		t.Errorf("sent %s, want %s", got, want)
-	}
 }
 
 func TestPassphraseNeverRepeats(t *testing.T) {

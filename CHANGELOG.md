@@ -8,7 +8,6 @@ Breaking changes are listed first in each release, with what to do about them. R
 
 - Handheld: OpenSnitch is off, as without a desktop. Game Mode can't show its questions, so on the full profile it blocked Steam and everything else from connecting out.
 - Handheld: the Steam Deck's controller unlocks the disk. Until its menu button was held it was a mouse and a few keys, and sent no button presses at the prompt. `hid_steam.lizard_mode=0` keeps it a gamepad; on the desktop, Steam makes it a mouse again.
-- Handheld: Caps Lock on a plugged-in keyboard no longer turns the controller's presses into capitals at the passphrase prompt.
 
 ### Added
 
