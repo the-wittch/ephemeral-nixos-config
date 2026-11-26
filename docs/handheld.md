@@ -22,24 +22,25 @@ You can install with the controller alone. On a Steam Deck or an Ally the instal
 | on the controller | in the installer |
 |---|---|
 | d-pad | move |
-| A or Start | choose, or go on |
+| A, or Menu (☰) | choose, or go on |
 | B | back |
 | X | tick or untick |
 | Y | on-screen keyboard, in a text field |
 | LB, RB | previous and next field |
-| Select | delete |
+| View (⧉) | delete |
 
 1. Boot the installer from USB. On an Ally, hold volume down while it starts, pick **Boot Menu**, and pick the USB stick there, or its buttons won't work until the installer is up.
 2. **Connect to Wi-Fi** on the first screen: pick your network, and type its password with the on-screen keyboard.
-3. On the passphrase screen the controller types the passphrase the way it will at boot. Press your buttons, then **Start**; **Select** deletes. Use only the characters in the table below; the installer won't take any others, or the Deck's back buttons on anything but a Deck.
+3. On each passphrase field, press **Y** to start typing with the controller, the way you will at boot. Your buttons type, **View** deletes, and **Menu** finishes, which also puts the controller back to moving around the screen. Use twelve or more presses of the buttons in the table below; the installer won't take anything else, or the Deck's back buttons on anything but a Deck.
 4. The login password and the rest are typed with the on-screen keyboard (Y).
 
 A USB keyboard works throughout too.
 
 The passphrase has to be at least twelve presses. Fourteen buttons give each press less than four bits, so twelve presses are about 46 bits and sixteen about 61; eight would be about 30, which an offline attack on a stolen disk can get through. On a Deck the back buttons add four more characters.
+
 ## Unlocking the disk
 
-At boot, the passphrase prompt takes your controller's buttons as you'd type the passphrase. Press your buttons in order, then **Start**. **Select** deletes the last press. A keyboard works too.
+At boot, the passphrase prompt takes your controller's buttons as you'd type the passphrase. Press your buttons in order, then **Menu** (☰). **View** (⧉) deletes the last press; on a PlayStation pad they're Options and Create, or Share. A keyboard works too.
 
 | button | types | button | types |
 |---|---|---|---|

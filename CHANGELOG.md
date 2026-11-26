@@ -2,6 +2,12 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 5.5.1
+
+### Changed
+
+- [Handheld](docs/handheld.md): the controller's View and Menu buttons are called that, rather than Select and Start, and installing says how to type the passphrase with installer 3.14.1: Y to start, Menu to finish.
+
 ## 5.5.0
 
 ### Fixed
