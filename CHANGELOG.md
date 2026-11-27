@@ -2,6 +2,28 @@
 
 Breaking changes are listed first in each release, with what to do about them. Releases before 3.0.0 are on the [releases page](https://github.com/the-wittch/ephemeral-nixos-config/releases).
 
+## 5.6.0
+
+### Fixed
+
+- Installed games no longer stay on the disk for weeks after they're uninstalled or patched. `~/.local/share/Steam/steamapps` and `~/Games` were inside the hourly snapshots of `/persist`, which held on to every old copy for up to four weeks. At the next boot each is moved into a subvolume of its own, which snapshots leave out; the move copies with reflinks, so the games' data isn't written again and needs no space of its own. The space comes back as the snapshots taken before it expire.
+- [Backups](docs/backup.md#whats-in-them) keep game saves: Steam's `userdata`, and the Windows user folders in Proton and Wine prefixes, where games without cloud saves keep theirs. Until now the whole Steam folder was left out.
+
+### Changed
+
+- Backups leave out the games installed in `~/Games` by Heroic and Lutris, keeping only the saves in their prefixes. They were backed up whole.
+- [Handheld](docs/handheld.md#game-mode-and-the-desktop): `ephemeral update` builds the new system and uses it from the next restart, rather than switching under a running game. `ephemeral update --now` switches straight away.
+- Handheld: Decky Loader isn't ticked by default any more. It runs as root, its plugins can too, and it opens Steam's debugging port to every program on the machine, which is a choice to make rather than a default. A handheld that has it keeps it.
+- `ephemeral update` takes a snapshot of `/persist` before it changes anything, on the full profile. The last five are kept.
+
+### Added
+
+- A `handheld` setting says which handheld it is, `steamdeck`, `rog-ally`, `legion-go` or `other`, and the installer sets it from 3.15.0 on. A Deck no longer runs Handheld Daemon, which doesn't support it, and an Ally or a Legion Go gets the newest kernel nixpkgs has, for their drivers: the Ally's power limits need `asus-armoury`, new in Linux 6.19. An install from before has `other`, which works as before; set it and run `ephemeral update`.
+- `ephemeral setup` lists the buttons a handheld can press for a TPM PIN before it asks for one.
+- Handheld: if Game Mode stops within a minute three times in a row, the desktop comes up once instead, with a notification saying so, rather than a black screen coming and going.
+- `steamRemotePlay` in [settings](docs/settings.md) opens the firewall for Steam Remote Play and game transfers between your own machines. Off by default.
+- Proton-GE in the app list, installed with the system and updated with it, for Steam to pick per game.
+
 ## 5.5.1
 
 ### Changed

@@ -2,7 +2,9 @@
 
 ## Snapshots
 
-snapper keeps read-only snapshots of `/persist`, and with it your home folder: 24 hourly, 7 daily and 4 weekly. They undo deletes and bad edits, but they're on the same disk, so they aren't a [backup](backup.md).
+snapper keeps read-only snapshots of `/persist`, and with it your home folder: 24 hourly, 7 daily and 4 weekly, and one from just before each of the last five `ephemeral update` runs. They undo deletes and bad edits, but they're on the same disk, so they aren't a [backup](backup.md).
+
+Installed games aren't in them: `~/.local/share/Steam/steamapps` and `~/Games` are subvolumes of their own, so an uninstalled game gives its space back straight away. Each is moved into one at the first boot after it appears. Your saves in them are in the [backups](backup.md#whats-in-them).
 
 To bring back a file or folder as it was:
 

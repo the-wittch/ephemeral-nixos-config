@@ -1,6 +1,7 @@
 # A Steam Deck or ROG Ally: Steam's Game Mode at boot, Plasma as desktop mode, the disk unlocked
 # with the controller. In beta: designed on a Deck and an Ally X, not yet run on one.
-# The same system on every handheld: what differs between them, Handheld Daemon finds at run time.
+# settings.handheld says which one, for the little only that device needs; Handheld Daemon finds the
+# rest at run time.
 { config, ... }:
 let
   inherit (config.ephemeral.aspects) nixos;
@@ -15,6 +16,7 @@ let
     }:
     let
       user = config.ephemeral.settings.username;
+      device = config.ephemeral.settings.handheld;
 
       # the picked launchers' entries in Game Mode; only the full profile installs catalog apps
       launchers =
@@ -113,9 +115,10 @@ let
         };
       };
 
-      # the Ally's controller, back buttons, power limits and stick lights
+      # The Ally's controller, back buttons, power limits and stick lights. Not on a Deck: it isn't
+      # one Handheld Daemon supports, and Steam reads its controller itself.
       services.handheld-daemon = {
-        enable = true;
+        enable = device != "steamdeck";
         inherit user;
         # The Ally's power limits go through asus-wmi. acpi_call, which other handhelds need, is an
         # out-of-tree module that lets root run any ACPI method, so it stays out.
@@ -125,11 +128,11 @@ let
         };
       };
       # its settings, profiles and API token
-      preservation.preserveAt."/persist".directories = [ "/etc/hhd" ];
+      preservation.preserveAt."/persist".directories = lib.mkIf (device != "steamdeck") [ "/etc/hhd" ];
       # The stick lights start as a rainbow. Handheld Daemon fills in the rest of its settings
       # around this, and C writes it only where there's no state.yml yet, so a change made in its
       # overlay stays.
-      systemd.tmpfiles.rules = [
+      systemd.tmpfiles.rules = lib.mkIf (device != "steamdeck") [
         "C /etc/hhd/state.yml 0644 root root - ${pkgs.writeText "hhd-state.yml" ''
           rgb:
             handheld:
@@ -163,7 +166,39 @@ let
         OnlyShowIn=KDE;
       '';
 
+      # The Ally's power limits need asus-armoury, new in 6.19, and the Legion Go's drivers are new
+      # too; the long-term kernel stays everywhere else
+      boot.kernelPackages = lib.mkIf (lib.elem device [
+        "rog-ally"
+        "legion-go"
+      ]) pkgs.linuxPackages_latest;
+
+      # says why the desktop came up when Game Mode wouldn't start; the session loop leaves the note
+      environment.etc."xdg/autostart/ephemeral-game-mode-failed.desktop".text = ''
+        [Desktop Entry]
+        Type=Application
+        Name=Game Mode didn't start
+        Exec=${pkgs.writeShellScript "game-mode-failed" ''
+          note=''${XDG_STATE_HOME:-$HOME/.local/state}/ephemeral/game-mode-failed
+          [[ -f $note ]] || exit 0
+          ${lib.getExe' pkgs.libnotify "notify-send"} -u critical -a Steam "Game Mode didn't start" "$(<"$note")"
+          rm -f -- "$note"
+        ''}
+        Terminal=false
+        NoDisplay=true
+        OnlyShowIn=KDE;
+      '';
+
+      # what this handheld's buttons type at the disk prompt, for ephemeral setup to show before it
+      # asks for a TPM PIN, which the controller types there too
+      environment.etc."ephemeral/handheld-buttons".text =
+        lib.concatMapStrings (b: "${b.button}\t${b.character}\n")
+          (builtins.filter (b: !(b ? dmiVendor) || device == "steamdeck") (import ../handheld/_buttons.nix));
+
       environment.systemPackages = steamos ++ [ returnToGameMode ];
+      # ephemeral update builds the new system for the next restart rather than switching under
+      # Game Mode
+      environment.etc."ephemeral/update-at-boot".text = "";
     };
 in
 {

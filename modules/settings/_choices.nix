@@ -33,8 +33,31 @@
     {
       value = "handheld";
       label = "Handheld";
-      description = "Steam's Game Mode and Plasma, for a Steam Deck or ROG Ally";
+      description = "Steam's Game Mode and Plasma, for a Steam Deck, ROG Ally or Legion Go";
       tag = "beta";
+    }
+  ];
+  # with "desktop": "handheld": which one, for what only that device needs
+  handheld = [
+    {
+      value = "steamdeck";
+      label = "Steam Deck";
+      description = "LCD or OLED";
+    }
+    {
+      value = "rog-ally";
+      label = "ROG Ally";
+      description = "Ally and Ally X and Xbox Ally: a newer kernel for their power limits";
+    }
+    {
+      value = "legion-go";
+      label = "Legion Go";
+      description = "Go and Go S and Go 2: a newer kernel";
+    }
+    {
+      value = "other";
+      label = "Other";
+      description = "Game Mode and the desktop with nothing device-specific";
     }
   ];
   nvidia = [

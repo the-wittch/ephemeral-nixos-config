@@ -19,10 +19,27 @@ R /persist/var/lib/sbctl
 ! persist/etc/borg
 ! persist/etc/ssh
 
+## Game saves: Steam's own folder (local saves, controller layouts, screenshots) and the Windows
+## user folders in Proton and Wine prefixes, where games without cloud saves keep theirs. The rest
+## of Steam and ~/Games is installed games, downloaded again. Those two are - lines so borg still
+## looks inside for the saves; the ! lines spare it the big folders.
+! home/*/.local/share/Steam/steamapps/compatdata/*/pfx/drive_c/users/*/AppData/Local/Temp
++ home/*/.local/share/Steam/userdata
++ home/*/.local/share/Steam/steamapps/compatdata/*/pfx/drive_c/users
+! home/*/.local/share/Steam/steamapps/common
+! home/*/.local/share/Steam/steamapps/shadercache
+! home/*/.local/share/Steam/steamapps/downloading
+! home/*/.local/share/Steam/steamapps/workshop
+! home/*/.local/share/Steam/steamapps/compatdata/*/pfx/drive_c/windows
+- home/*/.local/share/Steam
+! home/*/Games/**/drive_c/users/*/AppData/Local/Temp
++ home/*/Games/**/drive_c/users
+! home/*/Games/**/drive_c/windows
+- home/*/Games
+
 ## Caches, and what apps, package managers and builds fetch or make again.
 ! home/*/.cache
 ! home/*/.local/share/Trash
-! home/*/.local/share/Steam
 ! home/*/.local/share/flatpak
 ! home/*/.local/share/containers
 ! home/*/.var/app/*/cache

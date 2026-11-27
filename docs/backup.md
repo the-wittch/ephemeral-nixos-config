@@ -47,7 +47,7 @@ Keep the passphrase somewhere other than this machine: without it the backups ca
 
 ### What's in them
 
-Your home folder, `/persist/etc` (the machine config and its secrets) and the Secure Boot keys, without caches and what can be fetched or built again: `.cache`, the trash, Steam's games, Flatpak and Podman's downloads, the language package managers' caches, `node_modules`, `.venv` and `.direnv`. A folder with a `CACHEDIR.TAG` file, as Rust's `target` has, or a `.nobackup` file you put there, is left out. [`modules/backup-patterns.lst`](../modules/backup-patterns.lst) has the full list.
+Your home folder, `/persist/etc` (the machine config and its secrets) and the Secure Boot keys, without caches and what can be fetched or built again: `.cache`, the trash, installed games in Steam and `~/Games`, Flatpak and Podman's downloads, the language package managers' caches, `node_modules`, `.venv` and `.direnv`. A folder with a `CACHEDIR.TAG` file, as Rust's `target` has, or a `.nobackup` file you put there, is left out. [`modules/backup-patterns.lst`](../modules/backup-patterns.lst) has the full list.
 
 To back up more, such as a server's data in `/persist/var/lib`, add lines in a module of your own. They're read before the built-in ones, so a `+` line keeps something they'd leave out:
 

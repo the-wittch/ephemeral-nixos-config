@@ -146,6 +146,16 @@ fi
 if [[ -n $tpm_action ]]; then
   luks=$(luks_device)
   if [[ $tpm_action == enroll ]]; then
+    # it reads the PIN itself, so it can't be checked here; the alternative is passing it in
+    # cryptenroll's environment
+    buttons=${EPHEMERAL_ROOT:-}/etc/ephemeral/handheld-buttons
+    if [[ -r $buttons ]]; then
+      echo "At boot you'll press the PIN on the controller, so make it six or more presses of these:"
+      while IFS=$'\t' read -r button character; do
+        printf '  %-20s %s\n' "$button" "$character"
+      done <"$buttons"
+      echo "Anything else can only be typed with a keyboard. A PIN that can't be pressed is asked for until the TPM stops taking guesses, and then the passphrase is."
+    fi
     echo "systemd-cryptenroll asks for the disk passphrase, then the new PIN twice."
     tpm_enroll "$luks" || die "the TPM wasn't enrolled; nothing changed"
   else

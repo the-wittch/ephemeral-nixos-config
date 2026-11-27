@@ -9,11 +9,7 @@
         "steam"
         "steam-unwrapped"
       ];
-      nixos.programs.steam = {
-        enable = true;
-        remotePlay.openFirewall = false;
-        dedicatedServer.openFirewall = false;
-      };
+      nixos.programs.steam.enable = true;
     };
     lutris = {
       label = "Lutris";
@@ -62,7 +58,7 @@
       label = "Decky Loader";
       category = "Gaming";
       description = "plugins for Game Mode from the Decky store";
-      defaultOn = [ "handheld" ];
+      # not ticked by default: root, root plugins and an open debugging port are a choice to make
       desktops = [ "handheld" ];
       warn = "Decky runs as root and its plugins can ask to as well; it turns on Steam's remote debugging port for every program on this machine";
       nixos =
@@ -126,6 +122,17 @@
       description = "install Proton-GE and Wine-GE";
       package = "protonup-qt";
     };
+    proton-ge = {
+      label = "Proton-GE";
+      category = "Gaming";
+      description = "a Proton with extra fixes for Steam to pick per game";
+      # in the system rather than downloaded by hand, so it's updated along with everything else
+      nixos =
+        { pkgs, ... }:
+        {
+          programs.steam.extraCompatPackages = [ pkgs.proton-ge-bin ];
+        };
+    };
     zork = {
       label = "Zork I-III";
       category = "Gaming";
@@ -136,4 +143,16 @@
       };
     };
   };
+
+  # Remote Play and game transfers between your own machines need ports open to the network;
+  # without Steam they open nothing. Dedicated servers stay closed.
+  flake.modules.nixos.pc =
+    { config, ... }:
+    {
+      programs.steam = {
+        remotePlay.openFirewall = config.ephemeral.settings.steamRemotePlay;
+        localNetworkGameTransfers.openFirewall = config.ephemeral.settings.steamRemotePlay;
+        dedicatedServer.openFirewall = false;
+      };
+    };
 }
