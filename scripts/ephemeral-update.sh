@@ -8,11 +8,13 @@ repo=$(release_repo)
 
 usage() {
   cat <<'USAGE'
-ephemeral-update [--check | --previous | --as-installed | --list]
+ephemeral-update [--now | --check | --previous | --as-installed | --list]
 
 With no option: offer a newer release if there is one, then rebuild from
-/persist/etc/nixos and switch to it.
+/persist/etc/nixos and switch to it. On a handheld it's used from the next
+restart instead, so a running game or Game Mode isn't cut off.
 
+  --now           on a handheld, switch to it straight away
   --check         build it without switching, to see whether a change works
   --previous      go back to the system before the last rebuild
   --as-installed  rebuild the system as it was installed; your files stay
@@ -21,10 +23,19 @@ USAGE
 }
 
 mode=switch
+# Switching live restarts services under the running session, and across nixpkgs versions some
+# have failed to come back until a restart. A handheld is in Game Mode while that happens, so it
+# takes the new system at the next restart.
+at_boot=
+[[ -e ${EPHEMERAL_ROOT:-}/etc/ephemeral/update-at-boot ]] && at_boot=1
 case ${1:-} in
   -h | --help)
     usage
     exit 0
+    ;;
+  --now)
+    at_boot=
+    shift
     ;;
   --check) mode=check ;;
   --previous) mode=previous ;;
@@ -121,9 +132,23 @@ if is_newer "$latest" "$pinned"; then
 fi
 
 make_initrd_ssh_key
-nh os switch "path:${flake}" --hostname nixos "$@"
-trap - ERR
-echo "If something's wrong now: ephemeral-update --previous, or pick the previous entry in the boot menu."
+# a release can change what's kept on /persist, so there's a copy from just before it to go back to
+if [[ -e ${EPHEMERAL_ROOT:-}/etc/snapper/configs/persist ]]; then
+  sudo snapper -c persist create --cleanup-algorithm number \
+    --description "before ephemeral update from $(cat /etc/ephemeral/release 2>/dev/null || echo "an unknown release")" ||
+    echo "Couldn't take a snapshot of /persist first; updating anyway." >&2
+fi
+if [[ -n $at_boot ]]; then
+  nh os boot "path:${flake}" --hostname nixos "$@"
+  trap - ERR
+  echo "Built. It's used from the next restart; until then this system stays as it is."
+  echo "To switch to it now instead: ephemeral-update --now"
+  echo "If something's wrong after the restart: pick the previous entry in the boot menu."
+else
+  nh os switch "path:${flake}" --hostname nixos "$@"
+  trap - ERR
+  echo "If something's wrong now: ephemeral-update --previous, or pick the previous entry in the boot menu."
+fi
 
 asked=${XDG_STATE_HOME:-$HOME/.local/state}/ephemeral/apps-asked
 if [[ -t 0 && ! -e $flake/apps.json && ! -e $asked ]] && command -v ephemeral-apps >/dev/null; then

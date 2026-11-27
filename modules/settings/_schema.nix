@@ -62,6 +62,11 @@ in
       default = "full";
       description = "minimal is the small first-boot system the installer sets up; full is everything here.";
     };
+    handheld = mkOption {
+      type = types.enum rules.handheld;
+      default = "other";
+      description = "With desktop = \"handheld\": which one, steamdeck, rog-ally or legion-go, for what only it needs.";
+    };
     nvidia = mkOption {
       type = types.enum rules.nvidia;
       default = "none";
@@ -92,6 +97,7 @@ in
     useTailscale = flag false "Tailscale VPN.";
     useOpenSnitch = flag true "OpenSnitch: outgoing connections need your OK (full profile).";
     flatpakUpdates = flag true "Update the Flatpak apps once a week (full profile, with a desktop).";
+    steamRemotePlay = flag false "Open the firewall for Steam Remote Play and game transfers between your own machines.";
     usePassSettings = flag false "Merge settings.from-pass.json.";
     passSettingsVault = mkOption {
       type = matching "passSettingsVault";

@@ -1,6 +1,11 @@
 {
   flake.modules.nixos.full =
-    { config, pkgs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     {
       services.snapper = {
         persistentTimer = true;
@@ -14,6 +19,9 @@
           TIMELINE_LIMIT_WEEKLY = 4;
           TIMELINE_LIMIT_MONTHLY = 0;
           TIMELINE_LIMIT_YEARLY = 0;
+          # the ones ephemeral update takes before it changes anything
+          NUMBER_CLEANUP = true;
+          NUMBER_LIMIT = "5";
         };
       };
 
@@ -40,6 +48,39 @@
           fi
           chmod 750 /persist/.snapshots
         '';
+      };
+
+      # Installed games in subvolumes of their own, which snapshots of /persist leave out. Inside,
+      # an uninstalled or patched game would keep its old copy on the disk until the last snapshot
+      # holding it went, four weeks later. A folder is moved in only once it's there, so Steam and
+      # the launchers make their own first, and before anyone logs in, so nothing has it open.
+      systemd.services.game-subvolumes = {
+        description = "Keep installed games out of the snapshots of /persist";
+        wantedBy = [ "multi-user.target" ];
+        before = [ "systemd-user-sessions.service" ];
+        after = [ "local-fs.target" ];
+        path = [
+          pkgs.btrfs-progs
+          pkgs.coreutils
+          pkgs.findutils
+        ];
+        serviceConfig = config.ephemeral.sandbox // {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ReadWritePaths = [ "/persist/home" ];
+          # to copy files as their owners have them, and read folders only they can
+          CapabilityBoundingSet = [
+            "CAP_CHOWN"
+            "CAP_DAC_OVERRIDE"
+            "CAP_DAC_READ_SEARCH"
+            "CAP_FOWNER"
+          ];
+        };
+        script = builtins.readFile ./_game-subvolumes.sh;
+        scriptArgs = lib.escapeShellArgs [
+          "/persist/home/${config.ephemeral.settings.username}/.local/share/Steam/steamapps"
+          "/persist/home/${config.ephemeral.settings.username}/Games"
+        ];
       };
 
       systemd.services.snapper-timeline = {

@@ -312,6 +312,13 @@ in
                 machine.succeed("test \"$(readlink /etc/machine-id)\" = /persist/etc/machine-id")
                 machine.succeed("findmnt -n /var/lib/systemd/credential.secret")
                 ids = {f: machine.succeed(f"sha256sum {f}").split()[0] for f in kept_files}
+                # installed games, as plain folders; ~/Games as a run cut short between its renames left it
+                steamapps = "/home/alice/.local/share/Steam/steamapps"
+                machine.succeed(
+                    f"runuser -u alice -- mkdir -p {steamapps}/common/Game /home/alice/Games.ephemeral-old/Heroic",
+                    f"runuser -u alice -- sh -c 'echo pak > {steamapps}/common/Game/data.pak && chmod 600 {steamapps}/common/Game/data.pak'",
+                    "runuser -u alice -- sh -c 'echo save > /home/alice/Games.ephemeral-old/Heroic/save'",
+                )
                 reboot()
                 boot_is_clean(3)
                 machine.fail("test -e /root-was-here")
@@ -329,6 +336,25 @@ in
                         assert machine.succeed(f"sha256sum {f}").split()[0] == before, f"{f} changed across the reboot"
                 got = machine.succeed("systemd-creds decrypt --name=t /persist/t.cred -").strip()
                 assert got == "boot-one-secret", f"credential from boot 1 no longer decrypts: {got!r}"
+
+            with subtest("installed games are moved into subvolumes of their own, which snapshots leave out"):
+                for d in [steamapps, "/home/alice/Games"]:
+                    assert machine.succeed(f"stat -c %i {d}").strip() == "256", f"{d} isn't a subvolume"
+                    assert machine.succeed(f"stat -c %U {d}").strip() == "alice", f"{d} isn't alice's"
+                    machine.fail(f"test -e {d}.ephemeral-old || test -e {d}.ephemeral-new")
+                assert machine.succeed(f"cat {steamapps}/common/Game/data.pak").strip() == "pak"
+                assert machine.succeed(f"stat -c '%a %U' {steamapps}/common/Game/data.pak").strip() == "600 alice"
+                assert machine.succeed("cat /home/alice/Games/Heroic/save").strip() == "save"
+                machine.succeed("systemctl start snapper-timeline.service")
+                machine.wait_until_succeeds(f"snapper -c persist --csvout list --columns number | tail -n 1 | grep -qvx {n}", timeout=timedelta(seconds=30))
+                m = machine.succeed("snapper -c persist --csvout list --columns number | tail -n 1").strip()
+                shot = f"/persist/.snapshots/{m}/snapshot/home/alice"
+                machine.succeed(f"test -d {shot}/.local/share/Steam")
+                machine.fail(f"test -e {shot}/.local/share/Steam/steamapps/common")
+                machine.fail(f"test -e {shot}/Games/Heroic")
+                # a boot with nothing left to move changes nothing
+                machine.succeed("systemctl restart game-subvolumes.service")
+                assert machine.succeed(f"cat {steamapps}/common/Game/data.pak").strip() == "pak"
 
             # the same paths the reboot above just showed are kept, as the explorer and --json see them
             with subtest("ephemeral-doctor persistence agrees with what the reboot kept"):

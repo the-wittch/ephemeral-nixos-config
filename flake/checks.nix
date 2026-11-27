@@ -139,8 +139,6 @@ let
   ];
   allowedDrift = {
     "persist:/var/lib/opensnitch" = "OpenSnitch is a full-profile option";
-    "handheld:persist:/var/lib/decky-loader" =
-      "Decky Loader is a catalog app, which only the full profile installs";
     "gnome:services.gnome.gnome-initial-setup.enable" =
       "no difference in practice: for an existing user it only marks itself done and exits (GNOME 40 and later)";
   };

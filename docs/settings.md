@@ -8,8 +8,9 @@
 | `locale` | language, e.g. `de_DE.UTF-8` |
 | `keyboardLayout`, `keyboardVariant` | e.g. `de` and `nodeadkeys`; also used at the LUKS prompt |
 | `diskDevice`, `swapSize` | the whole disk (not a partition) and the swap file size |
-| `desktop` | `plasma`, `gnome`, `niri` or `umbriel`; `none` for a headless server, which needs `server`; or `handheld` for a Steam Deck or ROG Ally, in beta ([Handheld](handheld.md)) |
+| `desktop` | `plasma`, `gnome`, `niri` or `umbriel`; `none` for a headless server, which needs `server`; or `handheld` for a Steam Deck, ROG Ally or Legion Go, in beta ([Handheld](handheld.md)) |
 | `profile` | `full` (everything in these docs) or `minimal` (the installer's small install) |
+| `handheld` | with `"desktop": "handheld"`, which one: `steamdeck` (LCD or OLED: no Handheld Daemon, which doesn't support it, and its back buttons at the disk prompt), `rog-ally` (the Ally, Ally X and Xbox Ally) or `legion-go` (the Go, Go S and Go 2), which get a newer kernel for their drivers, or `other` (the default). The installer sets it |
 | `nvidia` | `none`, `open` (RTX 20 / GTX 16 series and newer) or `legacy` (GTX 900 / 10 series) |
 | `extras` | the extra shell tools listed in the [README](../README.md): atuin, fzf, bat, fastfetch and more |
 | `laptop` | thermald on Intel, battery reporting, screen rotation and light sensors |
@@ -24,6 +25,7 @@
 | `sshKeys` | SSH public keys that may log in, such as `"ssh-ed25519 AAAA… you@laptop"`; a server needs at least one |
 | `useOpenSnitch` | OpenSnitch asks before programs connect out (on by default; always off without a desktop and on a handheld, where nobody could answer it) |
 | `flatpakUpdates` | update the Flatpak apps once a week (on by default; full system with a desktop) |
+| `steamRemotePlay` | open the firewall for Steam Remote Play and game transfers between your own machines: UDP 10400–10401 and 27031–27036, TCP 27036, 27037 and 27040, open to whatever network you're on (off by default) |
 | `usePassSettings`, `passSettingsVault`, `passSettingsItem` | merge settings from Proton Pass |
 | `usePassSshAgent`, `passSshVault` | the Proton Pass SSH agent at login, serving the keys in that vault |
 

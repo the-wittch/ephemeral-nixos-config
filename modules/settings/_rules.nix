@@ -21,6 +21,7 @@ in
   swapSize = "[0-9]+[KMGT]?";
   desktop = values "desktop";
   profile = values "profile";
+  handheld = values "handheld";
   nvidia = values "nvidia";
   encryptedDns = values "encryptedDns";
   # each entry, address#name: resolved checks the server's certificate against the name

@@ -19,6 +19,7 @@
               util-linux
             ];
             SCRIPTS = ../../scripts;
+            SESSION = ../../modules/handheld/_session.sh;
             # what packages.nix puts in front of every command
             PRELUDE = pkgs.writeText "prelude.sh" (import ../../modules/packages/_prelude.nix { inherit lib; });
           }

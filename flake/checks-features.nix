@@ -70,13 +70,39 @@ let
     # nobody in Game Mode to answer it
     && !c.services.opensnitch.enable
     && lib.elem "hid_steam.lizard_mode=0" c.boot.kernelParams
-    && lib.any (lib.hasPrefix "C /etc/hhd/state.yml ") c.systemd.tmpfiles.rules;
+    && lib.any (lib.hasPrefix "C /etc/hhd/state.yml ") c.systemd.tmpfiles.rules
+    && c.environment.etc ? "ephemeral/handheld-buttons"
+    # Remote Play's ports stay closed until steamRemotePlay opens them
+    && !c.programs.steam.remotePlay.openFirewall
+    && c.environment.etc ? "ephemeral/update-at-boot";
   notHandheld =
     c:
     !c.services.handheld-daemon.enable
     && !(c.boot.initrd.systemd.services ? handheld-input)
     && !lib.elem "uinput" c.boot.initrd.kernelModules
     && !lib.elem "hid_steam.lizard_mode=0" c.boot.kernelParams;
+  # handheld-full as each device
+  as =
+    device:
+    (config.flake.nixosConfigurations.handheld-full.extendModules {
+      modules = [ { ephemeral.settings.handheld = lib.mkForce device; } ];
+    }).config;
+  kernel = c: c.boot.kernelPackages.kernel.version;
+  devices =
+    let
+      deck = as "steamdeck";
+      other = host "handheld-full";
+    in
+    # Handheld Daemon doesn't support the Deck, whose controller Steam reads itself
+    !deck.services.handheld-daemon.enable
+    && !lib.any (lib.hasPrefix "C /etc/hhd/state.yml ") deck.systemd.tmpfiles.rules
+    # the Deck's back buttons type at the disk prompt only on a Deck
+    && lib.hasInfix "L4\t1" deck.environment.etc."ephemeral/handheld-buttons".text
+    && !lib.hasInfix "L4" other.environment.etc."ephemeral/handheld-buttons".text
+    && kernel deck == kernel other
+    # asus-armoury came in 6.19
+    && lib.versionAtLeast (kernel (as "rog-ally")) "6.19"
+    && lib.versionAtLeast (kernel (as "legion-go")) "6.19";
   refused =
     name: change:
     !(builtins.tryEval
@@ -124,7 +150,9 @@ in
             "handheld-full"
             "handheld-minimal"
           ])
-          "a handheld is missing Handheld Daemon, its kept settings and lights, the power button or the controller unlock, or has OpenSnitch";
+          "a handheld is missing Handheld Daemon, its kept settings and lights, the power button, the controller unlock or its button list, or has OpenSnitch";
+        assert lib.assertMsg devices
+          "a Steam Deck should have no Handheld Daemon and keep this config's kernel, and an Ally or a Legion Go get a kernel with their drivers, 6.19 or newer";
         assert lib.assertMsg (lib.all (n: notHandheld (host n)) [
           "plasma-full"
           "plasma-minimal"

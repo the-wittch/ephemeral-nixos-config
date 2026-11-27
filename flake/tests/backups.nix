@@ -89,6 +89,20 @@ in
                   "echo dep > /home/alice/code/node_modules/dep/index.js",
                   "echo main > /home/alice/code/main.rs",
                   "touch /home/alice/later/.nobackup && echo later > /home/alice/later/draft",
+                  "mkdir -p /home/alice/.local/share/Steam/userdata/1/remote"
+                  " /home/alice/.local/share/Steam/steamapps/common/Game"
+                  " /home/alice/.local/share/Steam/steamapps/compatdata/10/pfx/drive_c/users/steamuser/Saved"
+                  " /home/alice/.local/share/Steam/steamapps/compatdata/10/pfx/drive_c/windows"
+                  " /home/alice/Games/Heroic/Prefixes/default/Other/drive_c/users/steamuser/Saved"
+                  " /home/alice/Games/Heroic/Other",
+                  "echo s > /home/alice/.local/share/Steam/userdata/1/remote/save",
+                  "echo s > /home/alice/.local/share/Steam/steamapps/compatdata/10/pfx/drive_c/users/steamuser/Saved/slot1",
+                  "echo s > /home/alice/Games/Heroic/Prefixes/default/Other/drive_c/users/steamuser/Saved/slot1",
+                  "echo g > /home/alice/.local/share/Steam/steamapps/common/Game/data.pak",
+                  "echo g > /home/alice/.local/share/Steam/steamapps/compatdata/10/pfx/drive_c/windows/win.ini",
+                  "echo g > /home/alice/.local/share/Steam/steam.sh",
+                  "echo g > /home/alice/Games/Heroic/Other/game.exe",
+                  "chown -R alice /home/alice/.local /home/alice/Games",
                   "mkdir -p /persist/etc/nixos && echo '{}' > /persist/etc/nixos/settings.json",
               )
               machine.succeed("borgmatic repo-create --encryption repokey-blake2 >&2")
@@ -100,6 +114,9 @@ in
                   "home/alice/Downloads/file.iso",
                   "home/alice/code/main.rs",
                   "persist/etc/nixos/settings.json",
+                  "home/alice/.local/share/Steam/userdata/1/remote/save",
+                  "home/alice/.local/share/Steam/steamapps/compatdata/10/pfx/drive_c/users/steamuser/Saved/slot1",
+                  "home/alice/Games/Heroic/Prefixes/default/Other/drive_c/users/steamuser/Saved/slot1",
               ]:
                   assert kept in listed, f"{kept} isn't in the backup"
               for left in [
@@ -108,6 +125,10 @@ in
                   "home/alice/later/draft",
                   "persist/etc/borg/passphrase",
                   "persist/etc/borg/ssh_key",
+                  "home/alice/.local/share/Steam/steamapps/common/Game/data.pak",
+                  "home/alice/.local/share/Steam/steamapps/compatdata/10/pfx/drive_c/windows/win.ini",
+                  "home/alice/.local/share/Steam/steam.sh",
+                  "home/alice/Games/Heroic/Other/game.exe",
               ]:
                   assert left not in listed, f"{left} is in the backup"
               storage.succeed("test -d /home/borg/repo/data")

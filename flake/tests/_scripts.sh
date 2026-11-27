@@ -96,6 +96,50 @@ if grep -q '^nh os switch' "$calls"; then
   pass "update: offline, it rebuilds what's pinned"
 else fail "update: offline"; fi
 
+handheld=$work/handheld
+mkdir -p "$handheld/etc/ephemeral" "$handheld/etc/snapper/configs" && : >"$handheld/etc/ephemeral/update-at-boot"
+: >"$handheld/etc/snapper/configs/persist"
+fake snapper 'echo "snapper $*" >>"$CALLS"'
+flake_at v4.0.0
+EPHEMERAL_ROOT=$handheld FAKE_OFFLINE=1 on_tty '' bash "$update" || true
+if grep -q '^nh os boot' "$calls" && ! grep -q '^nh os switch' "$calls" && grep -q 'next restart' "$work/out"; then
+  pass "update: a handheld gets the new system at the next restart"
+else fail "update: a handheld switched live"; fi
+if [[ $(grep -m1 -oE '^(snapper|nh)' "$calls") == snapper ]] &&
+  grep -q '^snapper -c persist create --cleanup-algorithm number' "$calls"; then
+  pass "update: a snapshot of /persist comes first, cleaned up by number"
+else fail "update: no snapshot before the update"; fi
+flake_at v4.0.0
+EPHEMERAL_ROOT=$handheld FAKE_OFFLINE=1 on_tty '' bash "$update" --now || true
+if grep -q '^nh os switch' "$calls" && ! grep -q '^nh os boot' "$calls"; then
+  pass "update: --now switches a handheld straight away"
+else fail "update: --now on a handheld"; fi
+
+# The handheld's session loop, with Game Mode failing at once or asking for the desktop. Plasma
+# ends the loop, so each run stops at the first desktop.
+session_bin=$work/session-bin
+mkdir -p "$session_bin"
+printf '#!%s\n%s\n' "$(command -v bash)" 'echo gamescope >>"$CALLS"
+[[ $FAKE_GAMESCOPE == fail ]] && exit 1
+echo plasma >"$XDG_STATE_HOME/ephemeral/next-session"' >"$session_bin/steam-gamescope"
+printf '#!%s\n%s\n' "$(command -v bash)" 'echo plasma >>"$CALLS"; kill -TERM "$PPID"' >"$session_bin/plasma"
+printf '#!%s\n%s\n' "$(command -v bash)" ':' >"$session_bin/sleep"
+chmod +x "$session_bin"/*
+run_session() {
+  : >"$calls"
+  rm -rf -- "${work:?}/state" && mkdir -p "$work/state/ephemeral"
+  FAKE_GAMESCOPE=$1 XDG_STATE_HOME=$work/state PATH=$session_bin:$PATH timeout 20 \
+    bash -c "plasma_run=$session_bin/plasma steam_shortcuts=true launchers=none; source $SESSION" || true
+}
+run_session fail
+if [[ $(tr '\n' ' ' <"$calls") == "gamescope gamescope gamescope plasma " && -s $work/state/ephemeral/game-mode-failed ]]; then
+  pass "handheld session: three failed Game Mode starts bring up the desktop, with a note why"
+else fail "handheld session: failing Game Mode ($(tr '\n' ' ' <"$calls"))"; fi
+run_session desktop
+if [[ $(tr '\n' ' ' <"$calls") == "gamescope plasma " && ! -e $work/state/ephemeral/game-mode-failed ]]; then
+  pass "handheld session: Switch to Desktop goes to the desktop, and isn't a failure"
+else fail "handheld session: Switch to Desktop ($(tr '\n' ' ' <"$calls"))"; fi
+
 initrd_key=$ROOT/persist/etc/ssh/initrd/ssh_host_ed25519_key
 flake_at v4.0.0
 printf '{"server": false}\n' >"$work/flake/settings.json"

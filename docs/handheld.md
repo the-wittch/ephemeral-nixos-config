@@ -1,6 +1,6 @@
 # Handheld (beta)
 
-`"desktop": "handheld"` turns a Steam Deck or a ROG Ally into something like SteamOS: it starts in Steam's Game Mode, and "Switch to Desktop" goes to Plasma. Underneath it's the same system as any other install: `/` wiped at every boot, `/persist`, the encrypted disk, backups and `ephemeral`. Steam's games and saves are in your home folder, which is kept.
+`"desktop": "handheld"` turns a Steam Deck, a ROG Ally or a Legion Go into something like SteamOS: it starts in Steam's Game Mode, and "Switch to Desktop" goes to Plasma. Underneath it's the same system as any other install: `/` wiped at every boot, `/persist`, the encrypted disk, backups and `ephemeral`. Steam's games and saves are in your home folder, which is kept.
 
 It's a beta. The controller tables come from what a ROG Xbox Ally X sends and from the kernel's drivers, and CI boots it and unlocks a disk with a virtual controller, but nothing on this page has been checked on a real handheld yet. Please report what you find.
 
@@ -12,8 +12,11 @@ It's a beta. The controller tables come from what a ROG Xbox Ally X sends and fr
 | ROG Ally X (2024) | the same controller IDs as the Xbox Ally X, so it should behave the same; untested |
 | Steam Deck LCD and OLED | the controller table is from the kernel's `hid-steam` driver; untested |
 | ROG Ally (2023) | Game Mode should work; its controller isn't in the table, so the disk needs a keyboard at boot |
+| Legion Go, Go S, Go 2 | Game Mode should work; their controllers aren't in the table, so the disk needs a keyboard at boot |
 
 Other handhelds that [Handheld Daemon](https://github.com/hhd-dev/hhd) supports may work in Game Mode, but their controllers can't type the passphrase at boot.
+
+`"handheld"` in [settings](settings.md) says which one it is: `steamdeck`, `rog-ally`, `legion-go` or `other`. The installer sets it from 3.15.0 on. An install from before then has `other`; on a Deck, an Ally or a Legion Go, set it and run `ephemeral update`.
 
 ## Installing
 
@@ -66,20 +69,25 @@ These controllers work at the prompt:
 
 Bluetooth pads, and Xbox One and Series pads through the Xbox Wireless Adapter, work in Game Mode and on the desktop, but not at the prompt.
 
+### A shorter PIN with the TPM
+
+With [Secure Boot](security.md#secure-boot) on, `ephemeral setup` can enroll the TPM, so the disk asks for a PIN rather than the passphrase, and the TPM stops taking guesses after a few wrong ones. The controller presses the PIN as it does the passphrase, so make it six or more presses of the buttons above; `ephemeral setup` lists them before it asks. Whether a Deck's or an Ally's firmware lets you put Secure Boot in Setup Mode hasn't been checked yet; until it has, keep the passphrase.
+
 ## Game Mode and the desktop
 
 - **To the desktop**: Steam's power menu, "Switch to Desktop".
 - **Back to Game Mode**: "Return to Game Mode" in Plasma's launcher. Logging out does the same, and every boot starts in Game Mode.
 - **On the desktop**, Steam runs in the background, so the controller works as a mouse, and Steam and X together bring up its on-screen keyboard, for `sudo` and anything else you have to type.
-- **Updates**: Steam's own system update button does nothing here. Update from the desktop with `ephemeral update`, as on any other install.
+- **Updates**: Steam's own system update button does nothing here. Update from the desktop with `ephemeral update`, as on any other install. On a handheld it builds the new system and uses it from the next restart, so nothing changes under a running game; `ephemeral update --now` switches straight away.
+- **If Game Mode won't start**: after three tries that stop within a minute, the desktop comes up once, with a notification saying so.
 - **Power button**: a short press suspends, a long one powers off.
 - **On a Deck** the controller is a gamepad from the start rather than a mouse, which is what lets it unlock the disk. On the desktop, Steam in the background makes it a mouse again.
 
-On an Ally, Handheld Daemon runs the back buttons, the gyro, the stick lights and the power limits (TDP), from its overlay: double-tap the Armoury Crate button. Its settings are kept across reboots. On a Deck, Steam reads the controller itself, and Handheld Daemon only adds its overlay and power profiles.
+On an Ally, Handheld Daemon runs the back buttons, the gyro, the stick lights and the power limits (TDP), from its overlay: double-tap the Armoury Crate button. Its settings are kept across reboots. A Deck (`"handheld": "steamdeck"`) doesn't run Handheld Daemon, which doesn't support it: Steam reads its controller itself.
 
 ## Launchers and Decky
 
-On the full profile, the Apps screen has these for Game Mode. Heroic, Lutris and Decky Loader are ticked already; untick any you don't want:
+On the full profile, the Apps screen has these for Game Mode. Heroic and Lutris are ticked already; untick any you don't want. Decky Loader isn't, for the reasons under it:
 
 - **Heroic**: Epic, GOG and Amazon games.
 - **Lutris**: in Game Mode it also brings **Battle.net**, the **EA app**, **Ubisoft Connect** and the **Rockstar Games Launcher**. The first time, each one runs Lutris's installer for it. After that, Lutris asks whether to play or install again, and A on Play starts it.
@@ -96,6 +104,7 @@ These come from the kernel and firmware every install has, not from anything mad
 
 - **Screen, brightness, Wi-Fi, Bluetooth, battery, sound**: the standard drivers. The Deck LCD's Wi-Fi is Realtek, the OLED's Qualcomm and the Ally's MediaTek. The Deck's speakers don't get the sound processing SteamOS gives them, so they can sound thinner.
 - **Fans**: left to the firmware's own curve on both. Handheld Daemon can set a curve on an Ally.
+- **Kernel**: an Ally or a Legion Go (`rog-ally`, `legion-go`) gets the newest kernel nixpkgs has, rather than the long-term one, for their drivers: the Ally's power limits need `asus-armoury`, new in Linux 6.19.
 - **Power limits on a Deck**: Steam's performance slider needs SteamOS's own helpers, which this hasn't got, so expect it to do nothing.
 - **Firmware updates**: neither is on LVFS, so `fwupd` doesn't update them. Update an Ally's BIOS from its own setup screen or Windows, and a Deck's from SteamOS.
 - **Docking**: external screens over USB-C work as on any AMD laptop.
